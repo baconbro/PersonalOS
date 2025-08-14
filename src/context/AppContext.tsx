@@ -237,13 +237,45 @@ export function AppProvider({ children }: AppProviderProps) {
           // Migrate weekly tasks that don't have status field
           const migratedUserData = {
             ...userData,
-            weeklyTasks: userData.weeklyTasks.map(task => ({
-              ...task,
-              status: task.status || (task.completed ? 'done' : 'todo')
-            }))
+            weeklyTasks: userData.weeklyTasks.map(task => {
+              const hasStatus = task.status !== undefined && task.status !== null;
+              const normalizedStatus = task.status || (task.completed ? 'done' : 'todo');
+              
+              if (!hasStatus) {
+                console.log(`🔄 Migrating task "${task.title}" - adding status: ${normalizedStatus}`);
+              }
+              
+              return {
+                ...task,
+                status: normalizedStatus,
+                completed: normalizedStatus === 'done' || task.completed
+              };
+            })
           };
           
           dispatch({ type: 'LOAD_STATE', payload: migratedUserData });
+          
+          // Force save migrated tasks back to Firebase if any were migrated
+          const tasksNeedingMigration = userData.weeklyTasks.filter(task => 
+            task.status === undefined || task.status === null
+          );
+          
+          if (tasksNeedingMigration.length > 0) {
+            console.log(`🔄 Force-saving ${tasksNeedingMigration.length} migrated tasks to Firebase...`);
+            // Save migrated tasks back to Firebase
+            for (const originalTask of tasksNeedingMigration) {
+              const migratedTask = migratedUserData.weeklyTasks.find(t => t.id === originalTask.id);
+              if (migratedTask) {
+                try {
+                  await service.updateWeeklyTask(migratedTask);
+                  console.log(`✅ Migrated task "${migratedTask.title}" saved to Firebase`);
+                } catch (error) {
+                  console.warn(`⚠️ Failed to save migrated task "${migratedTask.title}":`, error);
+                }
+              }
+            }
+          }
+          
           console.log('✅ Data loaded from Firebase with status migration');
         } catch (error) {
           console.warn('⚠️ Failed to load from Firebase, trying localStorage:', error);

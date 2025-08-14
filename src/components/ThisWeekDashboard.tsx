@@ -45,11 +45,12 @@ const ThisWeekDashboard: React.FC = () => {
 
   // Convert tasks to priority cards format for better UX
   const weeklyPriorities: WeeklyPriorityCard[] = thisWeekTasks.map(task => {
+    // Ensure consistent status field - migrate old data on the fly
+    const normalizedStatus = task.status || (task.completed ? 'done' : 'todo');
+    
     // Debug logging to understand data state
-    if (task.status) {
-      console.log(`✅ Task "${task.title}" has status: ${task.status}`);
-    } else {
-      console.log(`⚠️ Task "${task.title}" missing status, completed: ${task.completed}`);
+    if (task.status !== normalizedStatus) {
+      console.log(`🔄 Migrating task "${task.title}" status from ${task.status} to ${normalizedStatus}`);
     }
     
     return {
@@ -57,7 +58,7 @@ const ThisWeekDashboard: React.FC = () => {
       title: task.title,
       description: task.description,
       linkedOKRId: task.quarterlyGoalId || '',
-      status: task.status || (task.completed ? 'done' : 'todo'), // Use status field or fallback to completed
+      status: normalizedStatus,
       estimatedHours: task.estimatedHours,
       actualHours: task.actualHours || 0
     };
@@ -91,7 +92,8 @@ const ThisWeekDashboard: React.FC = () => {
   const updateTaskStatus = (taskId: string, newStatus: 'todo' | 'in-progress' | 'done') => {
     const task = thisWeekTasks.find(t => t.id === taskId);
     if (task) {
-      console.log(`🔄 Updating task ${taskId} from ${task.status || (task.completed ? 'done' : 'todo')} to ${newStatus}`);
+      const currentStatus = task.status || (task.completed ? 'done' : 'todo');
+      console.log(`🔄 Updating task ${taskId} from ${currentStatus} to ${newStatus}`);
       
       const updatedTask: WeeklyTask = {
         ...task,
@@ -99,7 +101,7 @@ const ThisWeekDashboard: React.FC = () => {
         completed: newStatus === 'done'
       };
       
-      console.log('📝 Updated task data:', updatedTask);
+      console.log('📝 Updated task data:', { id: updatedTask.id, status: updatedTask.status, completed: updatedTask.completed });
       dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
       
       // Trigger celebration animation when task is completed
@@ -110,6 +112,8 @@ const ThisWeekDashboard: React.FC = () => {
           setCelebratingTask(null);
         }, 2000); // 2 second celebration
       }
+    } else {
+      console.error('❌ Task not found:', taskId);
     }
   };
 

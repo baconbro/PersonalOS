@@ -217,10 +217,18 @@ export class FirebaseService {
     try {
       const taskRef = doc(db, 'users', this.userId, 'weeklyTasks', task.id);
       const { id, ...taskData } = task;
-      const dataToSave = convertDatesToTimestamps(taskData);
+      
+      // Ensure status field is always present and consistent with completed field
+      const normalizedTaskData = {
+        ...taskData,
+        status: task.status || (task.completed ? 'done' : 'todo'),
+        completed: task.status === 'done' || task.completed
+      };
+      
+      const dataToSave = convertDatesToTimestamps(normalizedTaskData);
       
       // Debug logging to see what's being saved
-      console.log('🔥 Saving task to Firebase:', task.id, 'status:', task.status);
+      console.log('🔥 Saving task to Firebase:', task.id, 'status:', normalizedTaskData.status, 'completed:', normalizedTaskData.completed);
       console.log('📦 Full data being saved:', dataToSave);
       
       await updateDoc(taskRef, dataToSave);

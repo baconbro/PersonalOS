@@ -67,7 +67,7 @@ export interface WeeklyTask {
   estimatedHours: number;
   actualHours?: number;
   completed: boolean;
-  status?: 'todo' | 'in-progress' | 'done'; // For Kanban board
+  status: 'todo' | 'in-progress' | 'done'; // Required for Kanban board
   weekOf: Date;
   roadblocks: string[];
   notes: string;
