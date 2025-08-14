@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+import { devToastService } from '../services/devToastService';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -92,9 +93,15 @@ export class FirebaseAIService {
         REFINED_VISION: [only if needs significant improvement]
       `;
 
+      // Log the query in development mode
+      const queryId = devToastService.logAIQuery(prompt, 'life-goal-refinement', this.estimateTokens(prompt));
+
       const result = await this.model.generateContent(prompt);
       const response = result.response;
       const text = response.text();
+      
+      // Log response tokens in development mode
+      devToastService.updateQueryWithResponse(queryId, this.estimateTokens(text));
       
       // Parse the response
       const lines = text.split('\n').filter((line: string) => line.trim().length > 0);
@@ -413,13 +420,30 @@ USER MESSAGE: ${userMessage}
 
 ASSISTANT RESPONSE:`;
 
+      // Log the query in development mode
+      const queryId = devToastService.logAIQuery(prompt, context, this.estimateTokens(prompt));
+
       const result = await this.model.generateContent(prompt);
       const response = result.response;
-      return response.text().trim();
+      const responseText = response.text().trim();
+      
+      // Log response tokens in development mode
+      devToastService.updateQueryWithResponse(queryId, this.estimateTokens(responseText));
+      
+      return responseText;
     } catch (error) {
       console.error('Error generating chat response:', error);
       throw new Error('Failed to generate chat response');
     }
+  }
+
+  /**
+   * Estimate token count for text (rough approximation)
+   */
+  private estimateTokens(text: string): number {
+    // Rough estimation: 1 token ≈ 4 characters for English text
+    // This is an approximation since exact tokenization depends on the model
+    return Math.ceil(text.length / 4);
   }
 
   /**

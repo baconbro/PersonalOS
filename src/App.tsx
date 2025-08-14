@@ -12,6 +12,7 @@ import NotificationBanner from './components/NotificationBanner.tsx'
 import NotificationSettings from './components/NotificationSettings.tsx'
 import LifeArchitectureWizard from './components/LifeArchitectureWizard.tsx'
 import AIChatbot from './components/AIChatbot.tsx'
+import DevToastContainer from './components/DevToastContainer.tsx'
 import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
@@ -302,6 +303,9 @@ function App() {
         isVisible={showChatbot}
         onToggle={() => setShowChatbot(!showChatbot)}
       />
+
+      {/* Development Toast Notifications */}
+      <DevToastContainer />
     </div>
   )
 }
