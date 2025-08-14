@@ -56,10 +56,10 @@ const UserGuide: React.FC = () => {
             <div className="tier">
               <div className="tier-header">
                 <CheckSquare className="tier-icon weekly" />
-                <h3>Weekly Execution</h3>
+                <h3>Weekly Command Huddle</h3>
                 <span className="tier-timeframe">7 days</span>
               </div>
-              <p>Weekly accountability loops for progress review and priority setting</p>
+              <p>Strategic 15-minute sessions that transform weekly planning into focused executive-level command huddles</p>
             </div>
           </div>
         </section>
@@ -263,6 +263,95 @@ const UserGuide: React.FC = () => {
           </div>
         </section>
 
+        {/* Weekly Command Huddle Section */}
+        <section className="guide-section">
+          <h2>
+            <Target className="section-icon" />
+            Weekly Command Huddle
+          </h2>
+          <p>
+            The Weekly Command Huddle is your 15-minute strategic session that transforms weekly planning 
+            from a mundane task into a focused, executive-level experience. It's not about filling out 
+            spreadsheets—it's about having a focused command huddle with your most important employee: your future self.
+          </p>
+          
+          <div className="feature-highlight">
+            <h4>🎯 The W.R.P. Ritual (Weekly Review & Plan)</h4>
+            <p>
+              A guided, three-phase wizard that walks you through strategic weekly planning:
+            </p>
+            
+            <div className="ritual-phases">
+              <div className="ritual-phase">
+                <div className="phase-number">1</div>
+                <div className="phase-content">
+                  <h5>📍 Review (Look Back)</h5>
+                  <p>Check off last week's priorities and reflect on your biggest win and roadblock. 
+                  This provides immediate accountability and helps you spot patterns over time.</p>
+                </div>
+              </div>
+              
+              <div className="ritual-phase">
+                <div className="phase-number">2</div>
+                <div className="phase-content">
+                  <h5>🎯 Re-align (Look Up)</h5>
+                  <p>Review your current quarterly OKRs with progress bars and select which objective 
+                  needs the most impact this week. The system forces you to look at the tactical map 
+                  before deciding your route.</p>
+                </div>
+              </div>
+              
+              <div className="ritual-phase">
+                <div className="phase-number">3</div>
+                <div className="phase-content">
+                  <h5>📋 Plan (Look Forward)</h5>
+                  <p>Define 3-5 "needle-mover" priorities linked to your selected OKR. The system 
+                  enforces focus by limiting you to maximum 5 priorities—no comprehensive to-do lists allowed.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="example-box">
+            <h4>🎮 This Week Dashboard - Your Command Center</h4>
+            <p>Once your huddle is complete, the "This Week" view becomes your minimalist heads-up display:</p>
+            
+            <div className="dashboard-features">
+              <div className="feature-item">
+                <h5>⚡ Extreme Focus</h5>
+                <p>Only your 3-5 weekly priorities are prominently displayed. The noise of bigger goals is intentionally hidden to prevent overwhelm.</p>
+              </div>
+              
+              <div className="feature-item">
+                <h5>📊 Kanban Board</h5>
+                <p>Drag your priorities through "To Do → In Progress → Done" for powerful visual progress tracking.</p>
+              </div>
+              
+              <div className="feature-item">
+                <h5>🔗 Golden Thread</h5>
+                <p>Every priority card has a link icon showing exactly how it connects to your quarterly OKR and annual goal—reinforcing your "Why."</p>
+              </div>
+              
+              <div className="feature-item">
+                <h5>📅 Calendar Integration</h5>
+                <p>Link priorities to calendar blocks, moving from intentions to scheduled commitments.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="tips">
+            <h4>💡 Mastering the Weekly Command Huddle</h4>
+            <ul>
+              <li><strong>Trigger timing:</strong> System prompts every Sunday evening or Monday morning</li>
+              <li><strong>Non-dismissible:</strong> This is a core loop of the app—strategic discipline enforced</li>
+              <li><strong>Quality over quantity:</strong> 3-5 needle-movers beat 20 scattered tasks every time</li>
+              <li><strong>Strategic connection:</strong> Every priority must link to an OKR—no orphaned tasks</li>
+              <li><strong>Visual progress:</strong> Use the Kanban board for satisfying completion tracking</li>
+              <li><strong>Golden Thread:</strong> Click the 🔗 icon anytime to see your task's strategic context</li>
+            </ul>
+          </div>
+        </section>
+
         {/* Weekly Reviews Section */}
         <section className="guide-section">
           <h2>
@@ -423,7 +512,9 @@ const UserGuide: React.FC = () => {
             <div className="workflow-step">
               <h4>✅ 4. Execute Weekly</h4>
               <p>
-                Review progress and set priorities in <strong>Weekly Review</strong>. This is where strategy meets execution.
+                Navigate to <strong>"This Week"</strong> and start your <strong>Weekly Command Huddle</strong>—a 15-minute 
+                strategic session that guides you through Review → Re-align → Plan. This transforms weekly planning 
+                from a chore into focused executive-level decision making.
               </p>
             </div>
           </div>
