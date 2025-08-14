@@ -32,6 +32,7 @@ const ThisWeekDashboard: React.FC = () => {
   const [showGoldenThread, setShowGoldenThread] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  const [celebratingTask, setCelebratingTask] = useState<string | null>(null);
 
   const currentWeek = new Date();
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -87,6 +88,15 @@ const ThisWeekDashboard: React.FC = () => {
         completed: newStatus === 'done'
       };
       dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
+      
+      // Trigger celebration animation when task is completed
+      if (newStatus === 'done') {
+        setCelebratingTask(taskId);
+        // Clear celebration after animation
+        setTimeout(() => {
+          setCelebratingTask(null);
+        }, 2000); // 2 second celebration
+      }
     }
   };
 
@@ -377,7 +387,7 @@ const ThisWeekDashboard: React.FC = () => {
                   {doneTasks.map(task => (
                     <div 
                       key={task.id}
-                      className={`kanban-task done ${draggedTask === task.id ? 'dragging' : ''}`}
+                      className={`kanban-task done ${draggedTask === task.id ? 'dragging' : ''} ${celebratingTask === task.id ? 'celebrating' : ''}`}
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}
@@ -392,6 +402,19 @@ const ThisWeekDashboard: React.FC = () => {
                           {task.estimatedHours}h
                         </span>
                       </div>
+                      {celebratingTask === task.id && (
+                        <div className="celebration-overlay">
+                          <div className="celebration-confetti">
+                            <div className="confetti-piece"></div>
+                            <div className="confetti-piece"></div>
+                            <div className="confetti-piece"></div>
+                            <div className="confetti-piece"></div>
+                            <div className="confetti-piece"></div>
+                            <div className="confetti-piece"></div>
+                          </div>
+                          <div className="celebration-text">🎉 Well Done!</div>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {doneTasks.length === 0 && (
