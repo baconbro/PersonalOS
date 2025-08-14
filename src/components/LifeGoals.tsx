@@ -15,7 +15,8 @@ const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
   'Spirit': Compass,
   'Community': Building,
   'Travel': Plane,
-  'Giving Back': Gift
+  'Giving Back': Gift,
+  'Other': Target
 };
 
 const categoryColors: Record<LifeGoalCategory, string> = {
@@ -28,7 +29,8 @@ const categoryColors: Record<LifeGoalCategory, string> = {
   'Spirit': '#9c27b0',
   'Community': '#ff9800',
   'Travel': '#00bcd4',
-  'Giving Back': '#4caf50'
+  'Giving Back': '#4caf50',
+  'Other': '#6c757d'
 };
 
 const LifeGoals: React.FC = () => {

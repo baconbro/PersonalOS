@@ -10,7 +10,8 @@ export type LifeGoalCategory =
   | 'Spirit'
   | 'Community'
   | 'Travel'
-  | 'Giving Back';
+  | 'Giving Back'
+  | 'Other';
 
 export interface Goal {
   id: string;
