@@ -1,0 +1,369 @@
+/* Golden Thread Component Styles */
+
+.golden-thread-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.golden-thread-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 900px;
+  max-height: 90vh;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  animation: golden-thread-enter 0.3s ease-out;
+}
+
+@keyframes golden-thread-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.golden-thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.golden-thread-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.golden-thread-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.golden-thread-title h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.golden-thread-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-left: 0.5rem;
+}
+
+.golden-thread-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.golden-thread-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.golden-thread-content {
+  padding: 2rem;
+  max-height: calc(90vh - 100px);
+  overflow-y: auto;
+}
+
+.thread-path {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.thread-level {
+  position: relative;
+}
+
+.thread-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-left: 4px solid #007bff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.thread-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.thread-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.thread-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.thread-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.thread-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.thread-subtitle {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.thread-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.thread-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 80px;
+}
+
+.thread-progress-bar {
+  width: 40px;
+  height: 6px;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.thread-progress-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6c757d;
+  min-width: 30px;
+}
+
+.thread-expand {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.thread-expand:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.thread-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f3f4;
+}
+
+.thread-description {
+  color: #6c757d;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.thread-navigate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.thread-navigate:hover {
+  background: #0056b3;
+}
+
+.thread-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+  position: relative;
+}
+
+.thread-connector::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #e9ecef, #007bff, #e9ecef);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.connector-arrow {
+  background: white;
+  border: 2px solid #007bff;
+  border-radius: 50%;
+  padding: 0.5rem;
+  color: #007bff;
+  z-index: 1;
+}
+
+.connector-label {
+  position: absolute;
+  background: white;
+  color: #6c757d;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  margin-left: 3rem;
+  z-index: 1;
+}
+
+.thread-summary {
+  border-top: 1px solid #e9ecef;
+  padding-top: 2rem;
+}
+
+.summary-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.summary-card h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.summary-card p {
+  margin: 0;
+  color: #6c757d;
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .golden-thread-overlay {
+    padding: 1rem;
+  }
+
+  .golden-thread-modal {
+    max-height: 95vh;
+  }
+
+  .golden-thread-header {
+    padding: 1.5rem;
+  }
+
+  .golden-thread-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .golden-thread-subtitle {
+    margin-left: 0;
+  }
+
+  .golden-thread-content {
+    padding: 1.5rem;
+  }
+
+  .thread-card {
+    padding: 1rem;
+  }
+
+  .thread-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .thread-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .connector-label {
+    position: static;
+    margin: 0.5rem 0 0 0;
+    display: inline-block;
+  }
+}
+
+/* Animation for thread levels */
+.thread-level {
+  animation: thread-level-enter 0.3s ease-out;
+  animation-fill-mode: both;
+}
+
+.thread-level:nth-child(1) { animation-delay: 0.1s; }
+.thread-level:nth-child(3) { animation-delay: 0.2s; }
+.thread-level:nth-child(5) { animation-delay: 0.3s; }
+.thread-level:nth-child(7) { animation-delay: 0.4s; }
+
+@keyframes thread-level-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

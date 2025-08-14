@@ -1,0 +1,1078 @@
+import { useState } from 'react';
+import { useApp } from '../context/AppContext';
+import { CheckSquare, Plus, Edit3, Clock, AlertCircle, BookOpen, Star, Copy, Trash2, Network } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks } from 'date-fns';
+import type { WeeklyTask, WeeklyReviewData } from '../types';
+import AISuggestions from './AISuggestions';
+import GoldenThread from './GoldenThread';
+
+function WeeklyReview() {
+  const { state, dispatch } = useApp();
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<WeeklyTask | null>(null);
+  const [goldenThreadTaskId, setGoldenThreadTaskId] = useState<string | null>(null);
+  const [taskFormData, setTaskFormData] = useState({
+    title: '',
+    description: '',
+    quarterlyGoalId: '',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    estimatedHours: 1,
+  });
+  const [reviewFormData, setReviewFormData] = useState({
+    roadblocks: [''],
+    learnings: [''],
+    nextWeekPriorities: [''],
+    lastWeekGoals: [''],
+    lastWeekResults: [''],
+    strategicCheckIn: '',
+    energyLevel: 3 as 1 | 2 | 3 | 4 | 5,
+    satisfaction: 3 as 1 | 2 | 3 | 4 | 5,
+    notes: '',
+  });
+
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+
+  const weekTasks = state.weeklyTasks.filter(task =>
+    isWithinInterval(task.weekOf, { start: weekStart, end: weekEnd })
+  );
+
+  const weekReview = state.weeklyReviews.find(review =>
+    isWithinInterval(review.weekOf, { start: weekStart, end: weekEnd })
+  );
+
+  const currentQuarterGoals = state.quarterlyGoals.filter(
+    goal => goal.quarter === state.currentQuarter && 
+           goal.year === state.currentYear &&
+           goal.status !== 'completed'
+  );
+
+  const resetTaskForm = () => {
+    setTaskFormData({
+      title: '',
+      description: '',
+      quarterlyGoalId: '',
+      priority: 'medium',
+      estimatedHours: 1,
+    });
+    setEditingTask(null);
+    setShowTaskForm(false);
+  };
+
+  const handleTaskSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!taskFormData.title.trim()) {
+      alert('Please enter a task title');
+      return;
+    }
+
+    try {
+      const taskData: WeeklyTask = {
+        id: editingTask?.id || crypto.randomUUID(),
+        title: taskFormData.title.trim(),
+        description: taskFormData.description.trim(),
+        quarterlyGoalId: taskFormData.quarterlyGoalId,
+        priority: taskFormData.priority,
+        estimatedHours: taskFormData.estimatedHours,
+        actualHours: editingTask?.actualHours,
+        completed: editingTask?.completed || false,
+        weekOf: weekStart,
+        roadblocks: editingTask?.roadblocks || [],
+        notes: editingTask?.notes || '',
+      };
+
+      console.log('Saving weekly task:', taskData);
+
+      if (editingTask) {
+        dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: taskData });
+        console.log('Updated weekly task');
+      } else {
+        dispatch({ type: 'ADD_WEEKLY_TASK', payload: taskData });
+        console.log('Added new weekly task');
+      }
+
+      alert(editingTask ? 'Task updated successfully!' : 'Task created successfully!');
+      resetTaskForm();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      alert('Error saving task. Please try again.');
+    }
+  };
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const completedTasks = weekTasks.filter(task => task.completed).map(task => task.id);
+      const totalTasks = weekTasks.length;
+      const overallProgress = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+
+      const reviewData: WeeklyReviewData = {
+        id: weekReview?.id || crypto.randomUUID(),
+        weekOf: weekStart,
+        completedTasks,
+        roadblocks: reviewFormData.roadblocks.filter(r => r.trim()),
+        learnings: reviewFormData.learnings.filter(l => l.trim()),
+        nextWeekPriorities: reviewFormData.nextWeekPriorities.filter(p => p.trim()),
+        lastWeekGoals: reviewFormData.lastWeekGoals.filter(g => g.trim()),
+        lastWeekResults: reviewFormData.lastWeekResults.filter(r => r.trim()),
+        strategicCheckIn: reviewFormData.strategicCheckIn.trim(),
+        overallProgress,
+        energyLevel: reviewFormData.energyLevel,
+        satisfaction: reviewFormData.satisfaction,
+        notes: reviewFormData.notes.trim(),
+      };
+
+      console.log('Saving weekly review:', reviewData);
+
+      if (weekReview) {
+        dispatch({ type: 'UPDATE_WEEKLY_REVIEW', payload: reviewData });
+        console.log('Updated weekly review');
+      } else {
+        dispatch({ type: 'ADD_WEEKLY_REVIEW', payload: reviewData });
+        console.log('Added new weekly review');
+      }
+
+      alert(weekReview ? 'Review updated successfully!' : 'Review completed successfully!');
+      setShowReviewForm(false);
+    } catch (error) {
+      console.error('Error saving review:', error);
+      alert('Error saving review. Please try again.');
+    }
+  };
+
+  const toggleTaskCompletion = (taskId: string) => {
+    const task = weekTasks.find(t => t.id === taskId);
+    if (task) {
+      const updatedTask = { ...task, completed: !task.completed };
+      dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
+    }
+  };
+
+  const updateTaskHours = (taskId: string, actualHours: number) => {
+    const task = weekTasks.find(t => t.id === taskId);
+    if (task) {
+      const updatedTask = { ...task, actualHours };
+      dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
+    }
+  };
+
+  const editTask = (task: WeeklyTask) => {
+    setEditingTask(task);
+    setTaskFormData({
+      title: task.title,
+      description: task.description,
+      quarterlyGoalId: task.quarterlyGoalId,
+      priority: task.priority,
+      estimatedHours: task.estimatedHours,
+    });
+    setShowTaskForm(true);
+  };
+
+  const deleteTask = (taskId: string) => {
+    const task = weekTasks.find(t => t.id === taskId);
+    const taskTitle = task ? task.title : 'this task';
+    if (confirm(`Are you sure you want to delete "${taskTitle}"? This action cannot be undone.`)) {
+      dispatch({ type: 'DELETE_WEEKLY_TASK', payload: taskId });
+    }
+  };
+
+  const quickAddTask = (taskTitle: string) => {
+    const taskData: WeeklyTask = {
+      id: crypto.randomUUID(),
+      title: taskTitle,
+      description: '',
+      quarterlyGoalId: '',
+      priority: 'medium',
+      estimatedHours: 1,
+      actualHours: 0,
+      completed: false,
+      weekOf: weekStart,
+      roadblocks: [],
+      notes: '',
+    };
+    dispatch({ type: 'ADD_WEEKLY_TASK', payload: taskData });
+  };
+
+  const duplicateTask = (task: WeeklyTask) => {
+    const newTask: WeeklyTask = {
+      ...task,
+      id: crypto.randomUUID(),
+      title: `${task.title} (Copy)`,
+      completed: false,
+      weekOf: weekStart,
+    };
+    dispatch({ type: 'ADD_WEEKLY_TASK', payload: newTask });
+  };
+
+  const handleGoldenThreadNavigation = (section: 'life-goals' | 'annual-plan' | 'quarterly-sprint' | 'weekly-review', id?: string) => {
+    // This would integrate with your routing system
+    // For now, we'll just log the navigation intent
+    console.log(`Navigate to ${section}`, id);
+    // In a real app, you might use React Router or similar:
+    // navigate(`/${section}${id ? `?highlight=${id}` : ''}`);
+  };
+
+  const resetTaskForm = () => {
+      title: `${task.title} (Copy)`,
+      completed: false,
+      actualHours: 0,
+      roadblocks: [],
+      notes: '',
+    };
+    dispatch({ type: 'ADD_WEEKLY_TASK', payload: duplicatedTask });
+  };
+
+  const addArrayItem = (arrayName: keyof typeof reviewFormData, value: string) => {
+    if (arrayName === 'roadblocks' || arrayName === 'learnings' || arrayName === 'nextWeekPriorities' || 
+        arrayName === 'lastWeekGoals' || arrayName === 'lastWeekResults') {
+      setReviewFormData({
+        ...reviewFormData,
+        [arrayName]: [...(reviewFormData[arrayName] as string[]), value]
+      });
+    }
+  };
+
+  const updateArrayItem = (arrayName: keyof typeof reviewFormData, index: number, value: string) => {
+    if (arrayName === 'roadblocks' || arrayName === 'learnings' || arrayName === 'nextWeekPriorities' ||
+        arrayName === 'lastWeekGoals' || arrayName === 'lastWeekResults') {
+      const newArray = [...(reviewFormData[arrayName] as string[])];
+      newArray[index] = value;
+      setReviewFormData({
+        ...reviewFormData,
+        [arrayName]: newArray
+      });
+    }
+  };
+
+  const removeArrayItem = (arrayName: keyof typeof reviewFormData, index: number) => {
+    if (arrayName === 'roadblocks' || arrayName === 'learnings' || arrayName === 'nextWeekPriorities' ||
+        arrayName === 'lastWeekGoals' || arrayName === 'lastWeekResults') {
+      const newArray = (reviewFormData[arrayName] as string[]).filter((_, i) => i !== index);
+      setReviewFormData({
+        ...reviewFormData,
+        [arrayName]: newArray
+      });
+    }
+  };
+
+  const completedCount = weekTasks.filter(task => task.completed).length;
+  const totalEstimatedHours = weekTasks.reduce((sum, task) => sum + task.estimatedHours, 0);
+  const totalActualHours = weekTasks.reduce((sum, task) => sum + (task.actualHours || 0), 0);
+
+  return (
+    <div className="component-container">
+      <div className="component-title">
+        <CheckSquare size={32} />
+        Weekly Execution Review
+      </div>
+      <p className="component-description">
+        Your most important accountability loop. Plan tasks, track progress, identify roadblocks, 
+        and set priorities for strategic execution.
+      </p>
+
+      {/* Week Navigation */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2rem',
+        background: '#f7fafc',
+        padding: '1rem',
+        borderRadius: '8px'
+      }}>
+        <button 
+          className="btn btn-secondary"
+          onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+        >
+          ← Previous Week
+        </button>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+            Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>
+            Tasks: {completedCount}/{weekTasks.length} completed
+          </div>
+        </div>
+        <button 
+          className="btn btn-secondary"
+          onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+        >
+          Next Week →
+        </button>
+      </div>
+
+      {/* Week Stats */}
+      <div className="grid grid-3" style={{ marginBottom: '2rem' }}>
+        <div className="card">
+          <div className="card-title">Task Progress</div>
+          <div className="card-content">
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#667eea' }}>
+              {completedCount}/{weekTasks.length}
+            </div>
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ width: `${weekTasks.length > 0 ? (completedCount / weekTasks.length) * 100 : 0}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Time Planned</div>
+          <div className="card-content">
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#764ba2' }}>
+              {totalEstimatedHours}h
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#666' }}>
+              Estimated hours
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Time Actual</div>
+          <div className="card-content">
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#48bb78' }}>
+              {totalActualHours}h
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#666' }}>
+              Logged hours
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowTaskForm(true)}
+        >
+          <Plus size={20} />
+          Add Custom Task
+        </button>
+        
+        {/* Quick Add Buttons */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => quickAddTask('Review last week goals')}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+          >
+            + Review Goals
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => quickAddTask('Plan next week priorities')}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+          >
+            + Plan Week
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => quickAddTask('Weekly review meeting')}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+          >
+            + Review Meeting
+          </button>
+        </div>
+
+        <button 
+          className="btn btn-secondary"
+          onClick={() => {
+            if (weekReview) {
+              setReviewFormData({
+                roadblocks: weekReview.roadblocks.length > 0 ? weekReview.roadblocks : [''],
+                learnings: weekReview.learnings.length > 0 ? weekReview.learnings : [''],
+                nextWeekPriorities: weekReview.nextWeekPriorities.length > 0 ? weekReview.nextWeekPriorities : [''],
+                lastWeekGoals: weekReview.lastWeekGoals?.length > 0 ? weekReview.lastWeekGoals : [''],
+                lastWeekResults: weekReview.lastWeekResults?.length > 0 ? weekReview.lastWeekResults : [''],
+                strategicCheckIn: weekReview.strategicCheckIn || '',
+                energyLevel: weekReview.energyLevel,
+                satisfaction: weekReview.satisfaction,
+                notes: weekReview.notes,
+              });
+            } else {
+              setReviewFormData({
+                roadblocks: [''],
+                learnings: [''],
+                nextWeekPriorities: [''],
+                lastWeekGoals: [''],
+                lastWeekResults: [''],
+                strategicCheckIn: '',
+                energyLevel: 3,
+                satisfaction: 3,
+                notes: '',
+              });
+            }
+            setShowReviewForm(true);
+          }}
+        >
+          <BookOpen size={20} />
+          {weekReview ? 'Update Review' : 'Complete Review'}
+        </button>
+      </div>
+
+      {/* Task Form */}
+      {showTaskForm && (
+        <div className="card" style={{ marginBottom: '2rem', background: '#f7fafc' }}>
+          <form onSubmit={handleTaskSubmit}>
+            <div className="grid grid-2">
+              <div className="form-group">
+                <label className="form-label">Task Title *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={taskFormData.title}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, title: e.target.value })}
+                  placeholder="What needs to be done?"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Link to Quarterly Goal</label>
+                <select
+                  className="form-input"
+                  value={taskFormData.quarterlyGoalId}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, quarterlyGoalId: e.target.value })}
+                >
+                  <option value="">No specific goal</option>
+                  {currentQuarterGoals.map(goal => (
+                    <option key={goal.id} value={goal.id}>{goal.title}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea
+                className="form-input form-textarea"
+                value={taskFormData.description}
+                onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
+                placeholder="Task details, context, or notes..."
+                style={{ minHeight: '80px' }}
+              />
+            </div>
+
+            <div className="grid grid-2">
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select
+                  className="form-input"
+                  value={taskFormData.priority}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, priority: e.target.value as 'high' | 'medium' | 'low' })}
+                >
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Estimated Hours</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  className="form-input"
+                  value={taskFormData.estimatedHours}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, estimatedHours: parseFloat(e.target.value) || 1 })}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary" onClick={resetTaskForm}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                {editingTask ? 'Update Task' : 'Add Task'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Tasks List */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ marginBottom: '1rem', color: '#2d3748' }}>Tasks for This Week</h3>
+        {weekTasks.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+            <Clock size={32} style={{ color: '#cbd5e0', margin: '0 auto 1rem' }} />
+            <p style={{ color: '#718096' }}>No tasks planned for this week.</p>
+          </div>
+        ) : (
+          <div className="grid grid-1" style={{ gap: '1rem' }}>
+            {weekTasks
+              .sort((a, b) => {
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                return priorityOrder[b.priority] - priorityOrder[a.priority];
+              })
+              .map(task => {
+                const linkedGoal = currentQuarterGoals.find(g => g.id === task.quarterlyGoalId);
+                return (
+                  <div key={task.id} className="card" style={{ 
+                    background: task.completed ? '#f0fff4' : 'white',
+                    border: task.completed ? '2px solid #48bb78' : '1px solid #e2e8f0'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => toggleTaskCompletion(task.id)}
+                          style={{ marginTop: '0.25rem' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                            <h4 style={{ 
+                              margin: 0, 
+                              textDecoration: task.completed ? 'line-through' : 'none',
+                              color: task.completed ? '#666' : '#2d3748'
+                            }}>
+                              {task.title}
+                            </h4>
+                            <span style={{ 
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: '600',
+                              backgroundColor: task.priority === 'high' ? '#fed7d7' : 
+                                             task.priority === 'medium' ? '#fef5e7' : '#f0fff4',
+                              color: task.priority === 'high' ? '#c53030' : 
+                                     task.priority === 'medium' ? '#d69e2e' : '#38a169'
+                            }}>
+                              {task.priority.toUpperCase()}
+                            </span>
+                          </div>
+                          
+                          {task.description && (
+                            <p style={{ margin: '0 0 0.75rem 0', color: '#4a5568', fontSize: '0.9rem' }}>
+                              {task.description}
+                            </p>
+                          )}
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', fontSize: '0.9rem', color: '#666' }}>
+                            <span>
+                              <Clock size={14} style={{ marginRight: '0.25rem' }} />
+                              Est: {task.estimatedHours}h
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span>Actual:</span>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={task.actualHours || 0}
+                                onChange={(e) => updateTaskHours(task.id, parseFloat(e.target.value) || 0)}
+                                style={{ 
+                                  width: '60px', 
+                                  padding: '0.25rem', 
+                                  border: '1px solid #cbd5e0', 
+                                  borderRadius: '4px' 
+                                }}
+                              />
+                              <span>h</span>
+                            </div>
+                            {linkedGoal && (
+                              <span style={{ color: '#667eea' }}>
+                                → {linkedGoal.title}
+                              </span>
+                            )}
+                          </div>
+
+                          {task.roadblocks.length > 0 && (
+                            <div style={{ marginTop: '0.75rem' }}>
+                              <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#e53e3e', marginBottom: '0.25rem' }}>
+                                <AlertCircle size={14} style={{ marginRight: '0.25rem' }} />
+                                Roadblocks:
+                              </div>
+                              <ul style={{ margin: 0, paddingLeft: '1.5rem', fontSize: '0.85rem', color: '#666' }}>
+                                {task.roadblocks.map((roadblock, index) => (
+                                  <li key={index}>{roadblock}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => setGoldenThreadTaskId(task.id)}
+                          style={{ padding: '0.5rem', fontSize: '0.8rem' }}
+                          title="See Context - Trace to Life Goals"
+                        >
+                          <Network size={14} />
+                          Context
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => editTask(task)}
+                          style={{ padding: '0.5rem' }}
+                          title="Edit task"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => duplicateTask(task)}
+                          style={{ padding: '0.5rem' }}
+                          title="Duplicate task"
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => deleteTask(task.id)}
+                          style={{ padding: '0.5rem', color: '#f56565' }}
+                          title="Delete task"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
+      {/* Weekly Review Form */}
+      {showReviewForm && (
+        <div className="card" style={{ background: '#f7fafc' }}>
+          <h3 style={{ marginBottom: '1.5rem', color: '#2d3748' }}>Weekly Execution Review</h3>
+          <form onSubmit={handleReviewSubmit}>
+            {/* Last Week's Scorecard */}
+            <div style={{ 
+              background: '#e6fffa', 
+              padding: '1.5rem', 
+              borderRadius: '8px', 
+              marginBottom: '2rem',
+              border: '1px solid #81e6d9'
+            }}>
+              <h4 style={{ marginBottom: '1rem', color: '#234e52' }}>📊 Last Week's Scorecard</h4>
+              
+              <div className="form-group">
+                <label className="form-label">Goals Set Last Week</label>
+                {reviewFormData.lastWeekGoals.map((goal, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={goal}
+                      onChange={(e) => updateArrayItem('lastWeekGoals', index, e.target.value)}
+                      placeholder="e.g., Complete Module 2 of Stanford AI course"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => removeArrayItem('lastWeekGoals', index)}
+                      style={{ padding: '0.5rem' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => addArrayItem('lastWeekGoals', '')}
+                >
+                  Add Goal
+                </button>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Results & Outcomes</label>
+                {reviewFormData.lastWeekResults.map((result, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <textarea
+                      className="form-input"
+                      value={result}
+                      onChange={(e) => updateArrayItem('lastWeekResults', index, e.target.value)}
+                      placeholder="e.g., 70% done. Got stuck on linear algebra concepts and lost momentum."
+                      style={{ minHeight: '60px', resize: 'vertical' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => removeArrayItem('lastWeekResults', index)}
+                      style={{ padding: '0.5rem', alignSelf: 'flex-start' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => addArrayItem('lastWeekResults', '')}
+                >
+                  Add Result
+                </button>
+              </div>
+            </div>
+
+            {/* Roadblocks & Risks */}
+            <div className="form-group">
+              <label className="form-label">🚧 Roadblocks & Risks</label>
+              {reviewFormData.roadblocks.map((roadblock, index) => (
+                <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <textarea
+                    className="form-input"
+                    value={roadblock}
+                    onChange={(e) => updateArrayItem('roadblocks', index, e.target.value)}
+                    placeholder="e.g., Knowledge Gap: My linear algebra is rustier than I thought..."
+                    style={{ minHeight: '60px', resize: 'vertical' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => removeArrayItem('roadblocks', index)}
+                    style={{ padding: '0.5rem', alignSelf: 'flex-start' }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => addArrayItem('roadblocks', '')}
+              >
+                Add Roadblock
+              </button>
+            </div>
+
+            {/* This Week's Top Priorities */}
+            <div style={{ 
+              background: '#fff5f5', 
+              padding: '1.5rem', 
+              borderRadius: '8px', 
+              marginBottom: '1.5rem',
+              border: '1px solid #fed7d7'
+            }}>
+              <h4 style={{ marginBottom: '1rem', color: '#c53030' }}>🎯 This Week's Top Priorities</h4>
+              
+              <div className="form-group">
+                <label className="form-label">Priority Actions</label>
+                {reviewFormData.nextWeekPriorities.map((priority, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <textarea
+                      className="form-input"
+                      value={priority}
+                      onChange={(e) => updateArrayItem('nextWeekPriorities', index, e.target.value)}
+                      placeholder="e.g., Priority 1 (Academic): Review linear algebra basics for 90 minutes on Tuesday..."
+                      style={{ minHeight: '80px', resize: 'vertical' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => removeArrayItem('nextWeekPriorities', index)}
+                      style={{ padding: '0.5rem', alignSelf: 'flex-start' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => addArrayItem('nextWeekPriorities', '')}
+                >
+                  Add Priority
+                </button>
+              </div>
+            </div>
+
+            {/* Strategic Check-in */}
+            <div className="form-group">
+              <label className="form-label">🎯 Strategic Check-in</label>
+              <textarea
+                className="form-input form-textarea"
+                value={reviewFormData.strategicCheckIn}
+                onChange={(e) => setReviewFormData({ ...reviewFormData, strategicCheckIn: e.target.value })}
+                placeholder="How do these priorities connect to your quarterly goals? What strategic progress are you making?"
+                style={{ minHeight: '100px' }}
+              />
+            </div>
+
+            {/* Key Learnings */}
+            <div className="form-group">
+              <label className="form-label">💡 Key Learnings & Insights</label>
+              {reviewFormData.learnings.map((learning, index) => (
+                <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={learning}
+                    onChange={(e) => updateArrayItem('learnings', index, e.target.value)}
+                    placeholder="What did you learn this week?"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => removeArrayItem('learnings', index)}
+                    style={{ padding: '0.5rem' }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => addArrayItem('learnings', '')}
+              >
+                Add Learning
+              </button>
+            </div>
+
+            {/* Ratings */}
+            <div className="grid grid-2">
+              <div className="form-group">
+                <label className="form-label">Energy Level (1-5)</label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {[1, 2, 3, 4, 5].map(level => (
+                    <label key={level} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <input
+                        type="radio"
+                        name="energyLevel"
+                        value={level}
+                        checked={reviewFormData.energyLevel === level}
+                        onChange={() => setReviewFormData({ ...reviewFormData, energyLevel: level as 1 | 2 | 3 | 4 | 5 })}
+                      />
+                      {level}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Satisfaction (1-5)</label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {[1, 2, 3, 4, 5].map(level => (
+                    <label key={level} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <input
+                        type="radio"
+                        name="satisfaction"
+                        value={level}
+                        checked={reviewFormData.satisfaction === level}
+                        onChange={() => setReviewFormData({ ...reviewFormData, satisfaction: level as 1 | 2 | 3 | 4 | 5 })}
+                      />
+                      <Star size={16} fill={level <= reviewFormData.satisfaction ? '#f6ad55' : 'none'} color="#f6ad55" />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* AI Analysis for Weekly Review */}
+            <AISuggestions
+              type="weekly-review"
+              sourceData={{
+                goals: reviewFormData.lastWeekGoals.filter(g => g.trim()),
+                accomplishments: reviewFormData.lastWeekResults.filter(r => r.trim()),
+                challenges: reviewFormData.roadblocks.filter(r => r.trim()),
+                priorities: reviewFormData.nextWeekPriorities.filter(p => p.trim())
+              }}
+              onSuggestionSelect={(suggestion) => {
+                if (!reviewFormData.strategicCheckIn.trim()) {
+                  setReviewFormData({ ...reviewFormData, strategicCheckIn: suggestion });
+                } else if (!reviewFormData.notes.trim()) {
+                  setReviewFormData({ ...reviewFormData, notes: suggestion });
+                }
+              }}
+              className="ai-suggestions-section"
+            />
+
+            <div className="form-group">
+              <label className="form-label">Additional Notes</label>
+              <textarea
+                className="form-input form-textarea"
+                value={reviewFormData.notes}
+                onChange={(e) => setReviewFormData({ ...reviewFormData, notes: e.target.value })}
+                placeholder="Any other thoughts, observations, or plans..."
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowReviewForm(false)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Save Review
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Current Review Display */}
+      {weekReview && !showReviewForm && (
+        <div className="card">
+          <h3 style={{ marginBottom: '1.5rem', color: '#2d3748', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BookOpen size={24} />
+            Weekly Execution Review - {format(weekReview.weekOf, 'MMM dd, yyyy')}
+          </h3>
+          
+          <div className="grid grid-2" style={{ marginBottom: '2rem' }}>
+            <div>
+              <strong>Energy Level:</strong> {weekReview.energyLevel}/5
+            </div>
+            <div>
+              <strong>Satisfaction:</strong> 
+              {[...Array(5)].map((_, i) => (
+                <Star 
+                  key={i} 
+                  size={16} 
+                  fill={i < weekReview.satisfaction ? '#f6ad55' : 'none'} 
+                  color="#f6ad55"
+                  style={{ marginLeft: '0.25rem' }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Last Week's Scorecard */}
+          {weekReview.lastWeekGoals && weekReview.lastWeekGoals.length > 0 && (
+            <div style={{ 
+              background: '#e6fffa', 
+              padding: '1.5rem', 
+              borderRadius: '8px', 
+              marginBottom: '1.5rem',
+              border: '1px solid #81e6d9'
+            }}>
+              <h4 style={{ color: '#234e52', marginBottom: '1rem' }}>📊 Last Week's Scorecard</h4>
+              <div className="grid grid-1" style={{ gap: '1rem' }}>
+                {weekReview.lastWeekGoals.map((goal, index) => (
+                  <div key={index} style={{ 
+                    background: 'white', 
+                    padding: '1rem', 
+                    borderRadius: '6px',
+                    border: '1px solid #b2f5ea'
+                  }}>
+                    <div style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#234e52' }}>
+                      Goal: {goal}
+                    </div>
+                    {weekReview.lastWeekResults && weekReview.lastWeekResults[index] && (
+                      <div style={{ color: '#4a5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                        <strong>Result:</strong> {weekReview.lastWeekResults[index]}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Roadblocks & Risks */}
+          {weekReview.roadblocks.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: '#e53e3e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🚧 Roadblocks & Risks:
+              </h4>
+              <div style={{ background: '#fed7d7', padding: '1rem', borderRadius: '8px' }}>
+                {weekReview.roadblocks.map((roadblock, index) => (
+                  <div key={index} style={{ 
+                    marginBottom: index < weekReview.roadblocks.length - 1 ? '1rem' : 0,
+                    lineHeight: 1.6,
+                    color: '#2d3748'
+                  }}>
+                    {roadblock}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* This Week's Priorities */}
+          {weekReview.nextWeekPriorities.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: '#c53030', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🎯 This Week's Top Priorities:
+              </h4>
+              <div style={{ background: '#fff5f5', padding: '1rem', borderRadius: '8px' }}>
+                {weekReview.nextWeekPriorities.map((priority, index) => (
+                  <div key={index} style={{ 
+                    marginBottom: index < weekReview.nextWeekPriorities.length - 1 ? '1rem' : 0,
+                    lineHeight: 1.6,
+                    color: '#2d3748'
+                  }}>
+                    <strong>Priority {index + 1}:</strong> {priority}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strategic Check-in */}
+          {weekReview.strategicCheckIn && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: '#667eea', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🎯 Strategic Check-in:
+              </h4>
+              <div style={{ 
+                background: '#edf2f7', 
+                padding: '1rem', 
+                borderRadius: '8px', 
+                lineHeight: 1.6,
+                color: '#2d3748'
+              }}>
+                {weekReview.strategicCheckIn}
+              </div>
+            </div>
+          )}
+
+          {/* Learnings */}
+          {weekReview.learnings.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: '#48bb78', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                💡 Key Learnings:
+              </h4>
+              <ul style={{ margin: 0, paddingLeft: '1.5rem', background: '#f0fff4', padding: '1rem', borderRadius: '8px' }}>
+                {weekReview.learnings.map((learning, index) => (
+                  <li key={index} style={{ marginBottom: '0.5rem', color: '#2d3748' }}>{learning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {weekReview.notes && (
+            <div>
+              <h4 style={{ marginBottom: '1rem', color: '#4a5568' }}>📝 Additional Notes:</h4>
+              <div style={{ 
+                background: '#f7fafc', 
+                padding: '1rem', 
+                borderRadius: '8px', 
+                color: '#4a5568', 
+                lineHeight: 1.6 
+              }}>
+                {weekReview.notes}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Golden Thread Modal */}
+      {goldenThreadTaskId && (
+        <GoldenThread
+          taskId={goldenThreadTaskId}
+          onClose={() => setGoldenThreadTaskId(null)}
+          onNavigate={handleGoldenThreadNavigation}
+        />
+      )}
+    </div>
+  );
+}
+
+export default WeeklyReview;
