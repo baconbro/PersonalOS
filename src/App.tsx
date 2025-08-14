@@ -11,6 +11,7 @@ import AuthComponent from './components/AuthComponent.tsx'
 import NotificationBanner from './components/NotificationBanner.tsx'
 import NotificationSettings from './components/NotificationSettings.tsx'
 import LifeArchitectureWizard from './components/LifeArchitectureWizard.tsx'
+import AIChatbot from './components/AIChatbot.tsx'
 import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
@@ -26,6 +27,7 @@ function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
 
   // Check if user has any data - if not, show wizard
   const isNewUser = state.lifeGoals.length === 0 && 
@@ -97,6 +99,23 @@ function App() {
   if (!user) {
     return <AuthComponent />;
   }
+
+  const getChatbotContext = (): string => {
+    switch (currentView) {
+      case 'life-goals':
+        return 'life-goals-viewing';
+      case 'annual':
+        return 'annual-plan';
+      case 'quarterly':
+        return 'quarterly-goals';
+      case 'this-week':
+        return 'weekly-dashboard';
+      case 'weekly':
+        return 'weekly-huddle';
+      default:
+        return 'dashboard';
+    }
+  };
 
   const renderView = () => {
     switch (currentView) {
@@ -275,6 +294,13 @@ function App() {
           notificationService.celebrateGoalCompletion('PersonalOS Setup', 'Life Architecture');
           setCurrentView('dashboard');
         }}
+      />
+
+      {/* AI Chatbot */}
+      <AIChatbot
+        context={getChatbotContext()}
+        isVisible={showChatbot}
+        onToggle={() => setShowChatbot(!showChatbot)}
       />
     </div>
   )

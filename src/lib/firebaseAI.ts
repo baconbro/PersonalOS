@@ -384,6 +384,107 @@ export class FirebaseAIService {
       throw new Error('Failed to generate life goal suggestions');
     }
   }
+
+  /**
+   * Generate contextual chat responses for the AI assistant
+   */
+  async generateChatResponse(
+    userMessage: string,
+    context: string,
+    userState: {
+      lifeGoals: any[];
+      annualGoals: any[];
+      quarterlyGoals: any[];
+      weeklyTasks: any[];
+      weeklyReviews: any[];
+    },
+    chatHistory: { role: string; content: string }[] = []
+  ): Promise<string> {
+    try {
+      const systemPrompt = this.buildSystemPrompt(context, userState);
+      const conversationHistory = chatHistory.slice(-6); // Keep last 6 messages for context
+      
+      const prompt = `${systemPrompt}
+
+CONVERSATION HISTORY:
+${conversationHistory.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n')}
+
+USER MESSAGE: ${userMessage}
+
+ASSISTANT RESPONSE:`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = result.response;
+      return response.text().trim();
+    } catch (error) {
+      console.error('Error generating chat response:', error);
+      throw new Error('Failed to generate chat response');
+    }
+  }
+
+  /**
+   * Build context-aware system prompt for the AI assistant
+   */
+  private buildSystemPrompt(context: string, userState: any): string {
+    const totalLifeGoals = userState.lifeGoals.length;
+    const totalAnnualGoals = userState.annualGoals.length;
+    const totalQuarterlyGoals = userState.quarterlyGoals.length;
+    const totalWeeklyTasks = userState.weeklyTasks.length;
+    
+    let contextInfo = '';
+    switch (context) {
+      case 'life-goals-viewing':
+      case 'life-goals-adding':
+        contextInfo = `The user is working with Life Goals. They have ${totalLifeGoals} life goals defined.`;
+        break;
+      case 'annual-plan':
+        contextInfo = `The user is working on Annual Planning. They have ${totalAnnualGoals} annual goals for this year.`;
+        break;
+      case 'quarterly-goals':
+        contextInfo = `The user is working on Quarterly OKRs. They have ${totalQuarterlyGoals} quarterly goals.`;
+        break;
+      case 'weekly-dashboard':
+        contextInfo = `The user is viewing their Weekly Dashboard. They have ${totalWeeklyTasks} weekly tasks.`;
+        break;
+      case 'weekly-huddle':
+        contextInfo = `The user is in their Weekly Command Huddle - strategic weekly planning session.`;
+        break;
+      default:
+        contextInfo = `The user is on the main Dashboard view of their Personal Operating System.`;
+    }
+
+    return `You are an AI Strategic Advisor for PersonalOS, a personal goal management and execution system. You help users optimize their personal execution through strategic goal setting, planning, and accountability.
+
+CONTEXT: ${contextInfo}
+
+USER'S CURRENT STATE:
+- Life Goals: ${totalLifeGoals} (long-term 5-10 year vision)
+- Annual Goals: ${totalAnnualGoals} (yearly milestones)
+- Quarterly Goals: ${totalQuarterlyGoals} (90-day OKRs)
+- Weekly Tasks: ${totalWeeklyTasks} (this week's priorities)
+
+YOUR ROLE:
+- Act as a strategic advisor and personal coach
+- Provide actionable, specific advice
+- Be encouraging but honest about areas for improvement
+- Help bridge the gap between big vision and daily execution
+- Use the Personal OS methodology: Life Goals → Annual Goals → Quarterly OKRs → Weekly Tasks
+
+COMMUNICATION STYLE:
+- Be conversational and supportive
+- Use strategic business language when appropriate (CEO mindset)
+- Provide concrete next steps when possible
+- Be concise but thorough (aim for 2-4 sentences)
+- Use emojis sparingly but effectively
+
+FOCUS AREAS:
+- Goal setting and refinement
+- Strategic planning and execution
+- Progress analysis and course correction
+- Overcoming roadblocks and resistance
+- Building sustainable systems and habits
+- Work-life integration and energy management`;
+  }
 }
 
 // Export singleton instance
