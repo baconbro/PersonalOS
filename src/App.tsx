@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard.tsx'
 import AnnualPlan from './components/AnnualPlan.tsx'
@@ -8,8 +8,11 @@ import ThisWeekDashboard from './components/ThisWeekDashboard.tsx'
 import LifeGoals from './components/LifeGoals.tsx'
 import UserGuide from './components/UserGuide.tsx'
 import AuthComponent from './components/AuthComponent.tsx'
-import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart } from 'lucide-react'
+import NotificationBanner from './components/NotificationBanner.tsx'
+import NotificationSettings from './components/NotificationSettings.tsx'
+import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
+import { notificationService } from './services/notificationService'
 // Import Firebase connection test
 import './utils/firebaseTest'
 
@@ -17,7 +20,46 @@ type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 
 
 function App() {
   const { user, loading, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard')
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      // Initialize notification service when user is logged in
+      notificationService.scheduleWeeklyHuddle();
+      notificationService.scheduleQuarterlyPlanning();
+      notificationService.scheduleAnnualReview();
+
+      // Listen for notification actions
+      const handleNotificationAction = (event: CustomEvent) => {
+        const action = event.detail;
+        switch (action) {
+          case 'navigate-this-week':
+            setCurrentView('this-week');
+            break;
+          case 'navigate-quarterly':
+            setCurrentView('quarterly');
+            break;
+          case 'navigate-annual':
+            setCurrentView('annual');
+            break;
+          case 'navigate-dashboard':
+            setCurrentView('dashboard');
+            break;
+          case 'prepare-huddle':
+            // Could show a preparation modal or tips
+            setCurrentView('this-week');
+            break;
+        }
+      };
+
+      window.addEventListener('notification-action', handleNotificationAction as EventListener);
+
+      return () => {
+        window.removeEventListener('notification-action', handleNotificationAction as EventListener);
+      };
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -60,6 +102,27 @@ function App() {
 
   return (
     <div className="app">
+      {/* Notification Banner */}
+      <NotificationBanner 
+        onAction={(action) => {
+          // Handle notification actions
+          switch (action) {
+            case 'navigate-this-week':
+              setCurrentView('this-week');
+              break;
+            case 'navigate-quarterly':
+              setCurrentView('quarterly');
+              break;
+            case 'navigate-annual':
+              setCurrentView('annual');
+              break;
+            case 'navigate-dashboard':
+              setCurrentView('dashboard');
+              break;
+          }
+        }}
+      />
+
       <header className="app-header">
         <div>
           <h1>Personal OS</h1>
@@ -69,6 +132,23 @@ function App() {
           <span style={{ color: '#718096', fontSize: '0.9rem' }}>
             {user.email}
           </span>
+          <button
+            onClick={() => setShowNotificationSettings(true)}
+            style={{
+              padding: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '6px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            title="Notification Settings"
+          >
+            <Settings size={16} />
+          </button>
           <button
             onClick={logout}
             style={{
@@ -144,6 +224,12 @@ function App() {
       <main className="app-main">
         {renderView()}
       </main>
+
+      {/* Notification Settings Modal */}
+      <NotificationSettings
+        isOpen={showNotificationSettings}
+        onClose={() => setShowNotificationSettings(false)}
+      />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData,
 import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
+import { notificationService } from '../services/notificationService';
 
 // Initial state
 const initialState: AppState & { loading: boolean } = {
@@ -67,13 +68,22 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         annualGoals: [...state.annualGoals, action.payload],
       };
-    case 'UPDATE_ANNUAL_GOAL':
+    case 'UPDATE_ANNUAL_GOAL': {
+      const oldGoal = state.annualGoals.find(goal => goal.id === action.payload.id);
+      const newGoal = action.payload;
+      
+      // Check if goal was just completed
+      if (oldGoal && oldGoal.status !== 'completed' && newGoal.status === 'completed') {
+        notificationService.celebrateGoalCompletion(newGoal.title, 'Annual');
+      }
+      
       return {
         ...state,
         annualGoals: state.annualGoals.map(goal =>
           goal.id === action.payload.id ? action.payload : goal
         ),
       };
+    }
     case 'DELETE_ANNUAL_GOAL':
       return {
         ...state,
@@ -84,13 +94,22 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         quarterlyGoals: [...state.quarterlyGoals, action.payload],
       };
-    case 'UPDATE_QUARTERLY_GOAL':
+    case 'UPDATE_QUARTERLY_GOAL': {
+      const oldGoal = state.quarterlyGoals.find(goal => goal.id === action.payload.id);
+      const newGoal = action.payload;
+      
+      // Check if goal was just completed
+      if (oldGoal && oldGoal.status !== 'completed' && newGoal.status === 'completed') {
+        notificationService.celebrateGoalCompletion(newGoal.title, 'Quarterly');
+      }
+      
       return {
         ...state,
         quarterlyGoals: state.quarterlyGoals.map(goal =>
           goal.id === action.payload.id ? action.payload : goal
         ),
       };
+    }
     case 'DELETE_QUARTERLY_GOAL':
       return {
         ...state,
@@ -113,11 +132,35 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         weeklyTasks: state.weeklyTasks.filter(task => task.id !== action.payload),
       };
-    case 'ADD_WEEKLY_REVIEW':
+    case 'ADD_WEEKLY_REVIEW': {
+      const newReviews = [...state.weeklyReviews, action.payload];
+      
+      // Calculate streak length
+      const sortedReviews = newReviews.sort((a, b) => new Date(b.weekOf).getTime() - new Date(a.weekOf).getTime());
+      let streak = 0;
+      const now = new Date();
+      
+      for (let i = 0; i < sortedReviews.length; i++) {
+        const reviewDate = new Date(sortedReviews[i].weekOf);
+        const weeksDiff = Math.floor((now.getTime() - reviewDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        
+        if (weeksDiff === i) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+      
+      // Celebrate streak milestones
+      if (streak > 0) {
+        notificationService.celebrateStreak(streak, 'Weekly Review');
+      }
+      
       return {
         ...state,
-        weeklyReviews: [...state.weeklyReviews, action.payload],
+        weeklyReviews: newReviews,
       };
+    }
     case 'UPDATE_WEEKLY_REVIEW':
       return {
         ...state,
