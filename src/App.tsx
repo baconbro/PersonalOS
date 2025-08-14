@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard.tsx'
 import AnnualPlan from './components/AnnualPlan.tsx'
 import QuarterlySprint from './components/QuarterlySprint.tsx'
 import WeeklyReview from './components/WeeklyReview'
+import ThisWeekDashboard from './components/ThisWeekDashboard.tsx'
 import LifeGoals from './components/LifeGoals.tsx'
 import UserGuide from './components/UserGuide.tsx'
 import AuthComponent from './components/AuthComponent.tsx'
@@ -12,7 +13,7 @@ import { useAuth } from './context/AuthContext'
 // Import Firebase connection test
 import './utils/firebaseTest'
 
-type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'life-goals' | 'guide'
+type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide'
 
 function App() {
   const { user, loading, logout } = useAuth();
@@ -46,6 +47,8 @@ function App() {
         return <AnnualPlan />
       case 'quarterly':
         return <QuarterlySprint />
+      case 'this-week':
+        return <ThisWeekDashboard />
       case 'weekly':
         return <WeeklyReview />
       case 'guide':
@@ -114,6 +117,13 @@ function App() {
         >
           <Calendar size={20} />
           90-Day Sprint
+        </button>
+        <button 
+          className={currentView === 'this-week' ? 'nav-button active' : 'nav-button'}
+          onClick={() => setCurrentView('this-week')}
+        >
+          <Target size={20} />
+          This Week
         </button>
         <button 
           className={currentView === 'weekly' ? 'nav-button active' : 'nav-button'}

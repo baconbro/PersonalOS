@@ -1,0 +1,614 @@
+/* This Week Dashboard Styles */
+.this-week-dashboard {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+/* Header */
+.week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.week-info h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #1e293b;
+}
+
+.week-range {
+  color: #64748b;
+  font-size: 16px;
+  margin: 0;
+}
+
+.week-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-card {
+  text-align: center;
+  min-width: 80px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weekly-huddle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.weekly-huddle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Command Huddle Prompt */
+.huddle-prompt {
+  background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+  border: 2px dashed #667eea;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 32px;
+  animation: pulsePrompt 2s infinite;
+}
+
+@keyframes pulsePrompt {
+  0%, 100% { 
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+  }
+  50% { 
+    border-color: #5a67d8;
+    background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+  }
+}
+
+.prompt-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+}
+
+.prompt-content p {
+  color: #64748b;
+  font-size: 16px;
+  margin: 0 0 24px 0;
+}
+
+.start-huddle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.start-huddle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Empty State */
+.empty-week {
+  text-align: center;
+  padding: 64px 32px;
+  color: #64748b;
+}
+
+.empty-week svg {
+  margin-bottom: 24px;
+  color: #cbd5e1;
+}
+
+.empty-week h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #475569;
+}
+
+.empty-week p {
+  font-size: 16px;
+  margin: 0 0 24px 0;
+}
+
+.start-planning-btn {
+  padding: 12px 24px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.start-planning-btn:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+}
+
+/* Priority Focus Area */
+.priority-focus-area {
+  margin-bottom: 32px;
+}
+
+.priority-focus-area h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: #1e293b;
+}
+
+.priorities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* Priority Cards */
+.priority-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.priority-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #e2e8f0;
+  transition: background 0.3s ease;
+}
+
+.priority-card.todo::before {
+  background: #3b82f6;
+}
+
+.priority-card.in-progress::before {
+  background: #f59e0b;
+}
+
+.priority-card.done::before {
+  background: #10b981;
+}
+
+.priority-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.priority-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.priority-number {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.priority-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.golden-thread-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.golden-thread-btn:hover {
+  background: #667eea10;
+  color: #5a67d8;
+}
+
+.golden-thread-btn.small {
+  padding: 4px;
+}
+
+.priority-menu {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.priority-menu:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.priority-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.priority-description {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.linked-okr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #667eea;
+  background: #667eea10;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  width: fit-content;
+}
+
+.priority-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-estimate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.todo {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-badge.in-progress {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge.done {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.add-priority-card {
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #64748b;
+  min-height: 180px;
+}
+
+.add-priority-card:hover {
+  border-color: #667eea;
+  background: #667eea05;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+.add-priority-card span {
+  font-weight: 500;
+}
+
+/* Kanban Board */
+.kanban-board {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.kanban-board h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: #1e293b;
+}
+
+.kanban-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.kanban-column {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 300px;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.column-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #374151;
+}
+
+.task-count {
+  background: #e2e8f0;
+  color: #64748b;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.column-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 200px;
+}
+
+.empty-column {
+  text-align: center;
+  padding: 40px 16px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Kanban Tasks */
+.kanban-task {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  cursor: grab;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.kanban-task:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.kanban-task:active {
+  cursor: grabbing;
+}
+
+.kanban-task::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #3b82f6;
+  border-radius: 8px 8px 0 0;
+}
+
+.kanban-task.in-progress::before {
+  background: #f59e0b;
+}
+
+.kanban-task.done::before {
+  background: #10b981;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.task-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: #374151;
+  line-height: 1.3;
+  flex: 1;
+  padding-right: 8px;
+}
+
+.done-icon {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-meta .time-estimate {
+  font-size: 11px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .week-header {
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .week-stats {
+    justify-content: center;
+  }
+
+  .priorities-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  .kanban-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .this-week-dashboard {
+    padding: 16px;
+  }
+
+  .week-header {
+    padding: 20px;
+  }
+
+  .week-info h1 {
+    font-size: 24px;
+  }
+
+  .week-range {
+    font-size: 14px;
+  }
+
+  .priorities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .priority-card {
+    padding: 16px;
+  }
+
+  .kanban-board {
+    padding: 20px;
+  }
+
+  .kanban-columns {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .week-header {
+    padding: 16px;
+  }
+
+  .week-stats {
+    gap: 12px;
+  }
+
+  .stat-card {
+    min-width: 60px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .weekly-huddle-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .priority-card {
+    padding: 12px;
+  }
+
+  .priority-content h3 {
+    font-size: 16px;
+  }
+}

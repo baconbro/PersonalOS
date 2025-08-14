@@ -165,17 +165,38 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div 
+          className="card"
+          style={{ 
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+            border: '2px solid #2f855a',
+            color: 'white'
+          }}
+          onClick={() => {
+            // For now, just show a message. In a router-based app, this would navigate
+            alert('Weekly Command Huddle feature! Navigate to "This Week" tab to experience the full Weekly Huddle.');
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 25px rgba(72, 187, 120, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+          }}
+        >
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white' }}>
             <CheckSquare size={20} />
-            This Week
+            This Week Command Center
           </div>
           <div className="card-content">
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#48bb78' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>
               {stats.weeklyTasksCompleted}
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#666' }}>
-              Tasks Completed
+            <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)' }}>
+              Tasks Completed • Click for Weekly Huddle
             </div>
           </div>
         </div>
