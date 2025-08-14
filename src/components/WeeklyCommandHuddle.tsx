@@ -169,6 +169,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         estimatedHours: 2,
         actualHours: 0,
         completed: false,
+        status: 'todo', // Set default status for Kanban board
         weekOf: weekStart,
         roadblocks: [],
         notes: ''

@@ -233,8 +233,18 @@ export function AppProvider({ children }: AppProviderProps) {
           dispatch({ type: 'SET_LOADING', payload: true });
           console.log('🔄 Loading data from Firebase...');
           const userData = await service.loadAllData();
-          dispatch({ type: 'LOAD_STATE', payload: userData });
-          console.log('✅ Data loaded from Firebase');
+          
+          // Migrate weekly tasks that don't have status field
+          const migratedUserData = {
+            ...userData,
+            weeklyTasks: userData.weeklyTasks.map(task => ({
+              ...task,
+              status: task.status || (task.completed ? 'done' : 'todo')
+            }))
+          };
+          
+          dispatch({ type: 'LOAD_STATE', payload: migratedUserData });
+          console.log('✅ Data loaded from Firebase with status migration');
         } catch (error) {
           console.warn('⚠️ Failed to load from Firebase, trying localStorage:', error);
           // Fallback to localStorage

@@ -44,15 +44,24 @@ const ThisWeekDashboard: React.FC = () => {
   );
 
   // Convert tasks to priority cards format for better UX
-  const weeklyPriorities: WeeklyPriorityCard[] = thisWeekTasks.map(task => ({
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    linkedOKRId: task.quarterlyGoalId || '',
-    status: task.status || (task.completed ? 'done' : 'todo'), // Use status field or fallback to completed
-    estimatedHours: task.estimatedHours,
-    actualHours: task.actualHours || 0
-  }));
+  const weeklyPriorities: WeeklyPriorityCard[] = thisWeekTasks.map(task => {
+    // Debug logging to understand data state
+    if (task.status) {
+      console.log(`✅ Task "${task.title}" has status: ${task.status}`);
+    } else {
+      console.log(`⚠️ Task "${task.title}" missing status, completed: ${task.completed}`);
+    }
+    
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      linkedOKRId: task.quarterlyGoalId || '',
+      status: task.status || (task.completed ? 'done' : 'todo'), // Use status field or fallback to completed
+      estimatedHours: task.estimatedHours,
+      actualHours: task.actualHours || 0
+    };
+  });
 
   // Organize by status for Kanban board
   const todoTasks = weeklyPriorities.filter(p => p.status === 'todo');
@@ -82,11 +91,15 @@ const ThisWeekDashboard: React.FC = () => {
   const updateTaskStatus = (taskId: string, newStatus: 'todo' | 'in-progress' | 'done') => {
     const task = thisWeekTasks.find(t => t.id === taskId);
     if (task) {
+      console.log(`🔄 Updating task ${taskId} from ${task.status || (task.completed ? 'done' : 'todo')} to ${newStatus}`);
+      
       const updatedTask: WeeklyTask = {
         ...task,
         status: newStatus,
         completed: newStatus === 'done'
       };
+      
+      console.log('📝 Updated task data:', updatedTask);
       dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
       
       // Trigger celebration animation when task is completed

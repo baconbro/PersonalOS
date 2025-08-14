@@ -188,7 +188,14 @@ export class FirebaseService {
     try {
       const tasksRef = collection(db, 'users', this.userId, 'weeklyTasks');
       const snapshot = await getDocs(query(tasksRef, orderBy('weekOf', 'desc')));
-      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as WeeklyTask);
+      const tasks = snapshot.docs.map(doc => {
+        const data = convertTimestamps({ id: doc.id, ...doc.data() }) as WeeklyTask;
+        // Debug logging to see what's being loaded
+        console.log('📥 Loaded task from Firebase:', data.id, 'status:', data.status, 'completed:', data.completed);
+        return data;
+      });
+      console.log(`✅ Loaded ${tasks.length} weekly tasks from Firebase`);
+      return tasks;
     } catch (error) {
       console.error('Error fetching weekly tasks:', error);
       throw error;
@@ -210,9 +217,16 @@ export class FirebaseService {
     try {
       const taskRef = doc(db, 'users', this.userId, 'weeklyTasks', task.id);
       const { id, ...taskData } = task;
-      await updateDoc(taskRef, convertDatesToTimestamps(taskData));
+      const dataToSave = convertDatesToTimestamps(taskData);
+      
+      // Debug logging to see what's being saved
+      console.log('🔥 Saving task to Firebase:', task.id, 'status:', task.status);
+      console.log('📦 Full data being saved:', dataToSave);
+      
+      await updateDoc(taskRef, dataToSave);
+      console.log('✅ Task saved successfully to Firebase');
     } catch (error) {
-      console.error('Error updating weekly task:', error);
+      console.error('❌ Error updating weekly task:', error);
       throw error;
     }
   }

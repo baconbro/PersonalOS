@@ -62,6 +62,7 @@ function WeeklyReview() {
         estimatedHours: taskFormData.estimatedHours,
         actualHours: editingTask?.actualHours || 0,
         completed: editingTask?.completed || false,
+        status: editingTask?.status || (editingTask?.completed ? 'done' : 'todo'), // Preserve existing status or set default
         weekOf: weekStart,
         roadblocks: editingTask?.roadblocks || [],
         notes: editingTask?.notes || '',
