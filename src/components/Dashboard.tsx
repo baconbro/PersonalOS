@@ -1,11 +1,14 @@
 import { useApp } from '../context/AppContext';
-import { TrendingUp, Target, Calendar, CheckSquare, Clock, Star, Upload } from 'lucide-react';
+import { TrendingUp, Target, Calendar, CheckSquare, Clock, Star, Upload, GitBranch } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { loadSampleData } from '../utils/sampleData';
 import type { DashboardStats } from '../types';
+import GoalTree from './GoalTree';
+import { useState } from 'react';
 
 function Dashboard() {
   const { state, dispatch } = useApp();
+  const [showGoalTree, setShowGoalTree] = useState(false);
 
   // Debug function to check state and localStorage
   const debugState = () => {
@@ -173,6 +176,66 @@ function Dashboard() {
             </div>
             <div style={{ fontSize: '0.9rem', color: '#666' }}>
               Tasks Completed
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Goal Tree Overview Card */}
+      <div style={{ marginBottom: '2rem' }}>
+        <div 
+          className="card"
+          style={{ 
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+            border: '2px solid #f59e0b',
+            color: '#7c2d12'
+          }}
+          onClick={() => setShowGoalTree(true)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          <div className="card-title" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '1rem',
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            color: '#7c2d12'
+          }}>
+            <GitBranch size={32} />
+            <span>🌟 Open Goal Tree Overview</span>
+          </div>
+          <div className="card-content" style={{ textAlign: 'center' }}>
+            <p style={{ 
+              margin: '0 0 1rem 0', 
+              fontSize: '1rem', 
+              color: '#92400e',
+              lineHeight: 1.6
+            }}>
+              See the complete hierarchy of your goals and tasks. Explore how every action connects 
+              to your life vision in an interactive tree view.
+            </p>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: '2rem', 
+              flexWrap: 'wrap',
+              fontSize: '0.875rem',
+              fontWeight: '600'
+            }}>
+              <span>📍 {state.lifeGoals.length} Life Goals</span>
+              <span>🎯 {state.annualGoals.length} Annual Goals</span>
+              <span>📅 {state.quarterlyGoals.length} Quarterly OKRs</span>
+              <span>✅ {state.weeklyTasks.length} Tasks</span>
             </div>
           </div>
         </div>
@@ -411,6 +474,12 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Goal Tree Modal */}
+      <GoalTree 
+        isOpen={showGoalTree}
+        onClose={() => setShowGoalTree(false)}
+      />
     </div>
   );
 }
