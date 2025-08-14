@@ -55,10 +55,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.8rem 1.2rem;
-  background: #f8f9fa;
-  border: 2px solid transparent;
+  background: var(--category-color);
+  border: 2px solid var(--category-color);
   border-radius: 8px;
-  color: #6c757d;
+  color: white;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9rem;
@@ -66,7 +66,8 @@
 }
 
 .category-tab:hover {
-  background: #e9ecef;
+  background: var(--category-color);
+  opacity: 0.9;
   transform: translateY(-1px);
 }
 
@@ -78,7 +79,7 @@
 }
 
 .category-tab .count {
-  background: var(--category-color);
+  background: rgba(255, 255, 255, 0.3);
   color: white;
   padding: 0.2rem 0.5rem;
   border-radius: 12px;
@@ -86,6 +87,11 @@
   font-weight: 600;
   min-width: 20px;
   text-align: center;
+}
+
+.category-tab.active .count {
+  background: var(--category-color);
+  color: white;
 }
 
 /* Modal Styles */
