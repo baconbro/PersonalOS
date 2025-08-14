@@ -48,7 +48,7 @@ const ThisWeekDashboard: React.FC = () => {
     title: task.title,
     description: task.description,
     linkedOKRId: task.quarterlyGoalId || '',
-    status: task.completed ? 'done' : 'todo',
+    status: task.status || (task.completed ? 'done' : 'todo'), // Use status field or fallback to completed
     estimatedHours: task.estimatedHours,
     actualHours: task.actualHours || 0
   }));
@@ -83,6 +83,7 @@ const ThisWeekDashboard: React.FC = () => {
     if (task) {
       const updatedTask: WeeklyTask = {
         ...task,
+        status: newStatus,
         completed: newStatus === 'done'
       };
       dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
@@ -99,10 +100,23 @@ const ThisWeekDashboard: React.FC = () => {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    // Add visual feedback
+    const target = e.currentTarget as HTMLElement;
+    target.classList.add('drag-over');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Remove visual feedback
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over');
   };
 
   const handleDrop = (e: React.DragEvent, newStatus: 'todo' | 'in-progress' | 'done') => {
     e.preventDefault();
+    // Remove visual feedback
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over');
+    
     if (draggedTask) {
       updateTaskStatus(draggedTask, newStatus);
     }
@@ -262,6 +276,7 @@ const ThisWeekDashboard: React.FC = () => {
               <div 
                 className="kanban-column"
                 onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, 'todo')}
               >
                 <div className="column-header">
@@ -272,7 +287,7 @@ const ThisWeekDashboard: React.FC = () => {
                   {todoTasks.map(task => (
                     <div 
                       key={task.id}
-                      className="kanban-task"
+                      className={`kanban-task ${draggedTask === task.id ? 'dragging' : ''}`}
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}
@@ -306,6 +321,7 @@ const ThisWeekDashboard: React.FC = () => {
               <div 
                 className="kanban-column"
                 onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, 'in-progress')}
               >
                 <div className="column-header">
@@ -316,7 +332,7 @@ const ThisWeekDashboard: React.FC = () => {
                   {inProgressTasks.map(task => (
                     <div 
                       key={task.id}
-                      className="kanban-task in-progress"
+                      className={`kanban-task in-progress ${draggedTask === task.id ? 'dragging' : ''}`}
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}
@@ -350,6 +366,7 @@ const ThisWeekDashboard: React.FC = () => {
               <div 
                 className="kanban-column"
                 onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, 'done')}
               >
                 <div className="column-header">
@@ -360,7 +377,7 @@ const ThisWeekDashboard: React.FC = () => {
                   {doneTasks.map(task => (
                     <div 
                       key={task.id}
-                      className="kanban-task done"
+                      className={`kanban-task done ${draggedTask === task.id ? 'dragging' : ''}`}
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}

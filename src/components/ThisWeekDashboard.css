@@ -495,6 +495,30 @@
   background: #10b981;
 }
 
+/* Drag and Drop Styles */
+.kanban-task[draggable="true"] {
+  cursor: grab;
+}
+
+.kanban-task[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.kanban-task.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+  cursor: grabbing;
+}
+
+.kanban-column.drag-over {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 2px dashed #3b82f6;
+}
+
+.kanban-column.drag-over .column-header {
+  color: #3b82f6;
+}
+
 .task-header {
   display: flex;
   justify-content: space-between;
