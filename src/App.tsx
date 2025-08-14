@@ -10,8 +10,10 @@ import UserGuide from './components/UserGuide.tsx'
 import AuthComponent from './components/AuthComponent.tsx'
 import NotificationBanner from './components/NotificationBanner.tsx'
 import NotificationSettings from './components/NotificationSettings.tsx'
-import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings } from 'lucide-react'
+import LifeArchitectureWizard from './components/LifeArchitectureWizard.tsx'
+import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
+import { useApp } from './context/AppContext'
 import { notificationService } from './services/notificationService'
 // Import Firebase connection test
 import './utils/firebaseTest'
@@ -20,8 +22,25 @@ type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 
 
 function App() {
   const { user, loading, logout } = useAuth();
+  const { state } = useApp();
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+
+  // Check if user has any data - if not, show wizard
+  const isNewUser = state.lifeGoals.length === 0 && 
+                   state.annualGoals.length === 0 && 
+                   state.quarterlyGoals.length === 0;
+
+  useEffect(() => {
+    if (user && isNewUser) {
+      // Show wizard for new users after a brief delay
+      const timer = setTimeout(() => {
+        setShowWizard(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isNewUser]);
 
   useEffect(() => {
     if (user) {
@@ -150,6 +169,23 @@ function App() {
             <Settings size={16} />
           </button>
           <button
+            onClick={() => setShowWizard(true)}
+            style={{
+              padding: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '6px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            title="Life Architecture Wizard"
+          >
+            <Sparkles size={16} />
+          </button>
+          <button
             onClick={logout}
             style={{
               padding: '0.5rem 1rem',
@@ -229,6 +265,16 @@ function App() {
       <NotificationSettings
         isOpen={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
+      />
+
+      {/* Life Architecture Wizard */}
+      <LifeArchitectureWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onComplete={() => {
+          notificationService.celebrateGoalCompletion('PersonalOS Setup', 'Life Architecture');
+          setCurrentView('dashboard');
+        }}
       />
     </div>
   )
