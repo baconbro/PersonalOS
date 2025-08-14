@@ -450,64 +450,155 @@ ASSISTANT RESPONSE:`;
    * Build context-aware system prompt for the AI assistant
    */
   private buildSystemPrompt(context: string, userState: any): string {
-    const totalLifeGoals = userState.lifeGoals.length;
-    const totalAnnualGoals = userState.annualGoals.length;
-    const totalQuarterlyGoals = userState.quarterlyGoals.length;
-    const totalWeeklyTasks = userState.weeklyTasks.length;
-    
-    let contextInfo = '';
+    // Determine immediate task based on context
+    let immediateTask = '';
     switch (context) {
       case 'life-goals-viewing':
       case 'life-goals-adding':
-        contextInfo = `The user is working with Life Goals. They have ${totalLifeGoals} life goals defined.`;
+        immediateTask = `The user is working with Life Goals (Vision layer). Help them clarify their long-term vision and ensure alignment with their values. Ask probing questions about what truly matters to them and how this vision connects to their daily reality.`;
         break;
       case 'annual-plan':
-        contextInfo = `The user is working on Annual Planning. They have ${totalAnnualGoals} annual goals for this year.`;
+        immediateTask = `The user is working on Annual Planning (Strategy layer). Help them translate life goals into concrete yearly milestones. Focus on strategic prioritization and resource allocation questions.`;
         break;
       case 'quarterly-goals':
-        contextInfo = `The user is working on Quarterly OKRs. They have ${totalQuarterlyGoals} quarterly goals.`;
+        immediateTask = `The user is working on Quarterly OKRs (Tactics layer). Help them break down annual goals into measurable 90-day objectives. Ask about bottlenecks, leverage points, and course-correction needs.`;
         break;
       case 'weekly-dashboard':
-        contextInfo = `The user is viewing their Weekly Dashboard. They have ${totalWeeklyTasks} weekly tasks.`;
+        immediateTask = `The user is viewing their Weekly Dashboard (Operations layer). Help them connect daily actions to higher-level objectives. Ask about energy management, priority alignment, and execution consistency.`;
         break;
       case 'weekly-huddle':
-        contextInfo = `The user is in their Weekly Command Huddle - strategic weekly planning session.`;
+        immediateTask = `The user is in their Weekly Command Huddle. This is strategic weekly planning time. Help them reflect on progress, identify roadblocks, and set clear priorities that strengthen their Golden Thread.`;
         break;
       default:
-        contextInfo = `The user is on the main Dashboard view of their Personal Operating System.`;
+        immediateTask = `The user is on the main Dashboard. Help them see the big picture and identify where their attention should be focused to maintain alignment across their strategic hierarchy.`;
     }
 
-    return `You are an AI Strategic Advisor for PersonalOS, a personal goal management and execution system. You help users optimize their personal execution through strategic goal setting, planning, and accountability.
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
 
-CONTEXT: ${contextInfo}
+    // Build Golden Thread hierarchy for user's strategic state
+    const buildGoldenThreadHierarchy = () => {
+      if (!userState.lifeGoals || userState.lifeGoals.length === 0) {
+        return "No Life Goals defined yet - this is the starting point for building your Golden Thread.";
+      }
 
-USER'S CURRENT STATE:
-- Life Goals: ${totalLifeGoals} (long-term 5-10 year vision)
-- Annual Goals: ${totalAnnualGoals} (yearly milestones)
-- Quarterly Goals: ${totalQuarterlyGoals} (90-day OKRs)
-- Weekly Tasks: ${totalWeeklyTasks} (this week's priorities)
+      let hierarchy = '';
+      
+      userState.lifeGoals.forEach((lifeGoal: any, index: number) => {
+        hierarchy += `\n🎯 LIFE GOAL ${index + 1}: "${lifeGoal.title}" (${lifeGoal.category})`;
+        hierarchy += `\n   Vision: ${lifeGoal.vision || lifeGoal.description || 'No vision defined'}`;
+        hierarchy += `\n   Timeframe: ${lifeGoal.timeframe || 'No timeframe set'}`;
+        
+        // Find related annual goals
+        const relatedAnnualGoals = userState.annualGoals?.filter((annual: any) => 
+          annual.lifeGoalId === lifeGoal.id || annual.category === lifeGoal.category
+        ) || [];
+        
+        if (relatedAnnualGoals.length > 0) {
+          relatedAnnualGoals.forEach((annualGoal: any, annualIndex: number) => {
+            hierarchy += `\n   ↳ 📅 ANNUAL GOAL ${annualIndex + 1}: "${annualGoal.title}"`;
+            hierarchy += `\n      Target: ${annualGoal.targetDate ? new Date(annualGoal.targetDate).toLocaleDateString() : 'No date set'}`;
+            hierarchy += `\n      Progress: ${annualGoal.progress || 0}%`;
+            
+            // Find related quarterly goals
+            const relatedQuarterlyGoals = userState.quarterlyGoals?.filter((quarterly: any) => 
+              quarterly.annualGoalId === annualGoal.id || quarterly.parentGoal === annualGoal.title
+            ) || [];
+            
+            if (relatedQuarterlyGoals.length > 0) {
+              relatedQuarterlyGoals.forEach((quarterlyGoal: any, quarterlyIndex: number) => {
+                hierarchy += `\n      ↳ 🎯 Q${Math.ceil((new Date().getMonth() + 1) / 3)} OKR ${quarterlyIndex + 1}: "${quarterlyGoal.title}"`;
+                hierarchy += `\n         Progress: ${quarterlyGoal.progress || 0}%`;
+                
+                // Find related weekly tasks
+                const relatedWeeklyTasks = userState.weeklyTasks?.filter((task: any) => 
+                  task.goalId === quarterlyGoal.id || 
+                  task.description?.toLowerCase().includes(quarterlyGoal.title?.toLowerCase().split(' ')[0] || '') ||
+                  task.category === quarterlyGoal.category
+                ) || [];
+                
+                if (relatedWeeklyTasks.length > 0) {
+                  hierarchy += `\n         ↳ 📋 WEEKLY TASKS:`;
+                  relatedWeeklyTasks.forEach((task: any) => {
+                    hierarchy += `\n            • "${task.description}" (${task.status || 'Not Started'})`;
+                  });
+                } else {
+                  hierarchy += `\n         ↳ 📋 No weekly tasks linked to this OKR`;
+                }
+              });
+            } else {
+              hierarchy += `\n      ↳ No quarterly OKRs defined for this annual goal`;
+            }
+          });
+        } else {
+          hierarchy += `\n   ↳ No annual goals defined for this life goal`;
+        }
+        
+        hierarchy += `\n`;
+      });
+      
+      // Show unlinked items
+      const unlinkedAnnualGoals = userState.annualGoals?.filter((annual: any) => 
+        !userState.lifeGoals.some((life: any) => life.id === annual.lifeGoalId || life.category === annual.category)
+      ) || [];
+      
+      const unlinkedQuarterlyGoals = userState.quarterlyGoals?.filter((quarterly: any) => 
+        !userState.annualGoals.some((annual: any) => annual.id === quarterly.annualGoalId)
+      ) || [];
+      
+      const unlinkedWeeklyTasks = userState.weeklyTasks?.filter((task: any) => 
+        !userState.quarterlyGoals.some((quarterly: any) => quarterly.id === task.goalId)
+      ) || [];
+      
+      if (unlinkedAnnualGoals.length > 0 || unlinkedQuarterlyGoals.length > 0 || unlinkedWeeklyTasks.length > 0) {
+        hierarchy += `\n🔗 UNLINKED ITEMS (BROKEN GOLDEN THREAD):`;
+        
+        unlinkedAnnualGoals.forEach((goal: any) => {
+          hierarchy += `\n   📅 Unlinked Annual: "${goal.title}"`;
+        });
+        
+        unlinkedQuarterlyGoals.forEach((goal: any) => {
+          hierarchy += `\n   🎯 Unlinked Quarterly: "${goal.title}"`;
+        });
+        
+        unlinkedWeeklyTasks.forEach((task: any) => {
+          hierarchy += `\n   📋 Unlinked Task: "${task.description}"`;
+        });
+      }
+      
+      return hierarchy;
+    };
 
-YOUR ROLE:
-- Act as a strategic advisor and personal coach
-- Provide actionable, specific advice
-- Be encouraging but honest about areas for improvement
-- Help bridge the gap between big vision and daily execution
-- Use the Personal OS methodology: Life Goals → Annual Goals → Quarterly OKRs → Weekly Tasks
+    return `# [1. CORE IDENTITY]
+You are "The Coach", an AI Strategic Advisor within PersonalOS, a personal goal management and execution system. Your purpose is to help users translate their vision into reality by providing insightful questions, data-driven feedback, and unwavering accountability. You are a partner in their journey toward personal sovereignty.
 
-COMMUNICATION STYLE:
-- Be conversational and supportive
-- Use strategic business language when appropriate (CEO mindset)
-- Provide concrete next steps when possible
-- Be concise but thorough (aim for 2-4 sentences)
-- Use emojis sparingly but effectively
+# [2. CORE METHODOLOGY]
+You operate on the "Golden Thread" principle. Every piece of advice you give must help the user see or strengthen the connection between their daily actions and their ultimate life vision. The hierarchy is always:
+- Life Goals (Vision) → Annual Plans (Strategy) → 90-Day Sprints (OKRs/Tactics) → Weekly Execution (Operations)
 
-FOCUS AREAS:
-- Goal setting and refinement
-- Strategic planning and execution
-- Progress analysis and course correction
-- Overcoming roadblocks and resistance
-- Building sustainable systems and habits
-- Work-life integration and energy management`;
+Your primary tool is Socratic questioning. Guide the user to their own conclusions rather than giving commands.
+
+# [3. DYNAMIC CONTEXT BLOCK]
+## System & Time Information:
+- Current Date: ${currentDate}
+- Current Quarter: Q${Math.ceil((new Date().getMonth() + 1) / 3)} of ${new Date().getFullYear()}
+
+## User's Current Strategic State (Golden Thread Hierarchy):
+${buildGoldenThreadHierarchy()}
+
+# [4. YOUR IMMEDIATE TASK]
+${immediateTask}
+
+# [5. RULES OF ENGAGEMENT]
+- **Data First:** NEVER give generic advice. ALWAYS tie your observations and questions back to specific data points from the user's strategic hierarchy above.
+- **Be a Coach, Not a Cheerleader:** Be encouraging, but don't shy away from pointing out discrepancies or off-track goals. Frame these as opportunities for strategic adjustment.
+- **Concise & Actionable:** Keep responses to 2-4 sentences. Focus on asking one powerful question at a time.
+- **Use Strategic Language:** Use terms like "alignment," "bottleneck," "leverage," and "course-correction."
+- **Embody the Persona:** You are the coach. You are calm, wise, strategic, and a motivator who helps users maintain their Golden Thread.`;
   }
 }
 
