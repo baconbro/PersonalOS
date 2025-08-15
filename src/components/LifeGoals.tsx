@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Target, Plus, Edit, Trash2, Heart, Brain, Briefcase, DollarSign, Activity, Users, Compass, Building, Plane, Gift, List, Grid, Share2 } from 'lucide-react';
 import type { LifeGoal, LifeGoalCategory } from '../types';
 import AIRefiner from './AIRefiner';
+import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
 import './LifeGoals.css';
 
 const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
@@ -50,6 +51,11 @@ const LifeGoals: React.FC = () => {
     priority: 'high' as 'high' | 'medium' | 'low'
   });
 
+  // Security validation states
+  const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [visionError, setVisionError] = useState('');
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -63,32 +69,87 @@ const LifeGoals: React.FC = () => {
     setEditingGoal(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const lifeGoal: LifeGoal = {
-      id: editingGoal?.id || `life-${Date.now()}`,
-      type: 'life',
-      title: formData.title,
-      description: formData.description,
-      vision: formData.vision,
-      category: formData.category,
-      timeframe: formData.timeframe,
-      priority: formData.priority,
-      status: 'not-started',
-      createdAt: editingGoal?.createdAt || new Date(),
-      targetDate: editingGoal?.targetDate || new Date(2030, 11, 31),
-      progress: editingGoal?.progress || 0,
-      annualGoals: editingGoal?.annualGoals || []
-    };
+    // Clear previous errors
+    setTitleError('');
+    setDescriptionError('');
+    setVisionError('');
 
-    if (editingGoal) {
-      dispatch({ type: 'UPDATE_LIFE_GOAL', payload: lifeGoal });
-    } else {
-      dispatch({ type: 'ADD_LIFE_GOAL', payload: lifeGoal });
+    // Validate inputs using security utilities
+    let hasErrors = false;
+
+    const titleValidation = validateGoalTitle(formData.title);
+    if (!titleValidation.valid) {
+      setTitleError(titleValidation.error || 'Invalid title');
+      hasErrors = true;
     }
 
-    resetForm();
+    const descriptionValidation = validateGoalDescription(formData.description);
+    if (!descriptionValidation.valid) {
+      setDescriptionError(descriptionValidation.error || 'Invalid description');
+      hasErrors = true;
+    }
+
+    const visionValidation = validateGoalDescription(formData.vision); // Using same validation for vision
+    if (!visionValidation.valid) {
+      setVisionError(visionValidation.error || 'Invalid vision');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      return;
+    }
+
+    try {
+      // Sanitize inputs before submission
+      const sanitizedData = {
+        ...formData,
+        title: sanitizeText(formData.title),
+        description: sanitizeText(formData.description),
+        vision: sanitizeText(formData.vision)
+      };
+
+      if (editingGoal) {
+        // Update existing goal
+        const updatedGoal: LifeGoal = {
+          ...editingGoal,
+          ...sanitizedData
+        };
+        dispatch({ type: 'UPDATE_LIFE_GOAL', payload: updatedGoal });
+        logSecurityEvent('LIFE_GOAL_UPDATED', { goalId: editingGoal.id });
+        setEditingGoal(null);
+      } else {
+        // Create new goal
+        const newGoal: LifeGoal = {
+          id: Date.now().toString(),
+          type: 'life',
+          ...sanitizedData,
+          createdAt: new Date(),
+          targetDate: new Date(new Date().getFullYear() + (sanitizedData.timeframe === 'five-year' ? 5 : sanitizedData.timeframe === 'ten-year' ? 10 : 50), 11, 31),
+          progress: 0,
+          status: 'not-started' as const,
+          annualGoals: []
+        };
+        dispatch({ type: 'ADD_LIFE_GOAL', payload: newGoal });
+        logSecurityEvent('LIFE_GOAL_CREATED', { category: sanitizedData.category });
+      }
+
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        vision: '',
+        category: 'Career' as LifeGoalCategory,
+        timeframe: 'five-year' as 'five-year' | 'ten-year' | 'lifetime',
+        priority: 'high' as 'high' | 'medium' | 'low'
+      });
+      setIsAddingGoal(false);
+    } catch (error) {
+      console.error('Error saving life goal:', error);
+      logSecurityEvent('LIFE_GOAL_SAVE_ERROR', { error: (error as Error).message });
+    }
   };
 
   const handleEdit = (goal: LifeGoal) => {
@@ -582,6 +643,7 @@ const LifeGoals: React.FC = () => {
                   placeholder="e.g., Build a thriving creative business"
                   required
                 />
+                {titleError && <div className="error-message">{titleError}</div>}
               </div>
 
               <div className="form-group">
@@ -594,6 +656,7 @@ const LifeGoals: React.FC = () => {
                   rows={3}
                   required
                 />
+                {visionError && <div className="error-message">{visionError}</div>}
               </div>
 
               <div className="form-group">
@@ -606,6 +669,7 @@ const LifeGoals: React.FC = () => {
                   rows={3}
                   required
                 />
+                {descriptionError && <div className="error-message">{descriptionError}</div>}
               </div>
 
               <AIRefiner

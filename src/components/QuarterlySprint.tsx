@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Calendar, Plus, Edit3, Trash2, Target, TrendingUp } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter } from 'date-fns';
 import type { QuarterlyGoal, KeyResult } from '../types';
+import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
 
 function QuarterlySprint() {
   const { state, dispatch } = useApp();
@@ -16,6 +17,10 @@ function QuarterlySprint() {
     priority: 'medium' as 'high' | 'medium' | 'low',
     keyResults: [] as KeyResult[],
   });
+
+  // Security validation states
+  const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
 
   const currentQuarterGoals = state.quarterlyGoals.filter(
     goal => goal.quarter === state.currentQuarter && goal.year === state.currentYear
@@ -33,6 +38,8 @@ function QuarterlySprint() {
       priority: 'medium',
       keyResults: [],
     });
+    setTitleError('');
+    setDescriptionError('');
     setEditingGoal(null);
     setShowForm(false);
   };
@@ -78,20 +85,45 @@ function QuarterlySprint() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim() || !formData.description.trim()) {
-      alert('Please fill in title and description');
+    // Clear previous errors
+    setTitleError('');
+    setDescriptionError('');
+
+    // Validate inputs using security utilities
+    let hasErrors = false;
+
+    const titleValidation = validateGoalTitle(formData.title);
+    if (!titleValidation.valid) {
+      setTitleError(titleValidation.error || 'Invalid title');
+      hasErrors = true;
+    }
+
+    const descriptionValidation = validateGoalDescription(formData.description);
+    if (!descriptionValidation.valid) {
+      setDescriptionError(descriptionValidation.error || 'Invalid description');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
     try {
       const progress = calculateProgress(formData.keyResults);
       
+      // Sanitize inputs before submission
+      const sanitizedData = {
+        title: sanitizeText(formData.title),
+        description: sanitizeText(formData.description),
+        category: sanitizeText(formData.category) || 'General'
+      };
+      
       const goalData: QuarterlyGoal = {
         id: editingGoal?.id || crypto.randomUUID(),
         type: 'quarterly',
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        category: formData.category.trim() || 'General',
+        title: sanitizedData.title,
+        description: sanitizedData.description,
+        category: sanitizedData.category,
         priority: formData.priority,
         status: editingGoal?.status || 'not-started',
         createdAt: editingGoal?.createdAt || new Date(),
@@ -109,9 +141,11 @@ function QuarterlySprint() {
       if (editingGoal) {
         dispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: goalData });
         console.log('Updated quarterly goal');
+        logSecurityEvent('QUARTERLY_GOAL_UPDATED', { goalId: editingGoal.id });
       } else {
         dispatch({ type: 'ADD_QUARTERLY_GOAL', payload: goalData });
         console.log('Added new quarterly goal');
+        logSecurityEvent('QUARTERLY_GOAL_CREATED', { category: sanitizedData.category });
         
         // Link to annual goal if selected
         if (formData.annualGoalId) {
@@ -228,6 +262,7 @@ function QuarterlySprint() {
                   placeholder="e.g., Complete AI Fundamentals Course"
                   required
                 />
+                {titleError && <div className="error-message">{titleError}</div>}
               </div>
 
               <div className="form-group">
@@ -257,6 +292,7 @@ function QuarterlySprint() {
                 placeholder="What will you accomplish this quarter?"
                 required
               />
+              {descriptionError && <div className="error-message">{descriptionError}</div>}
             </div>
 
             <div className="grid grid-3">

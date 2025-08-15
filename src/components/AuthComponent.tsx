@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, AlertTriangle } from 'lucide-react';
+import { validateEmail, validatePassword, rateLimiter, logSecurityEvent } from '../utils/security';
 
 function AuthComponent() {
   const [isLogin, setIsLogin] = useState(true);
@@ -8,35 +9,103 @@ function AuthComponent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [emailError, setEmailError] = useState('');
+  const [rateLimited, setRateLimited] = useState(false);
 
   const { login, register, loginWithGoogle } = useAuth();
 
+  const validateForm = (): boolean => {
+    let isValid = true;
+    
+    // Validate email
+    if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
+      isValid = false;
+    } else {
+      setEmailError('');
+    }
+    
+    // Validate password (only for registration)
+    if (!isLogin) {
+      const passwordValidation = validatePassword(password);
+      setPasswordErrors(passwordValidation.errors);
+      if (!passwordValidation.valid) {
+        isValid = false;
+      }
+    } else {
+      setPasswordErrors([]);
+    }
+    
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    const rateLimitKey = `auth:${email}`;
+    if (!rateLimiter.isAllowed(rateLimitKey, 5, 300000)) { // 5 attempts per 5 minutes
+      setRateLimited(true);
+      setError('Too many login attempts. Please wait 5 minutes before trying again.');
+      logSecurityEvent('rate_limit_exceeded', { email, action: isLogin ? 'login' : 'register' });
+      return;
+    }
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
     setError('');
+    setRateLimited(false);
 
     try {
       if (isLogin) {
         await login(email, password);
+        logSecurityEvent('login_success', { email });
+        rateLimiter.reset(rateLimitKey); // Reset on successful login
       } else {
         await register(email, password);
+        logSecurityEvent('registration_success', { email });
+        rateLimiter.reset(rateLimitKey);
       }
     } catch (error: any) {
-      setError(error.message || 'An error occurred');
+      const errorMessage = error.message || 'An error occurred';
+      setError(errorMessage);
+      
+      // Log security events
+      logSecurityEvent(isLogin ? 'login_failure' : 'registration_failure', { 
+        email, 
+        error: errorMessage 
+      });
+      
+      // Check for suspicious activity
+      if (errorMessage.includes('user-not-found') || errorMessage.includes('wrong-password')) {
+        logSecurityEvent('suspicious_login_attempt', { email, error: errorMessage });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    const rateLimitKey = `google_auth:${Date.now()}`;
+    if (!rateLimiter.isAllowed(rateLimitKey, 3, 60000)) { // 3 attempts per minute
+      setError('Too many Google login attempts. Please wait a minute.');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
     try {
       await loginWithGoogle();
+      logSecurityEvent('google_login_success', {});
     } catch (error: any) {
-      setError(error.message || 'An error occurred');
+      const errorMessage = error.message || 'An error occurred';
+      setError(errorMessage);
+      logSecurityEvent('google_login_failure', { error: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -75,14 +144,49 @@ function AuthComponent() {
 
         {error && (
           <div style={{
-            background: '#fed7d7',
-            color: '#c53030',
+            background: rateLimited ? '#fef3c7' : '#fed7d7',
+            color: rateLimited ? '#92400e' : '#c53030',
             padding: '0.75rem',
             borderRadius: '6px',
             marginBottom: '1rem',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
+            <AlertTriangle size={16} />
             {error}
+          </div>
+        )}
+
+        {emailError && (
+          <div style={{
+            background: '#fed7d7',
+            color: '#c53030',
+            padding: '0.5rem',
+            borderRadius: '4px',
+            marginBottom: '1rem',
+            fontSize: '0.8rem'
+          }}>
+            {emailError}
+          </div>
+        )}
+
+        {passwordErrors.length > 0 && (
+          <div style={{
+            background: '#fef3c7',
+            color: '#92400e',
+            padding: '0.75rem',
+            borderRadius: '6px',
+            marginBottom: '1rem',
+            fontSize: '0.8rem'
+          }}>
+            <strong>Password requirements:</strong>
+            <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.5rem' }}>
+              {passwordErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -112,7 +216,7 @@ function AuthComponent() {
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                  border: '1px solid #d1d5db',
+                  border: `1px solid ${emailError ? '#f56565' : '#d1d5db'}`,
                   borderRadius: '6px',
                   fontSize: '1rem',
                   boxSizing: 'border-box'
@@ -144,16 +248,16 @@ function AuthComponent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={isLogin ? 6 : 8}
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                  border: '1px solid #d1d5db',
+                  border: `1px solid ${passwordErrors.length > 0 ? '#f59e0b' : '#d1d5db'}`,
                   borderRadius: '6px',
                   fontSize: '1rem',
                   boxSizing: 'border-box'
                 }}
-                placeholder="Enter your password"
+                placeholder={isLogin ? "Enter your password" : "Create a strong password (8+ chars)"}
               />
             </div>
           </div>
