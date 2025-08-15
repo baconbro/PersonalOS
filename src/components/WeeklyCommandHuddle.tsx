@@ -187,8 +187,11 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="command-huddle-overlay">
-      <div className="command-huddle-modal">
+    <div className="command-huddle-overlay" onClick={onClose}>
+      <div 
+        className="command-huddle-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="command-huddle-header">
           <div className="huddle-progress">
             <div className={`progress-step ${currentPhase === 'review' ? 'active' : 'completed'}`}>
@@ -256,7 +259,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   </label>
                   <textarea
                     className="reflection-input"
-                    value={biggestWin}
+                    defaultValue={biggestWin}
                     onChange={(e) => setBiggestWin(e.target.value)}
                     placeholder="Describe your most significant achievement or breakthrough..."
                     rows={3}
@@ -270,7 +273,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   </label>
                   <textarea
                     className="reflection-input"
-                    value={biggestRoadblock}
+                    defaultValue={biggestRoadblock}
                     onChange={(e) => setBiggestRoadblock(e.target.value)}
                     placeholder="What slowed you down or prevented progress..."
                     rows={3}

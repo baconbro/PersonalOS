@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000; /* Higher than dev toasts to ensure modal interactions work */
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -21,6 +21,8 @@
   max-width: 800px;
   max-height: 90vh;
   overflow: hidden;
+  position: relative; /* Ensure proper positioning */
+  pointer-events: auto; /* Ensure modal can receive events */
   box-shadow: 
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -310,6 +312,9 @@
   resize: vertical;
   transition: border-color 0.2s ease;
   font-family: inherit;
+  pointer-events: auto; /* Ensure input can receive events */
+  user-select: text; /* Ensure text can be selected */
+  outline: none; /* We handle focus styling manually */
 }
 
 .reflection-input:focus {

@@ -74,9 +74,9 @@ const AISuggestions: React.FC<AISuggestionsProps> = ({
 
   const isConfigured = () => {
     // Check if Firebase is properly configured for AI
-    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || "personalos-a60e4";
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBbLxwwrnxJlYQDbznnxODLRGqlissBLiA";
-    return projectId && apiKey && projectId !== 'your-project-id';
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+    return projectId && apiKey && projectId !== 'your-project-id' && apiKey !== 'your-api-key';
   };
 
   if (!isConfigured()) {

@@ -4,19 +4,20 @@ import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBbLxwwrnxJlYQDbznnxODLRGqlissBLiA",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "personalos-a60e4.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "personalos-a60e4",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "personalos-a60e4.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "640772582455",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:640772582455:web:2462e236f10d94185863b2",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-179EE6ZZK7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Check if Firebase is properly configured
-const isFirebaseConfigured = firebaseConfig.apiKey !== "your-api-key" && 
-                            firebaseConfig.projectId !== "your-project-id" &&
-                            firebaseConfig.projectId === "personalos-a60e4";
+const isFirebaseConfigured = firebaseConfig.apiKey && 
+                            firebaseConfig.projectId &&
+                            firebaseConfig.apiKey !== "your-api-key" &&
+                            firebaseConfig.projectId !== "your-project-id";
 
 if (!isFirebaseConfigured) {
   console.warn(`
