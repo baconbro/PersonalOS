@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { MarkdownText } from '../utils/markdown';
+import { startOfWeek } from 'date-fns';
 import './LifeArchitectureWizard.css';
 
 interface WizardData {
@@ -127,18 +128,40 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
         }
       });
 
+      // Add Weekly Tasks for this week
+      const currentWeek = new Date();
+      const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Monday start, same as ThisWeekDashboard
+      
+      const validWeeklyTasks = wizardData.weeklyTasks.filter(task => task.trim() !== '');
+      validWeeklyTasks.forEach((task, index) => {
+        dispatch({
+          type: 'ADD_WEEKLY_TASK',
+          payload: {
+            id: `task-${Date.now()}-${index}`,
+            title: task,
+            description: `Priority task from Life Architecture setup`,
+            quarterlyGoalId: quarterlyGoalId,
+            priority: 'high' as const,
+            estimatedHours: 2,
+            completed: false,
+            status: 'todo' as const,
+            weekOf: weekStart, // Use Monday-based week start
+            roadblocks: [],
+            notes: 'Created during onboarding wizard'
+          }
+        });
+      });
+
       // Add Weekly Review with tasks
-      const weekOf = new Date();
-      weekOf.setDate(weekOf.getDate() - weekOf.getDay()); // Start of week
       dispatch({
         type: 'ADD_WEEKLY_REVIEW',
         payload: {
           id: `weekly-${Date.now()}`,
-          weekOf: weekOf,
+          weekOf: weekStart, // Use same week start
           completedTasks: [],
           roadblocks: [],
           learnings: [],
-          nextWeekPriorities: wizardData.weeklyTasks.filter(task => task.trim() !== ''),
+          nextWeekPriorities: validWeeklyTasks,
           lastWeekGoals: [],
           lastWeekResults: [],
           strategicCheckIn: 'Initial setup through Life Architecture Wizard',

@@ -493,3 +493,55 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Force white theme for the entire wizard regardless of system preferences */
+@media (prefers-color-scheme: dark) {
+  .wizard-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  }
+  
+  .wizard-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #2d3748 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  .wizard-content-wrapper {
+    background: transparent !important;
+    color: #2d3748 !important;
+  }
+  
+  .wizard-content-wrapper *,
+  .wizard-card *,
+  .wizard-container * {
+    color: #2d3748 !important;
+  }
+  
+  .wizard-content-wrapper h1,
+  .wizard-content-wrapper h2,
+  .wizard-content-wrapper h3,
+  .wizard-content-wrapper p,
+  .wizard-content-wrapper label,
+  .wizard-content-wrapper span,
+  .wizard-card h1,
+  .wizard-card h2,
+  .wizard-card h3,
+  .wizard-card p,
+  .wizard-card label,
+  .wizard-card span {
+    color: #2d3748 !important;
+  }
+  
+  .wizard-step input,
+  .wizard-step textarea,
+  .wizard-step select {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #2d3748 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .wizard-step input::placeholder,
+  .wizard-step textarea::placeholder {
+    color: #718096 !important;
+  }
+}
