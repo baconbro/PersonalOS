@@ -17,6 +17,7 @@ import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Set
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
 import { notificationService } from './services/notificationService'
+import { updatePageTitle, resetPageTitle } from './utils/pageTitle'
 // Import Firebase connection test
 import './utils/firebaseTest'
 
@@ -82,6 +83,35 @@ function App() {
       };
     }
   }, [user]);
+
+  // Update page title when view changes
+  useEffect(() => {
+    if (user) {
+      // Create context for dynamic page titles
+      const context = {
+        quarter: state.currentQuarter,
+        year: state.currentYear,
+        userName: user.displayName || user.email?.split('@')[0],
+        taskCount: state.weeklyTasks.filter(task => {
+          const taskWeek = new Date(task.weekOf);
+          const currentWeek = new Date();
+          const diffTime = Math.abs(currentWeek.getTime() - taskWeek.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays <= 7;
+        }).length,
+        goalCount: state.lifeGoals.length
+      };
+      
+      updatePageTitle(currentView, context);
+    } else {
+      resetPageTitle();
+    }
+
+    // Cleanup: reset page title when component unmounts
+    return () => {
+      resetPageTitle();
+    };
+  }, [currentView, user, state.currentQuarter, state.currentYear, state.weeklyTasks.length, state.lifeGoals.length]);
 
   if (loading) {
     return (

@@ -4,6 +4,7 @@ import { Target, Plus, Edit, Trash2, Heart, Brain, Briefcase, DollarSign, Activi
 import type { LifeGoal, LifeGoalCategory } from '../types';
 import AIRefiner from './AIRefiner';
 import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
+import { usePageTitleSuffix } from '../utils/usePageTitle';
 import './LifeGoals.css';
 
 const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
@@ -186,6 +187,15 @@ const LifeGoals: React.FC = () => {
     'Creativity & Passion', 'Mind', 'Career', 'Finance', 'Health',
     'Relationships', 'Spirit', 'Community', 'Travel', 'Giving Back'
   ];
+
+  // Update page title with goal count
+  const goalCount = state.lifeGoals.length;
+  const filteredGoals = getLifeGoalsByCategory(selectedCategory);
+  const titleSuffix = selectedCategory === 'All' 
+    ? goalCount > 0 ? `(${goalCount} goals)` : ''
+    : `(${filteredGoals.length}/${goalCount} goals)`;
+  
+  usePageTitleSuffix(titleSuffix);
 
   // Goal Detail Modal Component
   const GoalDetailModal = ({ goal }: { goal: LifeGoal }) => {
