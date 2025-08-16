@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal } from '../types';
+import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog } from '../types';
 import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
@@ -13,6 +13,7 @@ const initialState: AppState & { loading: boolean } = {
   quarterlyGoals: [],
   weeklyTasks: [],
   weeklyReviews: [],
+  activityLogs: [],
   currentYear: new Date().getFullYear(),
   currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
   loading: false,
@@ -34,6 +35,7 @@ type Action =
   | { type: 'DELETE_WEEKLY_TASK'; payload: string }
   | { type: 'ADD_WEEKLY_REVIEW'; payload: WeeklyReviewData }
   | { type: 'UPDATE_WEEKLY_REVIEW'; payload: WeeklyReviewData }
+  | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLog }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_CURRENT_YEAR'; payload: number }
@@ -168,8 +170,20 @@ function appReducer(state: AppState, action: Action): AppState {
           review.id === action.payload.id ? action.payload : review
         ),
       };
+    case 'ADD_ACTIVITY_LOG': {
+      // Keep only the last 30 activities
+      const newActivityLogs = [action.payload, ...state.activityLogs].slice(0, 30);
+      return {
+        ...state,
+        activityLogs: newActivityLogs,
+      };
+    }
     case 'LOAD_STATE':
-      return { ...action.payload, loading: false };
+      return { 
+        ...action.payload, 
+        activityLogs: action.payload.activityLogs || [], 
+        loading: false 
+      };
     case 'SET_LOADING':
       return {
         ...state,
@@ -214,8 +228,38 @@ export function AppProvider({ children }: AppProviderProps) {
     console.log('🚀 App starting, loading initial data...');
     const localData = LocalStorageService.load();
     if (localData) {
-      dispatch({ type: 'LOAD_STATE', payload: localData });
-      console.log('📂 Initial data loaded from localStorage');
+      // Migrate weekly tasks that don't have status field
+      const migratedLocalData = {
+        ...localData,
+        weeklyTasks: localData.weeklyTasks?.map(task => {
+          const hasStatus = task.status !== undefined && task.status !== null;
+          const normalizedStatus = task.status || (task.completed ? 'done' : 'todo');
+          
+          if (!hasStatus) {
+            console.log(`🔄 Migrating localStorage task "${task.title}" - adding status: ${normalizedStatus}`);
+          }
+          
+          return {
+            ...task,
+            status: normalizedStatus,
+            completed: normalizedStatus === 'done' || task.completed
+          };
+        }) || []
+      };
+      
+      dispatch({ type: 'LOAD_STATE', payload: migratedLocalData });
+      
+      // Save migrated data back to localStorage if any tasks were migrated
+      const tasksNeedingMigration = localData.weeklyTasks?.filter(task => 
+        task.status === undefined || task.status === null
+      ) || [];
+      
+      if (tasksNeedingMigration.length > 0) {
+        console.log(`🔄 Saving ${tasksNeedingMigration.length} migrated tasks back to localStorage...`);
+        LocalStorageService.save(migratedLocalData);
+      }
+      
+      console.log('📂 Initial data loaded from localStorage with migration');
     } else {
       console.log('💭 No localStorage data found, starting fresh');
     }
@@ -322,6 +366,7 @@ export function AppProvider({ children }: AppProviderProps) {
         quarterlyGoals: state.quarterlyGoals,
         weeklyTasks: state.weeklyTasks,
         weeklyReviews: state.weeklyReviews,
+        activityLogs: state.activityLogs,
         currentYear: state.currentYear,
         currentQuarter: state.currentQuarter,
       };
@@ -405,11 +450,42 @@ export function AppProvider({ children }: AppProviderProps) {
   );
 }
 
+// Utility function to create activity logs
+export function createActivityLog(
+  type: ActivityLog['type'],
+  title: string,
+  description: string,
+  entityId?: string,
+  entityType?: ActivityLog['entityType'],
+  metadata?: Record<string, any>
+): ActivityLog {
+  return {
+    id: crypto.randomUUID(),
+    type,
+    title,
+    description,
+    timestamp: new Date(),
+    entityId,
+    entityType,
+    metadata,
+  };
+}
+
 // Custom hook to use the context
 export function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {
     throw new Error('useApp must be used within an AppProvider');
   }
-  return context;
+  
+  // Enhanced dispatch with automatic activity logging
+  const logActivity = (activityLog: ActivityLog) => {
+    context.dispatch({ type: 'ADD_ACTIVITY_LOG', payload: activityLog });
+  };
+  
+  return {
+    ...context,
+    logActivity,
+    createActivityLog,
+  };
 }

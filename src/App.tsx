@@ -13,7 +13,8 @@ import NotificationSettings from './components/NotificationSettings.tsx'
 import LifeArchitectureWizard from './components/LifeArchitectureWizard.tsx'
 import AIChatbot from './components/AIChatbot.tsx'
 import DevToastContainer from './components/DevToastContainer.tsx'
-import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles } from 'lucide-react'
+import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
+import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
 import { notificationService } from './services/notificationService'
@@ -30,6 +31,7 @@ function App() {
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
 
   // Check if user has any data - if not, show wizard
   const isNewUser = state.lifeGoals.length === 0 && 
@@ -219,6 +221,23 @@ function App() {
             <Settings size={16} />
           </button>
           <button
+            onClick={() => setShowActivityLog(true)}
+            style={{
+              padding: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '6px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            title="Activity Log"
+          >
+            <Clock size={16} />
+          </button>
+          <button
             onClick={() => setShowWizard(true)}
             style={{
               padding: '0.5rem',
@@ -332,6 +351,12 @@ function App() {
         context={getChatbotContext()}
         isVisible={showChatbot}
         onToggle={() => setShowChatbot(!showChatbot)}
+      />
+
+      {/* Activity Log Drawer */}
+      <ActivityLogDrawer
+        isOpen={showActivityLog}
+        onClose={() => setShowActivityLog(false)}
       />
 
       {/* Development Toast Notifications */}

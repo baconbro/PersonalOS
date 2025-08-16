@@ -11,7 +11,7 @@ import {
   Play
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
-import type { WeeklyTask } from '../types';
+import type { WeeklyTask, ActivityType } from '../types';
 import WeeklyCommandHuddle from './WeeklyCommandHuddle';
 import GoldenThread from './GoldenThread';
 import './ThisWeekDashboard.css';
@@ -27,7 +27,7 @@ interface WeeklyPriorityCard {
 }
 
 const ThisWeekDashboard: React.FC = () => {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, logActivity, createActivityLog } = useApp();
   const [showCommandHuddle, setShowCommandHuddle] = useState(false);
   const [showGoldenThread, setShowGoldenThread] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
@@ -103,6 +103,32 @@ const ThisWeekDashboard: React.FC = () => {
       
       console.log('📝 Updated task data:', { id: updatedTask.id, status: updatedTask.status, completed: updatedTask.completed });
       dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
+      
+      // Log activity for status changes
+      if (currentStatus !== newStatus) {
+        // Determine the activity type based on the status change
+        let activityType: ActivityType;
+        if (newStatus === 'done') {
+          activityType = 'WEEKLY_TASK_COMPLETED';
+        } else {
+          activityType = 'WEEKLY_TASK_UPDATED';
+        }
+        
+        const activityLog = createActivityLog(
+          activityType,
+          `Task "${task.title}" moved to ${newStatus === 'todo' ? 'To Do' : newStatus === 'in-progress' ? 'In Progress' : 'Done'}`,
+          `Status changed from ${currentStatus === 'todo' ? 'To Do' : currentStatus === 'in-progress' ? 'In Progress' : 'Done'} to ${newStatus === 'todo' ? 'To Do' : newStatus === 'in-progress' ? 'In Progress' : 'Done'}`,
+          task.id,
+          'weekly_task',
+          {
+            previousStatus: currentStatus,
+            newStatus: newStatus,
+            taskTitle: task.title
+          }
+        );
+        
+        logActivity(activityLog);
+      }
       
       // Trigger celebration animation when task is completed
       if (newStatus === 'done') {

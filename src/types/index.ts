@@ -1,5 +1,35 @@
 // Types and interfaces for Personal OS
 
+export type ActivityType = 
+  | 'LIFE_GOAL_CREATED'
+  | 'LIFE_GOAL_UPDATED'
+  | 'LIFE_GOAL_DELETED'
+  | 'QUARTERLY_GOAL_CREATED'
+  | 'QUARTERLY_GOAL_UPDATED'
+  | 'QUARTERLY_GOAL_DELETED'
+  | 'QUARTERLY_GOAL_COMPLETED'
+  | 'WEEKLY_TASK_CREATED'
+  | 'WEEKLY_TASK_UPDATED'
+  | 'WEEKLY_TASK_COMPLETED'
+  | 'WEEKLY_TASK_DELETED'
+  | 'WEEKLY_REVIEW_COMPLETED'
+  | 'WEEKLY_HUDDLE_COMPLETED'
+  | 'KEY_RESULT_UPDATED'
+  | 'GOLDEN_THREAD_CREATED'
+  | 'USER_LOGIN'
+  | 'USER_LOGOUT';
+
+export interface ActivityLog {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  timestamp: Date;
+  entityId?: string; // ID of the item that was modified
+  entityType?: 'life_goal' | 'quarterly_goal' | 'weekly_task' | 'weekly_review';
+  metadata?: Record<string, any>; // Additional context data
+}
+
 export type LifeGoalCategory = 
   | 'Creativity & Passion'
   | 'Mind'
@@ -105,6 +135,7 @@ export interface AppState {
   quarterlyGoals: QuarterlyGoal[];
   weeklyTasks: WeeklyTask[];
   weeklyReviews: WeeklyReviewData[];
+  activityLogs: ActivityLog[];
   currentYear: number;
   currentQuarter: 1 | 2 | 3 | 4;
   loading?: boolean;
