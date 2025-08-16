@@ -36,7 +36,7 @@ const categoryColors: Record<LifeGoalCategory, string> = {
 };
 
 const LifeGoals: React.FC = () => {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, logActivity, createActivityLog } = useApp();
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<LifeGoal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<LifeGoalCategory | 'All'>('All');
@@ -167,8 +167,26 @@ const LifeGoals: React.FC = () => {
   };
 
   const handleDelete = (goalId: string) => {
+    const goalToDelete = state.lifeGoals.find(goal => goal.id === goalId);
     if (confirm('Are you sure you want to delete this life goal? This will also remove its connection to annual goals.')) {
       dispatch({ type: 'DELETE_LIFE_GOAL', payload: goalId });
+      
+      // Log the deletion activity
+      if (goalToDelete) {
+        const activityLog = createActivityLog(
+          'LIFE_GOAL_DELETED',
+          `Life goal "${goalToDelete.title}" deleted`,
+          `Deleted life goal in ${goalToDelete.category} category`,
+          goalId,
+          'life_goal',
+          {
+            goalTitle: goalToDelete.title,
+            category: goalToDelete.category,
+            timeframe: goalToDelete.timeframe
+          }
+        );
+        logActivity(activityLog);
+      }
     }
   };
 

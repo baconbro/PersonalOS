@@ -8,7 +8,9 @@ import {
   MoreHorizontal,
   Plus,
   Link2,
-  Play
+  Play,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { WeeklyTask, ActivityType } from '../types';
@@ -33,10 +35,32 @@ const ThisWeekDashboard: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [celebratingTask, setCelebratingTask] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingTask, setEditingTask] = useState<WeeklyTask | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    estimatedHours: 2
+  });
 
   const currentWeek = new Date();
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
+
+  // Handle clicking outside to close dropdown menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.priority-actions')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openMenuId]);
 
   // Get this week's tasks
   const thisWeekTasks = state.weeklyTasks.filter(task =>
@@ -185,6 +209,78 @@ const ThisWeekDashboard: React.FC = () => {
     setShowGoldenThread(true);
   };
 
+  // Task menu functions
+  const toggleTaskMenu = (taskId: string) => {
+    setOpenMenuId(openMenuId === taskId ? null : taskId);
+  };
+
+  const handleEditTask = (task: WeeklyTask) => {
+    setEditingTask(task);
+    setEditForm({
+      title: task.title,
+      description: task.description,
+      estimatedHours: task.estimatedHours
+    });
+    setOpenMenuId(null);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    const task = thisWeekTasks.find(t => t.id === taskId);
+    if (task && confirm(`Are you sure you want to delete "${task.title}"?`)) {
+      dispatch({ type: 'DELETE_WEEKLY_TASK', payload: taskId });
+      
+      // Log the deletion activity
+      const activityLog = createActivityLog(
+        'WEEKLY_TASK_DELETED',
+        `Task "${task.title}" deleted`,
+        `Deleted weekly task from ${task.status} column`,
+        taskId,
+        'weekly_task',
+        {
+          taskTitle: task.title,
+          status: task.status,
+          estimatedHours: task.estimatedHours
+        }
+      );
+      logActivity(activityLog);
+    }
+    setOpenMenuId(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingTask && editForm.title.trim()) {
+      const updatedTask: WeeklyTask = {
+        ...editingTask,
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        estimatedHours: editForm.estimatedHours
+      };
+      
+      dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedTask });
+      
+      // Log the update activity
+      const activityLog = createActivityLog(
+        'WEEKLY_TASK_UPDATED',
+        `Task "${updatedTask.title}" updated`,
+        `Updated task details and estimates`,
+        updatedTask.id,
+        'weekly_task',
+        {
+          taskTitle: updatedTask.title,
+          estimatedHours: updatedTask.estimatedHours
+        }
+      );
+      logActivity(activityLog);
+      
+      setEditingTask(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTask(null);
+    setEditForm({ title: '', description: '', estimatedHours: 2 });
+  };
+
   const completionRate = thisWeekTasks.length > 0 
     ? Math.round((doneTasks.length / thisWeekTasks.length) * 100)
     : 0;
@@ -277,9 +373,32 @@ const ThisWeekDashboard: React.FC = () => {
                         >
                           <Link2 size={16} />
                         </button>
-                        <button className="priority-menu">
+                        <button 
+                          className="priority-menu"
+                          onClick={() => toggleTaskMenu(priority.id)}
+                        >
                           <MoreHorizontal size={16} />
                         </button>
+                        
+                        {/* Dropdown Menu */}
+                        {openMenuId === priority.id && (
+                          <div className="task-menu-dropdown">
+                            <button 
+                              className="menu-item"
+                              onClick={() => handleEditTask(thisWeekTasks.find(t => t.id === priority.id)!)}
+                            >
+                              <Edit size={14} />
+                              Edit Task
+                            </button>
+                            <button 
+                              className="menu-item delete"
+                              onClick={() => handleDeleteTask(priority.id)}
+                            >
+                              <Trash2 size={14} />
+                              Delete Task
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -488,6 +607,70 @@ const ThisWeekDashboard: React.FC = () => {
           onClose={() => setShowGoldenThread(false)}
           taskId={selectedTaskId}
         />
+      )}
+
+      {/* Edit Task Modal */}
+      {editingTask && (
+        <div className="modal-overlay" onClick={handleCancelEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Task</h3>
+              <button className="modal-close" onClick={handleCancelEdit}>
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="edit-title">Task Title</label>
+                <input
+                  id="edit-title"
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter task title"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="edit-description">Description</label>
+                <textarea
+                  id="edit-description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter task description (optional)"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="edit-hours">Estimated Hours</label>
+                <input
+                  id="edit-hours"
+                  type="number"
+                  min="0.5"
+                  max="40"
+                  step="0.5"
+                  value={editForm.estimatedHours}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 1 }))}
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleSaveEdit}
+                disabled={!editForm.title.trim()}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

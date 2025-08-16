@@ -358,9 +358,10 @@ export function AppProvider({ children }: AppProviderProps) {
     // Always dispatch locally first for immediate UI update
     dispatch(action);
     
-    // Save to localStorage for persistence
+    // Save to localStorage for persistence with updated state
     setTimeout(() => {
-      const currentState = {
+      // Calculate the updated state based on the action
+      let updatedState = {
         lifeGoals: state.lifeGoals,
         annualGoals: state.annualGoals,
         quarterlyGoals: state.quarterlyGoals,
@@ -370,7 +371,71 @@ export function AppProvider({ children }: AppProviderProps) {
         currentYear: state.currentYear,
         currentQuarter: state.currentQuarter,
       };
-      LocalStorageService.save(currentState);
+
+      // Apply the action to get the correct state for localStorage
+      switch (action.type) {
+        case 'DELETE_LIFE_GOAL':
+          updatedState.lifeGoals = state.lifeGoals.filter(goal => goal.id !== action.payload);
+          break;
+        case 'DELETE_ANNUAL_GOAL':
+          updatedState.annualGoals = state.annualGoals.filter(goal => goal.id !== action.payload);
+          break;
+        case 'DELETE_QUARTERLY_GOAL':
+          updatedState.quarterlyGoals = state.quarterlyGoals.filter(goal => goal.id !== action.payload);
+          break;
+        case 'DELETE_WEEKLY_TASK':
+          updatedState.weeklyTasks = state.weeklyTasks.filter(task => task.id !== action.payload);
+          break;
+        case 'ADD_LIFE_GOAL':
+          updatedState.lifeGoals = [...state.lifeGoals, action.payload];
+          break;
+        case 'ADD_ANNUAL_GOAL':
+          updatedState.annualGoals = [...state.annualGoals, action.payload];
+          break;
+        case 'ADD_QUARTERLY_GOAL':
+          updatedState.quarterlyGoals = [...state.quarterlyGoals, action.payload];
+          break;
+        case 'ADD_WEEKLY_TASK':
+          updatedState.weeklyTasks = [...state.weeklyTasks, action.payload];
+          break;
+        case 'ADD_WEEKLY_REVIEW':
+          updatedState.weeklyReviews = [...state.weeklyReviews, action.payload];
+          break;
+        case 'ADD_ACTIVITY_LOG':
+          const newActivityLogs = [action.payload, ...state.activityLogs].slice(0, 30);
+          updatedState.activityLogs = newActivityLogs;
+          break;
+        case 'UPDATE_LIFE_GOAL':
+          updatedState.lifeGoals = state.lifeGoals.map(goal =>
+            goal.id === action.payload.id ? action.payload : goal
+          );
+          break;
+        case 'UPDATE_ANNUAL_GOAL':
+          updatedState.annualGoals = state.annualGoals.map(goal =>
+            goal.id === action.payload.id ? action.payload : goal
+          );
+          break;
+        case 'UPDATE_QUARTERLY_GOAL':
+          updatedState.quarterlyGoals = state.quarterlyGoals.map(goal =>
+            goal.id === action.payload.id ? action.payload : goal
+          );
+          break;
+        case 'UPDATE_WEEKLY_TASK':
+          updatedState.weeklyTasks = state.weeklyTasks.map(task =>
+            task.id === action.payload.id ? action.payload : task
+          );
+          break;
+        case 'UPDATE_WEEKLY_REVIEW':
+          updatedState.weeklyReviews = state.weeklyReviews.map(review =>
+            review.id === action.payload.id ? action.payload : review
+          );
+          break;
+        // For other actions, use the current state
+        default:
+          break;
+      }
+
+      LocalStorageService.save(updatedState);
     }, 100); // Small delay to ensure state is updated
 
     // Try Firebase sync if available
