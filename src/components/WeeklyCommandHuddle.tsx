@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   CheckSquare, 
@@ -52,12 +52,15 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   // Phase 3: Plan data
   const [weeklyPriorities, setWeeklyPriorities] = useState<WeeklyPriority[]>([]);
   const [priorityInput, setPriorityInput] = useState('');
+  
+  // Validation states
+  const [showValidationError, setShowValidationError] = useState(false);
 
-  const currentWeek = new Date();
-  const lastWeek = subWeeks(currentWeek, 1);
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
-  const lastWeekStart = startOfWeek(lastWeek, { weekStartsOn: 1 });
-  const lastWeekEnd = endOfWeek(lastWeek, { weekStartsOn: 1 });
+  const currentWeek = useMemo(() => new Date(), []);
+  const lastWeek = useMemo(() => subWeeks(currentWeek, 1), [currentWeek]);
+  const weekStart = useMemo(() => startOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
+  const lastWeekStart = useMemo(() => startOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
+  const lastWeekEnd = useMemo(() => endOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
 
   const currentQuarterOKRs = state.quarterlyGoals.filter(
     goal => goal.quarter === state.currentQuarter && 
@@ -90,8 +93,11 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         setBiggestWin(lastWeekReview.learnings[0] || '');
         setBiggestRoadblock(lastWeekReview.roadblocks[0] || '');
       }
+      
+      // Reset validation error when modal opens
+      setShowValidationError(false);
     }
-  }, [isOpen, state.weeklyTasks, state.weeklyReviews, lastWeekStart, lastWeekEnd]);
+  }, [isOpen, lastWeekStart, lastWeekEnd, state.weeklyTasks, state.weeklyReviews]);
 
   const togglePriorityComplete = (priorityId: string) => {
     setLastWeekPriorities(prev => 
@@ -101,6 +107,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
 
   const selectOKR = (okr: QuarterlyGoal) => {
     setSelectedOKR(okr);
+    if (showValidationError) setShowValidationError(false);
   };
 
   const addWeeklyPriority = () => {
@@ -115,6 +122,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       };
       setWeeklyPriorities(prev => [...prev, newPriority]);
       setPriorityInput('');
+      if (showValidationError) setShowValidationError(false);
     }
   };
 
@@ -124,8 +132,19 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
 
   const nextPhase = () => {
     if (currentPhase === 'review') {
+      // Validate before proceeding
+      if (!canProceedFromReview) {
+        setShowValidationError(true);
+        return; // Don't proceed if validation fails
+      }
+      setShowValidationError(false);
       setCurrentPhase('realign');
     } else if (currentPhase === 'realign') {
+      if (!canProceedFromRealign) {
+        setShowValidationError(true);
+        return; // Don't proceed if validation fails
+      }
+      setShowValidationError(false);
       setCurrentPhase('plan');
     }
   };
@@ -139,6 +158,14 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   };
 
   const completeHuddle = () => {
+    // Validate before completing
+    if (!canCompleteHuddle) {
+      setShowValidationError(true);
+      return; // Don't complete if validation fails
+    }
+    
+    setShowValidationError(false);
+
     // Save the review data
     const reviewData: WeeklyReviewData = {
       id: crypto.randomUUID(),
@@ -180,9 +207,18 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
     onComplete();
   };
 
-  const canProceedFromReview = biggestWin.trim() !== '' && biggestRoadblock.trim() !== '';
-  const canProceedFromRealign = selectedOKR !== null;
-  const canCompleteHuddle = weeklyPriorities.length >= 3 && weeklyPriorities.length <= 5;
+  const canProceedFromReview = useMemo(() => 
+    biggestWin.trim() !== '' && biggestRoadblock.trim() !== '', 
+    [biggestWin, biggestRoadblock]
+  );
+  const canProceedFromRealign = useMemo(() => 
+    selectedOKR !== null, 
+    [selectedOKR]
+  );
+  const canCompleteHuddle = useMemo(() => 
+    weeklyPriorities.length >= 3 && weeklyPriorities.length <= 5, 
+    [weeklyPriorities.length]
+  );
 
   if (!isOpen) return null;
 
@@ -260,7 +296,10 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   <textarea
                     className="reflection-input"
                     defaultValue={biggestWin}
-                    onChange={(e) => setBiggestWin(e.target.value)}
+                    onChange={(e) => {
+                      setBiggestWin(e.target.value);
+                      if (showValidationError) setShowValidationError(false);
+                    }}
                     placeholder="Describe your most significant achievement or breakthrough..."
                     rows={3}
                   />
@@ -274,7 +313,10 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   <textarea
                     className="reflection-input"
                     defaultValue={biggestRoadblock}
-                    onChange={(e) => setBiggestRoadblock(e.target.value)}
+                    onChange={(e) => {
+                      setBiggestRoadblock(e.target.value);
+                      if (showValidationError) setShowValidationError(false);
+                    }}
                     placeholder="What slowed you down or prevented progress..."
                     rows={3}
                   />
@@ -443,7 +485,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
               <button 
                 className="nav-button primary"
                 onClick={nextPhase}
-                disabled={!canProceedFromReview}
               >
                 Continue to Re-align
                 <ArrowRight size={20} />
@@ -454,7 +495,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
               <button 
                 className="nav-button primary"
                 onClick={nextPhase}
-                disabled={!canProceedFromRealign}
               >
                 Continue to Planning
                 <ArrowRight size={20} />
@@ -465,7 +505,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
               <button 
                 className="nav-button primary complete"
                 onClick={completeHuddle}
-                disabled={!canCompleteHuddle}
               >
                 Complete Weekly Huddle
                 <CheckSquare size={20} />
@@ -473,14 +512,14 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
             )}
           </div>
           
-          {!canProceedFromReview && currentPhase === 'review' && (
-            <p className="requirement-note">Please reflect on your biggest win and roadblock to continue</p>
+          {showValidationError && !canProceedFromReview && currentPhase === 'review' && (
+            <p className="requirement-note error">Please reflect on your biggest win and roadblock to continue</p>
           )}
-          {!canProceedFromRealign && currentPhase === 'realign' && (
-            <p className="requirement-note">Please select an OKR to focus on this week</p>
+          {showValidationError && !canProceedFromRealign && currentPhase === 'realign' && (
+            <p className="requirement-note error">Please select an OKR to focus on this week</p>
           )}
-          {!canCompleteHuddle && currentPhase === 'plan' && (
-            <p className="requirement-note">Define 3-5 priorities to complete your weekly huddle</p>
+          {showValidationError && !canCompleteHuddle && currentPhase === 'plan' && (
+            <p className="requirement-note error">Define 3-5 priorities to complete your weekly huddle</p>
           )}
         </div>
       </div>
