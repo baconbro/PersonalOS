@@ -41,6 +41,7 @@ function Dashboard() {
         weeklyTasks: [],
         weeklyReviews: [],
         lifeGoals: [],
+        activityLogs: [],
         currentYear: new Date().getFullYear(),
         currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
       }});

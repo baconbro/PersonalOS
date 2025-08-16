@@ -265,6 +265,7 @@ export function loadSampleData() {
       weeklyTasks: sampleData.weeklyTasks,
       weeklyReviews: sampleData.weeklyReviews,
       lifeGoals: sampleData.lifeGoals,
+      activityLogs: [],
       currentYear: 2025,
       currentQuarter: 3 as const,
     };
