@@ -26,6 +26,11 @@ function WeeklyReview() {
     isWithinInterval(task.weekOf, { start: weekStart, end: weekEnd })
   );
 
+  // Get weekly review data for this week
+  const weekReview = state.weeklyReviews.find(review =>
+    isWithinInterval(review.weekOf, { start: weekStart, end: weekEnd })
+  );
+
   const currentQuarterGoals = state.quarterlyGoals.filter(
     goal => goal.quarter === state.currentQuarter && 
            goal.year === state.currentYear &&
@@ -150,6 +155,143 @@ function WeeklyReview() {
           Next Week →
         </button>
       </div>
+
+      {/* Weekly Review Summary */}
+      {weekReview && (
+        <div className="card" style={{ 
+          marginBottom: '2rem', 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          border: 'none'
+        }}>
+          <h3 style={{ 
+            margin: '0 0 1.5rem 0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem',
+            color: 'white'
+          }}>
+            🔍 Weekly Review Summary
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div>
+              <h4 style={{ 
+                margin: '0 0 0.5rem 0', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                color: 'white'
+              }}>
+                ⭐ Biggest Wins
+              </h4>
+              {weekReview.learnings.length > 0 ? (
+                <ul style={{ margin: '0', paddingLeft: '1.2rem' }}>
+                  {weekReview.learnings.map((learning, index) => (
+                    <li key={index} style={{ marginBottom: '0.3rem' }}>{learning}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ margin: '0', opacity: 0.8 }}>No wins recorded</p>
+              )}
+            </div>
+            
+            <div>
+              <h4 style={{ 
+                margin: '0 0 0.5rem 0', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                color: 'white'
+              }}>
+                🚧 Roadblocks
+              </h4>
+              {weekReview.roadblocks.length > 0 ? (
+                <ul style={{ margin: '0', paddingLeft: '1.2rem' }}>
+                  {weekReview.roadblocks.map((roadblock, index) => (
+                    <li key={index} style={{ marginBottom: '0.3rem' }}>{roadblock}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ margin: '0', opacity: 0.8 }}>No roadblocks recorded</p>
+              )}
+            </div>
+          </div>
+          
+          <div style={{ 
+            marginTop: '1.5rem', 
+            paddingTop: '1.5rem', 
+            borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '1rem'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                {weekReview.overallProgress}%
+              </div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                Overall Progress
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                {'⭐'.repeat(weekReview.satisfaction)}
+              </div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                Satisfaction
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                {'⚡'.repeat(weekReview.energyLevel)}
+              </div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                Energy Level
+              </div>
+            </div>
+          </div>
+          
+          {weekReview.strategicCheckIn && (
+            <div style={{ 
+              marginTop: '1.5rem', 
+              paddingTop: '1.5rem', 
+              borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <h4 style={{ 
+                margin: '0 0 0.5rem 0', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                color: 'white'
+              }}>
+                🎯 Strategic Focus
+              </h4>
+              <p style={{ margin: '0', opacity: 0.9 }}>
+                {weekReview.strategicCheckIn}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* No Review Message */}
+      {!weekReview && (
+        <div className="card" style={{ 
+          marginBottom: '2rem', 
+          background: '#f7fafc',
+          border: '2px dashed #cbd5e0',
+          textAlign: 'center',
+          padding: '2rem'
+        }}>
+          <h3 style={{ margin: '0 0 0.5rem 0', color: '#4a5568' }}>
+            📝 No Weekly Review Found
+          </h3>
+          <p style={{ margin: '0', color: '#718096' }}>
+            Complete a Weekly Command Huddle for this week to see your review summary here.
+          </p>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>

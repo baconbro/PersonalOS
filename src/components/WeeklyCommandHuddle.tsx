@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Link2
 } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval, addWeeks } from 'date-fns';
 import type { WeeklyReviewData, QuarterlyGoal, WeeklyTask } from '../types';
 import './WeeklyCommandHuddle.css';
 
@@ -43,6 +43,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   const { state, dispatch } = useApp();
   const [currentPhase, setCurrentPhase] = useState<Phase>('review');
   const [selectedOKR, setSelectedOKR] = useState<QuarterlyGoal | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState(new Date()); // Add week selection
   
   // Phase 1: Review data
   const [lastWeekPriorities, setLastWeekPriorities] = useState<LastWeekPriority[]>([]);
@@ -56,7 +57,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   // Validation states
   const [showValidationError, setShowValidationError] = useState(false);
 
-  const currentWeek = useMemo(() => new Date(), []);
+  const currentWeek = useMemo(() => selectedWeek, [selectedWeek]);
   const lastWeek = useMemo(() => subWeeks(currentWeek, 1), [currentWeek]);
   const weekStart = useMemo(() => startOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
   const lastWeekStart = useMemo(() => startOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
@@ -216,7 +217,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
     [selectedOKR]
   );
   const canCompleteHuddle = useMemo(() => 
-    weeklyPriorities.length >= 3 && weeklyPriorities.length <= 5, 
+    weeklyPriorities.length >= 1 && weeklyPriorities.length <= 5, 
     [weeklyPriorities.length]
   );
 
@@ -229,6 +230,41 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="command-huddle-header">
+          {/* Week Selection */}
+          <div className="week-selector" style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: '1rem',
+            marginBottom: '1rem',
+            padding: '0.5rem',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px'
+          }}>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+            >
+              ← Previous Week
+            </button>
+            <div style={{ 
+              textAlign: 'center', 
+              color: 'white', 
+              fontWeight: 'bold',
+              minWidth: '200px'
+            }}>
+              Week of {format(weekStart, 'MMM dd')} - {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+            </div>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+            >
+              Next Week →
+            </button>
+          </div>
+          
           <div className="huddle-progress">
             <div className={`progress-step ${currentPhase === 'review' ? 'active' : 'completed'}`}>
               <div className="step-number">1</div>
@@ -427,9 +463,9 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     </button>
                   </div>
                   <div className="priority-counter">
-                    {weeklyPriorities.length}/5 priorities
-                    {weeklyPriorities.length < 3 && (
-                      <span className="min-requirement">Minimum 3 required</span>
+                    {weeklyPriorities.length}/3 priorities
+                    {weeklyPriorities.length < 1 && (
+                      <span className="min-requirement">Minimum 1 required</span>
                     )}
                   </div>
                 </div>
