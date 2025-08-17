@@ -56,7 +56,16 @@ export class FirebaseService {
     try {
       const goalsRef = collection(db, 'users', this.userId, 'annualGoals');
       const snapshot = await getDocs(query(goalsRef, orderBy('createdAt', 'desc')));
-      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as AnnualGoal);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        const firestoreId = doc.id; // The real Firestore document ID
+        console.log('📥 Loading annual goal - Firestore ID:', firestoreId, 'Custom ID:', data.id);
+        return convertTimestamps({ 
+          ...data, 
+          id: firestoreId, // Use Firestore document ID as the primary ID
+          customId: data.id // Preserve the custom ID if needed
+        }) as AnnualGoal;
+      });
     } catch (error) {
       console.error('Error fetching annual goals:', error);
       throw error;
@@ -100,7 +109,16 @@ export class FirebaseService {
     try {
       const goalsRef = collection(db, 'users', this.userId, 'lifeGoals');
       const snapshot = await getDocs(query(goalsRef, orderBy('createdAt', 'desc')));
-      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as LifeGoal);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        const firestoreId = doc.id; // The real Firestore document ID
+        console.log('📥 Loading life goal - Firestore ID:', firestoreId, 'Custom ID:', data.id);
+        return convertTimestamps({ 
+          ...data, 
+          id: firestoreId, // Use Firestore document ID as the primary ID
+          customId: data.id // Preserve the custom ID if needed
+        }) as LifeGoal;
+      });
     } catch (error) {
       console.error('Error fetching life goals:', error);
       throw error;
@@ -131,10 +149,17 @@ export class FirebaseService {
 
   async deleteLifeGoal(goalId: string): Promise<void> {
     try {
+      console.log('🔥 Firebase: Attempting to delete life goal with ID:', goalId);
+      console.log('🔥 Firebase: Document ID type:', typeof goalId);
+      console.log('🔥 Firebase: Document ID length:', goalId.length);
+      console.log('🔥 Firebase: User ID:', this.userId);
       const goalRef = doc(db, 'users', this.userId, 'lifeGoals', goalId);
+      console.log('🔥 Firebase: Goal reference path:', goalRef.path);
+      console.log('🔥 Firebase: Goal reference ID:', goalRef.id);
       await deleteDoc(goalRef);
+      console.log('✅ Firebase: Life goal deleted successfully');
     } catch (error) {
-      console.error('Error deleting life goal:', error);
+      console.error('❌ Firebase: Error deleting life goal:', error);
       throw error;
     }
   }
@@ -144,7 +169,16 @@ export class FirebaseService {
     try {
       const goalsRef = collection(db, 'users', this.userId, 'quarterlyGoals');
       const snapshot = await getDocs(query(goalsRef, orderBy('createdAt', 'desc')));
-      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as QuarterlyGoal);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        const firestoreId = doc.id; // The real Firestore document ID
+        console.log('📥 Loading quarterly goal - Firestore ID:', firestoreId, 'Custom ID:', data.id);
+        return convertTimestamps({ 
+          ...data, 
+          id: firestoreId, // Use Firestore document ID as the primary ID
+          customId: data.id // Preserve the custom ID if needed
+        }) as QuarterlyGoal;
+      });
     } catch (error) {
       console.error('Error fetching quarterly goals:', error);
       throw error;
@@ -189,10 +223,17 @@ export class FirebaseService {
       const tasksRef = collection(db, 'users', this.userId, 'weeklyTasks');
       const snapshot = await getDocs(query(tasksRef, orderBy('weekOf', 'desc')));
       const tasks = snapshot.docs.map(doc => {
-        const data = convertTimestamps({ id: doc.id, ...doc.data() }) as WeeklyTask;
+        const data = doc.data();
+        const firestoreId = doc.id; // The real Firestore document ID
+        console.log('📥 Loading weekly task - Firestore ID:', firestoreId, 'Custom ID:', data.id);
+        const convertedData = convertTimestamps({ 
+          ...data, 
+          id: firestoreId, // Use Firestore document ID as the primary ID
+          customId: data.id // Preserve the custom ID if needed
+        }) as WeeklyTask;
         // Debug logging to see what's being loaded
-        console.log('📥 Loaded task from Firebase:', data.id, 'status:', data.status, 'completed:', data.completed);
-        return data;
+        console.log('📥 Loaded task from Firebase:', convertedData.id, 'status:', convertedData.status, 'completed:', convertedData.completed);
+        return convertedData;
       });
       console.log(`✅ Loaded ${tasks.length} weekly tasks from Firebase`);
       return tasks;
@@ -254,7 +295,16 @@ export class FirebaseService {
     try {
       const reviewsRef = collection(db, 'users', this.userId, 'weeklyReviews');
       const snapshot = await getDocs(query(reviewsRef, orderBy('weekOf', 'desc')));
-      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as WeeklyReviewData);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        const firestoreId = doc.id; // The real Firestore document ID
+        console.log('📥 Loading weekly review - Firestore ID:', firestoreId, 'Custom ID:', data.id);
+        return convertTimestamps({ 
+          ...data, 
+          id: firestoreId, // Use Firestore document ID as the primary ID
+          customId: data.id // Preserve the custom ID if needed
+        }) as WeeklyReviewData;
+      });
     } catch (error) {
       console.error('Error fetching weekly reviews:', error);
       throw error;

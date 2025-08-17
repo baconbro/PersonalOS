@@ -1,6 +1,6 @@
 import type { AppState } from '../types';
 
-const STORAGE_KEY = 'personalos_data';
+const STORAGE_KEY = 'personal-os-data'; // Changed to match Dashboard.tsx
 
 export class LocalStorageService {
   static save(data: AppState): void {
@@ -14,7 +14,20 @@ export class LocalStorageService {
 
   static load(): AppState | null {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      // First try the correct key
+      let data = localStorage.getItem(STORAGE_KEY);
+      
+      // If not found, try the old key and migrate
+      if (!data) {
+        const oldData = localStorage.getItem('personalos_data');
+        if (oldData) {
+          console.log('🔄 Migrating from old localStorage key...');
+          localStorage.setItem(STORAGE_KEY, oldData);
+          localStorage.removeItem('personalos_data');
+          data = oldData;
+        }
+      }
+      
       if (data) {
         const parsed = JSON.parse(data);
         console.log('📂 Data loaded from localStorage');

@@ -23,7 +23,7 @@ const initialState: AppState & { loading: boolean } = {
 type Action =
   | { type: 'ADD_LIFE_GOAL'; payload: LifeGoal }
   | { type: 'UPDATE_LIFE_GOAL'; payload: LifeGoal }
-  | { type: 'DELETE_LIFE_GOAL'; payload: string }
+  | { type: 'DELETE_LIFE_GOAL'; payload: string; meta?: { activityLog: any } }
   | { type: 'ADD_ANNUAL_GOAL'; payload: AnnualGoal }
   | { type: 'UPDATE_ANNUAL_GOAL'; payload: AnnualGoal }
   | { type: 'DELETE_ANNUAL_GOAL'; payload: string }
@@ -220,7 +220,7 @@ interface AppProviderProps {
 
 export function AppProvider({ children }: AppProviderProps) {
   const { user } = useAuth();
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, originalDispatch] = useReducer(appReducer, initialState);
   const [firebaseService, setFirebaseService] = useState<FirebaseService | null>(null);
 
   // Load localStorage data on app startup
@@ -247,7 +247,7 @@ export function AppProvider({ children }: AppProviderProps) {
         }) || []
       };
       
-      dispatch({ type: 'LOAD_STATE', payload: migratedLocalData });
+      originalDispatch({ type: 'LOAD_STATE', payload: migratedLocalData });
       
       // Save migrated data back to localStorage if any tasks were migrated
       const tasksNeedingMigration = localData.weeklyTasks?.filter(task => 
@@ -274,7 +274,7 @@ export function AppProvider({ children }: AppProviderProps) {
       // Load user data from Firebase
       const loadData = async () => {
         try {
-          dispatch({ type: 'SET_LOADING', payload: true });
+          originalDispatch({ type: 'SET_LOADING', payload: true });
           console.log('🔄 Loading data from Firebase...');
           const userData = await service.loadAllData();
           
@@ -297,7 +297,7 @@ export function AppProvider({ children }: AppProviderProps) {
             })
           };
           
-          dispatch({ type: 'LOAD_STATE', payload: migratedUserData });
+          originalDispatch({ type: 'LOAD_STATE', payload: migratedUserData });
           
           // Force save migrated tasks back to Firebase if any were migrated
           const tasksNeedingMigration = userData.weeklyTasks.filter(task => 
@@ -326,13 +326,13 @@ export function AppProvider({ children }: AppProviderProps) {
           // Fallback to localStorage
           const localData = LocalStorageService.load();
           if (localData) {
-            dispatch({ type: 'LOAD_STATE', payload: localData });
+            originalDispatch({ type: 'LOAD_STATE', payload: localData });
             console.log('📂 Data loaded from localStorage');
           } else {
             console.log('💭 No local data found, starting fresh');
           }
         } finally {
-          dispatch({ type: 'SET_LOADING', payload: false });
+          originalDispatch({ type: 'SET_LOADING', payload: false });
         }
       };
       
@@ -344,10 +344,10 @@ export function AppProvider({ children }: AppProviderProps) {
       console.log('👤 No user authenticated, loading from localStorage...');
       const localData = LocalStorageService.load();
       if (localData) {
-        dispatch({ type: 'LOAD_STATE', payload: localData });
+        originalDispatch({ type: 'LOAD_STATE', payload: localData });
         console.log('📂 Data loaded from localStorage (no auth)');
       } else {
-        dispatch({ type: 'LOAD_STATE', payload: initialState });
+        originalDispatch({ type: 'LOAD_STATE', payload: initialState });
         console.log('💭 No local data found, starting fresh (no auth)');
       }
     }
@@ -355,113 +355,94 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // Enhanced dispatch that automatically saves to Firebase with localStorage fallback
   const enhancedDispatch = async (action: Action) => {
-    // Always dispatch locally first for immediate UI update
-    dispatch(action);
+    // Calculate the new state using the reducer logic BEFORE dispatching
+    const newState = appReducer(state, action);
     
-    // Save to localStorage for persistence with updated state
-    setTimeout(() => {
-      // Calculate the updated state based on the action
-      let updatedState = {
-        lifeGoals: state.lifeGoals,
-        annualGoals: state.annualGoals,
-        quarterlyGoals: state.quarterlyGoals,
-        weeklyTasks: state.weeklyTasks,
-        weeklyReviews: state.weeklyReviews,
-        activityLogs: state.activityLogs,
-        currentYear: state.currentYear,
-        currentQuarter: state.currentQuarter,
-      };
-
-      // Apply the action to get the correct state for localStorage
-      switch (action.type) {
-        case 'DELETE_LIFE_GOAL':
-          updatedState.lifeGoals = state.lifeGoals.filter(goal => goal.id !== action.payload);
-          break;
-        case 'DELETE_ANNUAL_GOAL':
-          updatedState.annualGoals = state.annualGoals.filter(goal => goal.id !== action.payload);
-          break;
-        case 'DELETE_QUARTERLY_GOAL':
-          updatedState.quarterlyGoals = state.quarterlyGoals.filter(goal => goal.id !== action.payload);
-          break;
-        case 'DELETE_WEEKLY_TASK':
-          updatedState.weeklyTasks = state.weeklyTasks.filter(task => task.id !== action.payload);
-          break;
-        case 'ADD_LIFE_GOAL':
-          updatedState.lifeGoals = [...state.lifeGoals, action.payload];
-          break;
-        case 'ADD_ANNUAL_GOAL':
-          updatedState.annualGoals = [...state.annualGoals, action.payload];
-          break;
-        case 'ADD_QUARTERLY_GOAL':
-          updatedState.quarterlyGoals = [...state.quarterlyGoals, action.payload];
-          break;
-        case 'ADD_WEEKLY_TASK':
-          updatedState.weeklyTasks = [...state.weeklyTasks, action.payload];
-          break;
-        case 'ADD_WEEKLY_REVIEW':
-          updatedState.weeklyReviews = [...state.weeklyReviews, action.payload];
-          break;
-        case 'ADD_ACTIVITY_LOG':
-          const newActivityLogs = [action.payload, ...state.activityLogs].slice(0, 30);
-          updatedState.activityLogs = newActivityLogs;
-          break;
-        case 'UPDATE_LIFE_GOAL':
-          updatedState.lifeGoals = state.lifeGoals.map(goal =>
-            goal.id === action.payload.id ? action.payload : goal
-          );
-          break;
-        case 'UPDATE_ANNUAL_GOAL':
-          updatedState.annualGoals = state.annualGoals.map(goal =>
-            goal.id === action.payload.id ? action.payload : goal
-          );
-          break;
-        case 'UPDATE_QUARTERLY_GOAL':
-          updatedState.quarterlyGoals = state.quarterlyGoals.map(goal =>
-            goal.id === action.payload.id ? action.payload : goal
-          );
-          break;
-        case 'UPDATE_WEEKLY_TASK':
-          updatedState.weeklyTasks = state.weeklyTasks.map(task =>
-            task.id === action.payload.id ? action.payload : task
-          );
-          break;
-        case 'UPDATE_WEEKLY_REVIEW':
-          updatedState.weeklyReviews = state.weeklyReviews.map(review =>
-            review.id === action.payload.id ? action.payload : review
-          );
-          break;
-        // For other actions, use the current state
-        default:
-          break;
-      }
-
-      LocalStorageService.save(updatedState);
-    }, 100); // Small delay to ensure state is updated
-
-    // Try Firebase sync if available
-    if (!firebaseService) {
-      console.log('📱 Firebase not available, using localStorage only');
-      return;
+    // Handle activity logging for DELETE_LIFE_GOAL with meta
+    if (action.type === 'DELETE_LIFE_GOAL' && action.meta?.activityLog) {
+      console.log('📝 Adding activity log for life goal deletion');
+      const activityLog = createActivityLog(
+        action.meta.activityLog.type,
+        action.meta.activityLog.title,
+        action.meta.activityLog.description,
+        action.meta.activityLog.entityId,
+        action.meta.activityLog.entityType,
+        action.meta.activityLog.metadata
+      );
+      
+      // Add the activity log to the new state
+      const newActivityLogs = [activityLog, ...newState.activityLogs].slice(0, 30);
+      newState.activityLogs = newActivityLogs;
     }
+    
+    // Save the new state to localStorage immediately - this should NEVER fail
+    try {
+      const stateToSave = {
+        lifeGoals: newState.lifeGoals,
+        annualGoals: newState.annualGoals,
+        quarterlyGoals: newState.quarterlyGoals,
+        weeklyTasks: newState.weeklyTasks,
+        weeklyReviews: newState.weeklyReviews,
+        activityLogs: newState.activityLogs,
+        currentYear: newState.currentYear,
+        currentQuarter: newState.currentQuarter,
+      };
+      
+      LocalStorageService.save(stateToSave);
+    } catch (error) {
+      console.error('❌ Failed to save to localStorage:', error);
+    }
+    
+    // Update the UI immediately - this should also never fail
+    originalDispatch(action);
+    
+    // Add activity log to UI if we created one
+    if (action.type === 'DELETE_LIFE_GOAL' && action.meta?.activityLog) {
+      const activityLog = createActivityLog(
+        action.meta.activityLog.type,
+        action.meta.activityLog.title,
+        action.meta.activityLog.description,
+        action.meta.activityLog.entityId,
+        action.meta.activityLog.entityType,
+        action.meta.activityLog.metadata
+      );
+      originalDispatch({ type: 'ADD_ACTIVITY_LOG', payload: activityLog });
+    }
+    
+    // Firebase operations are completely separate and asynchronous
+    // They run in the background and don't block localStorage or UI updates
+    if (firebaseService) {
+      console.log('🔄 Firebase service available, starting background sync...');
+      // Don't await this - let it run in background
+      handleFirebaseSync(action, firebaseService).catch(error => {
+        console.warn('⚠️ Firebase sync failed (but localStorage is safe):', error);
+      });
+    } else {
+      console.log('📱 Firebase service not available - user might not be authenticated');
+    }
+  };
 
+  // Separate function to handle Firebase sync
+  const handleFirebaseSync = async (action: Action, firebaseService: FirebaseService) => {
     try {
       console.log('🔄 Syncing with Firebase...');
       
-      // Then sync with Firebase
       switch (action.type) {
         case 'ADD_LIFE_GOAL':
           const lifeGoalId = await firebaseService.addLifeGoal(action.payload);
-          dispatch({ type: 'UPDATE_LIFE_GOAL', payload: { ...action.payload, id: lifeGoalId } });
+          originalDispatch({ type: 'UPDATE_LIFE_GOAL', payload: { ...action.payload, id: lifeGoalId } });
           break;
         case 'UPDATE_LIFE_GOAL':
           await firebaseService.updateLifeGoal(action.payload);
           break;
         case 'DELETE_LIFE_GOAL':
+          console.log('🔄 AppContext: Starting Firebase life goal deletion for ID:', action.payload);
           await firebaseService.deleteLifeGoal(action.payload);
+          console.log('✅ Firebase life goal deletion completed');
           break;
         case 'ADD_ANNUAL_GOAL':
           const annualId = await firebaseService.addAnnualGoal(action.payload);
-          dispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: { ...action.payload, id: annualId } });
+          originalDispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: { ...action.payload, id: annualId } });
           break;
         case 'UPDATE_ANNUAL_GOAL':
           await firebaseService.updateAnnualGoal(action.payload);
@@ -471,7 +452,7 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'ADD_QUARTERLY_GOAL':
           const quarterlyId = await firebaseService.addQuarterlyGoal(action.payload);
-          dispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: { ...action.payload, id: quarterlyId } });
+          originalDispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: { ...action.payload, id: quarterlyId } });
           break;
         case 'UPDATE_QUARTERLY_GOAL':
           await firebaseService.updateQuarterlyGoal(action.payload);
@@ -481,7 +462,7 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'ADD_WEEKLY_TASK':
           const taskId = await firebaseService.addWeeklyTask(action.payload);
-          dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: { ...action.payload, id: taskId } });
+          originalDispatch({ type: 'UPDATE_WEEKLY_TASK', payload: { ...action.payload, id: taskId } });
           break;
         case 'UPDATE_WEEKLY_TASK':
           await firebaseService.updateWeeklyTask(action.payload);
@@ -491,7 +472,7 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'ADD_WEEKLY_REVIEW':
           const reviewId = await firebaseService.addWeeklyReview(action.payload);
-          dispatch({ type: 'UPDATE_WEEKLY_REVIEW', payload: { ...action.payload, id: reviewId } });
+          originalDispatch({ type: 'UPDATE_WEEKLY_REVIEW', payload: { ...action.payload, id: reviewId } });
           break;
         case 'UPDATE_WEEKLY_REVIEW':
           await firebaseService.updateWeeklyReview(action.payload);
@@ -499,8 +480,8 @@ export function AppProvider({ children }: AppProviderProps) {
       }
       console.log('✅ Firebase sync completed');
     } catch (error) {
-      console.warn('⚠️ Firebase sync failed, data saved locally only:', error);
-      // Data is still saved in localStorage, so functionality continues
+      console.warn('⚠️ Firebase sync failed:', error);
+      throw error; // Re-throw so the catch in enhancedDispatch logs it
     }
   };
 

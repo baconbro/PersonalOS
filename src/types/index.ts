@@ -61,6 +61,7 @@ export interface LifeGoal extends Goal {
   timeframe: 'five-year' | 'ten-year' | 'lifetime';
   annualGoals: string[]; // References to annual goal IDs
   vision: string; // Long-term vision statement
+  customId?: string; // Optional custom ID from document data
 }
 
 export interface AnnualGoal extends Goal {
@@ -68,6 +69,7 @@ export interface AnnualGoal extends Goal {
   year: number;
   lifeGoalId?: string; // Optional reference to life goal
   quarterlyGoals: string[]; // References to quarterly goal IDs
+  customId?: string; // Optional custom ID from document data
 }
 
 export interface QuarterlyGoal extends Goal {
@@ -77,6 +79,7 @@ export interface QuarterlyGoal extends Goal {
   annualGoalId: string;
   keyResults: KeyResult[];
   weeklyTasks: string[]; // References to weekly task IDs
+  customId?: string; // Optional custom ID from document data
 }
 
 export interface KeyResult {
@@ -101,6 +104,7 @@ export interface WeeklyTask {
   weekOf: Date;
   roadblocks: string[];
   notes: string;
+  customId?: string; // Optional custom ID from document data
 }
 
 export interface WeeklyReviewData {
@@ -115,6 +119,7 @@ export interface WeeklyReviewData {
   strategicCheckIn: string;
   overallProgress: number; // 0-100
   energyLevel: 1 | 2 | 3 | 4 | 5;
+  customId?: string; // Optional custom ID from document data
   satisfaction: 1 | 2 | 3 | 4 | 5;
   notes: string;
 }

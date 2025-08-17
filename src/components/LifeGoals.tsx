@@ -36,7 +36,7 @@ const categoryColors: Record<LifeGoalCategory, string> = {
 };
 
 const LifeGoals: React.FC = () => {
-  const { state, dispatch, logActivity, createActivityLog } = useApp();
+  const { state, dispatch } = useApp();
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<LifeGoal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<LifeGoalCategory | 'All'>('All');
@@ -166,27 +166,47 @@ const LifeGoals: React.FC = () => {
     setIsAddingGoal(true);
   };
 
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+
   const handleDelete = (goalId: string) => {
+    // Prevent multiple simultaneous deletions
+    if (deletingGoalId) {
+      console.log('🛑 Already deleting a goal, ignoring duplicate call');
+      return;
+    }
+    
     const goalToDelete = state.lifeGoals.find(goal => goal.id === goalId);
     if (confirm('Are you sure you want to delete this life goal? This will also remove its connection to annual goals.')) {
-      dispatch({ type: 'DELETE_LIFE_GOAL', payload: goalId });
+      setDeletingGoalId(goalId);
+      console.log('🗑️ Starting deletion for goal:', goalId);
       
-      // Log the deletion activity
-      if (goalToDelete) {
-        const activityLog = createActivityLog(
-          'LIFE_GOAL_DELETED',
-          `Life goal "${goalToDelete.title}" deleted`,
-          `Deleted life goal in ${goalToDelete.category} category`,
-          goalId,
-          'life_goal',
-          {
-            goalTitle: goalToDelete.title,
-            category: goalToDelete.category,
-            timeframe: goalToDelete.timeframe
+      // Create a special action that includes the activity log data
+      const deleteAction = {
+        type: 'DELETE_LIFE_GOAL' as const,
+        payload: goalId,
+        meta: goalToDelete ? {
+          activityLog: {
+            type: 'LIFE_GOAL_DELETED' as const,
+            title: `Life goal "${goalToDelete.title}" deleted`,
+            description: `Deleted life goal in ${goalToDelete.category} category`,
+            entityId: goalId,
+            entityType: 'life_goal' as const,
+            metadata: {
+              goalTitle: goalToDelete.title,
+              category: goalToDelete.category,
+              timeframe: goalToDelete.timeframe
+            }
           }
-        );
-        logActivity(activityLog);
-      }
+        } : undefined
+      };
+      
+      dispatch(deleteAction);
+      
+      // Reset the deletion flag after a short delay
+      setTimeout(() => {
+        setDeletingGoalId(null);
+        console.log('✅ Deletion completed for goal:', goalId);
+      }, 1000);
     }
   };
 
