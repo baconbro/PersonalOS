@@ -42,6 +42,14 @@ const ThisWeekDashboard: React.FC = () => {
     description: '',
     estimatedHours: 2
   });
+  const [showAddTaskForm, setShowAddTaskForm] = useState(false);
+  const [addTaskForm, setAddTaskForm] = useState({
+    title: '',
+    description: '',
+    quarterlyGoalId: '',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    estimatedHours: 2
+  });
 
   const currentWeek = new Date();
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -88,10 +96,19 @@ const ThisWeekDashboard: React.FC = () => {
     };
   });
 
-  // Organize by status for Kanban board
-  const todoTasks = weeklyPriorities.filter(p => p.status === 'todo');
-  const inProgressTasks = weeklyPriorities.filter(p => p.status === 'in-progress');
-  const doneTasks = weeklyPriorities.filter(p => p.status === 'done');
+  // Organize by status for Kanban board - use original tasks with normalized status
+  const todoTasks = thisWeekTasks.filter(task => {
+    const status = task.status || (task.completed ? 'done' : 'todo');
+    return status === 'todo';
+  });
+  const inProgressTasks = thisWeekTasks.filter(task => {
+    const status = task.status || (task.completed ? 'done' : 'todo');
+    return status === 'in-progress';
+  });
+  const doneTasks = thisWeekTasks.filter(task => {
+    const status = task.status || (task.completed ? 'done' : 'todo');
+    return status === 'done';
+  });
 
   // Check if user needs to do weekly huddle
   const hasCurrentWeekReview = state.weeklyReviews.some(review =>
@@ -281,6 +298,71 @@ const ThisWeekDashboard: React.FC = () => {
     setEditForm({ title: '', description: '', estimatedHours: 2 });
   };
 
+  const resetAddTaskForm = () => {
+    setAddTaskForm({
+      title: '',
+      description: '',
+      quarterlyGoalId: '',
+      priority: 'medium',
+      estimatedHours: 2
+    });
+    setShowAddTaskForm(false);
+  };
+
+  const handleAddTaskSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!addTaskForm.title.trim()) {
+      alert('Please enter a task title');
+      return;
+    }
+
+    try {
+      const newTask: WeeklyTask = {
+        id: crypto.randomUUID(),
+        title: addTaskForm.title.trim(),
+        description: addTaskForm.description.trim(),
+        quarterlyGoalId: addTaskForm.quarterlyGoalId,
+        priority: addTaskForm.priority,
+        estimatedHours: addTaskForm.estimatedHours,
+        actualHours: 0,
+        completed: false,
+        status: 'todo',
+        weekOf: weekStart,
+        roadblocks: [],
+        notes: '',
+      };
+
+      dispatch({ type: 'ADD_WEEKLY_TASK', payload: newTask });
+      
+      // Log the activity
+      const activityLog = createActivityLog(
+        'WEEKLY_TASK_CREATED',
+        `Task "${newTask.title}" created`,
+        `Added new weekly task with ${newTask.estimatedHours}h estimate`,
+        newTask.id,
+        'weekly_task',
+        {
+          taskTitle: newTask.title,
+          estimatedHours: newTask.estimatedHours,
+          priority: newTask.priority
+        }
+      );
+      logActivity(activityLog);
+
+      resetAddTaskForm();
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
+  };
+
+  // Get current quarter goals for the add task form
+  const currentQuarterGoals = state.quarterlyGoals.filter(
+    goal => goal.quarter === state.currentQuarter && 
+           goal.year === state.currentYear &&
+           goal.status !== 'completed'
+  );
+
   const completionRate = thisWeekTasks.length > 0 
     ? Math.round((doneTasks.length / thisWeekTasks.length) * 100)
     : 0;
@@ -432,7 +514,7 @@ const ThisWeekDashboard: React.FC = () => {
               })}
               
               {weeklyPriorities.length < 5 && (
-                <div className="add-priority-card" onClick={() => setShowCommandHuddle(true)}>
+                <div className="add-priority-card" onClick={() => setShowAddTaskForm(true)}>
                   <Plus size={24} />
                   <span>Add Priority</span>
                 </div>
@@ -589,6 +671,100 @@ const ThisWeekDashboard: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Add Task Form Modal */}
+      {showAddTaskForm && (
+        <div className="modal-overlay" onClick={resetAddTaskForm}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add New Priority</h3>
+              <button className="modal-close" onClick={resetAddTaskForm}>
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddTaskSubmit} className="modal-body">
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label htmlFor="add-title">Task Title *</label>
+                  <input
+                    id="add-title"
+                    type="text"
+                    value={addTaskForm.title}
+                    onChange={(e) => setAddTaskForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="What needs to be done?"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="add-goal">Link to Quarterly Goal</label>
+                  <select
+                    id="add-goal"
+                    value={addTaskForm.quarterlyGoalId}
+                    onChange={(e) => setAddTaskForm(prev => ({ ...prev, quarterlyGoalId: e.target.value }))}
+                  >
+                    <option value="">No specific goal</option>
+                    {currentQuarterGoals.map(goal => (
+                      <option key={goal.id} value={goal.id}>{goal.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="add-description">Description</label>
+                <textarea
+                  id="add-description"
+                  value={addTaskForm.description}
+                  onChange={(e) => setAddTaskForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Task details, context, or notes..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label htmlFor="add-priority">Priority</label>
+                  <select
+                    id="add-priority"
+                    value={addTaskForm.priority}
+                    onChange={(e) => setAddTaskForm(prev => ({ ...prev, priority: e.target.value as 'high' | 'medium' | 'low' }))}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="add-hours">Estimated Hours</label>
+                  <input
+                    id="add-hours"
+                    type="number"
+                    min="0.5"
+                    max="40"
+                    step="0.5"
+                    value={addTaskForm.estimatedHours}
+                    onChange={(e) => setAddTaskForm(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) || 1 }))}
+                  />
+                </div>
+              </div>
+              
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={resetAddTaskForm}>
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={!addTaskForm.title.trim()}
+                >
+                  Add Priority
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Weekly Command Huddle Modal */}
