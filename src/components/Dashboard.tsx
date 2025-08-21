@@ -1,61 +1,42 @@
 import { useApp } from '../context/AppContext';
-import { TrendingUp, Target, Calendar, CheckSquare, Clock, Star, Upload, GitBranch } from 'lucide-react';
+import { TrendingUp, Target, Calendar, CheckSquare, Clock, Star, GitBranch } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
-import { loadSampleData } from '../utils/sampleData';
 import type { DashboardStats } from '../types';
 import GoalTree from './GoalTree';
 import { useState } from 'react';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
-  const { state, dispatch } = useApp();
+  const { state } = useApp();
   const [showGoalTree, setShowGoalTree] = useState(false);
 
-  // Debug function to check state and localStorage
-  const debugState = () => {
-    console.log('Current state:', state);
-    console.log('localStorage:', localStorage.getItem('personal-os-data'));
-    console.log('Annual goals count:', state.annualGoals.length);
-    console.log('Quarterly goals count:', state.quarterlyGoals.length);
-    console.log('Weekly tasks count:', state.weeklyTasks.length);
-    alert(`Goals: ${state.annualGoals.length} annual, ${state.quarterlyGoals.length} quarterly, ${state.weeklyTasks.length} tasks`);
-  };
-
-  // Manual save function
-  const forceSave = () => {
-    try {
-      localStorage.setItem('personal-os-data', JSON.stringify(state));
-      alert('Data saved successfully to localStorage!');
-    } catch (error) {
-      console.error('Error saving:', error);
-      alert('Error saving data!');
-    }
-  };
-
-  // Clear all data function
-  const clearAllData = () => {
-    if (confirm('This will delete ALL your data. Are you sure?')) {
-      localStorage.removeItem('personal-os-data');
-      dispatch({ type: 'LOAD_STATE', payload: {
-        annualGoals: [],
-        quarterlyGoals: [],
-        weeklyTasks: [],
-        weeklyReviews: [],
-        lifeGoals: [],
-        activityLogs: [],
-        currentYear: new Date().getFullYear(),
-        currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
-      }});
-      alert('All data cleared!');
-    }
-  };
-
-  const handleLoadSampleData = () => {
-    if (confirm('This will replace your current data with sample data. Are you sure?')) {
-      const sampleData = loadSampleData();
-      if (sampleData) {
-        dispatch({ type: 'LOAD_STATE', payload: sampleData });
-      }
-    }
+  // Balance Wheel Data Calculation
+  const calculateBalanceWheelData = () => {
+    const categories = [
+      'Creativity & Passion', 'Mind', 'Career', 'Finance', 
+      'Health', 'Relationships', 'Spirit', 'Community', 
+      'Travel', 'Giving Back'
+    ];
+    
+    return categories.map(category => {
+      // Find life goals in this category
+      const categoryGoals = state.lifeGoals.filter(goal => goal.category === category);
+      
+      // Calculate effort (number of goals in this category / total goals * 100)
+      const effort = state.lifeGoals.length > 0 ? 
+        (categoryGoals.length / state.lifeGoals.length) * 100 : 0;
+      
+      // Calculate progress (average progress of goals in this category)
+      const progress = categoryGoals.length > 0 ? 
+        categoryGoals.reduce((sum, goal) => sum + goal.progress, 0) / categoryGoals.length : 0;
+      
+      return {
+        category: category.replace(' & ', ' &\n'), // Line break for better display
+        effort: Math.round(effort),
+        progress: Math.round(progress),
+        goalCount: categoryGoals.length
+      };
+    }).filter(item => item.effort > 0 || item.progress > 0); // Only show categories with data
   };
 
   // Helper function to ensure date is a Date object
@@ -388,111 +369,184 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Getting Started Message */}
-      {stats.totalAnnualGoals === 0 && (
+      {/* Balance Wheel - Life Goals Overview */}
+      {state.lifeGoals.length > 0 ? (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <div className="card-title" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <Target size={24} />
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>Life Balance Wheel</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
+                Your effort and progress across life pillars for holistic growth
+              </p>
+            </div>
+          </div>
+          
+          <div style={{ height: '400px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={calculateBalanceWheelData()}>
+                <PolarGrid gridType="polygon" />
+                <PolarAngleAxis 
+                  dataKey="category" 
+                  tick={{ fontSize: 12, fill: '#374151' }}
+                  className="text-xs"
+                />
+                <PolarRadiusAxis 
+                  angle={90} 
+                  domain={[0, 100]} 
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                />
+                <Radar
+                  name="Effort (Goal Count %)"
+                  dataKey="effort"
+                  stroke="#8b5cf6"
+                  fill="#8b5cf6"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
+                />
+                <Radar
+                  name="Progress %"
+                  dataKey="progress"
+                  stroke="#10b981"
+                  fill="#10b981"
+                  fillOpacity={0.2}
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '2rem', 
+            marginTop: '1rem',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#8b5cf6', 
+                borderRadius: '2px' 
+              }}></div>
+              <span style={{ fontSize: '0.875rem', color: '#374151' }}>Effort Distribution</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#10b981', 
+                borderRadius: '2px' 
+              }}></div>
+              <span style={{ fontSize: '0.875rem', color: '#374151' }}>Progress Achievement</span>
+            </div>
+          </div>
+          
+          {/* Balance Insights */}
+          <div style={{ 
+            marginTop: '2rem',
+            padding: '1.5rem',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <h4 style={{ margin: '0 0 1rem 0', color: '#374151', fontSize: '1rem' }}>
+              🎯 Balance Insights
+            </h4>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: '1rem',
+              fontSize: '0.875rem'
+            }}>
+              {(() => {
+                const data = calculateBalanceWheelData();
+                const totalGoals = state.lifeGoals.length;
+                const avgProgress = data.length > 0 ? 
+                  Math.round(data.reduce((sum, item) => sum + item.progress, 0) / data.length) : 0;
+                const mostFocusedArea = data.length > 0 ? 
+                  data.reduce((max, item) => item.effort > max.effort ? item : max, data[0]) : null;
+                
+                return (
+                  <>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+                        {totalGoals}
+                      </div>
+                      <div style={{ color: '#6b7280' }}>Total Life Goals</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                        {avgProgress}%
+                      </div>
+                      <div style={{ color: '#6b7280' }}>Average Progress</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+                        {data.length}
+                      </div>
+                      <div style={{ color: '#6b7280' }}>Active Pillars</div>
+                    </div>
+                    {mostFocusedArea && (
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                          {mostFocusedArea.category.replace('\n', ' ')}
+                        </div>
+                        <div style={{ color: '#6b7280' }}>Most Focused Area</div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      ) : (
         <div className="card" style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+          border: '2px dashed #0ea5e9',
           textAlign: 'center',
-          padding: '2rem'
+          padding: '3rem 2rem',
+          marginBottom: '2rem'
         }}>
-          <div style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            Welcome to Personal OS! 🚀
-          </div>
-          <p style={{ marginBottom: '1.5rem', opacity: 0.9 }}>
-            Start your strategic journey by setting up your annual flight plan. 
-            Define 2-3 high-level goals that will drive your next year.
+          <Target size={48} style={{ color: '#0ea5e9', margin: '0 auto 1rem' }} />
+          <h3 style={{ margin: '0 0 1rem 0', color: '#0c4a6e', fontSize: '1.5rem' }}>
+            Create Your Life Vision
+          </h3>
+          <p style={{ 
+            margin: '0 0 2rem 0', 
+            color: '#075985', 
+            fontSize: '1.1rem',
+            lineHeight: '1.6',
+            maxWidth: '600px',
+            marginLeft: 'auto',
+            marginRight: 'auto'
+          }}>
+            Start by defining your life goals across different pillars. Your Balance Wheel will appear here 
+            to help you visualize and maintain holistic growth across all areas of your life.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-            <span style={{ 
-              background: 'rgba(255, 255, 255, 0.2)', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '8px',
-              fontSize: '0.9rem'
-            }}>
-              1. Set Annual Goals
-            </span>
-            <span style={{ 
-              background: 'rgba(255, 255, 255, 0.2)', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '8px',
-              fontSize: '0.9rem'
-            }}>
-              2. Break into Quarters
-            </span>
-            <span style={{ 
-              background: 'rgba(255, 255, 255, 0.2)', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '8px',
-              fontSize: '0.9rem'
-            }}>
-              3. Execute Weekly
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button 
-              className="btn"
-              onClick={handleLoadSampleData}
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.2)', 
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <Upload size={16} />
-              Load Sample Data
-            </button>
-            <button
-              onClick={debugState}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#805ad5',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              Debug State
-            </button>
-            <button
-              onClick={forceSave}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#38a169',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              Force Save
-            </button>
-            <button
-              onClick={clearAllData}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#e53e3e',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              Clear All
-            </button>
+          <div style={{ 
+            display: 'flex', 
+            gap: '1rem', 
+            justifyContent: 'center', 
+            flexWrap: 'wrap',
+            fontSize: '0.9rem',
+            color: '#0369a1'
+          }}>
+            <span>🎨 Creativity</span>
+            <span>🧠 Mind</span>
+            <span>💼 Career</span>
+            <span>💰 Finance</span>
+            <span>🏃‍♂️ Health</span>
+            <span>❤️ Relationships</span>
+            <span>🙏 Spirit</span>
+            <span>🌍 Community</span>
           </div>
         </div>
       )}
