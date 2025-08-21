@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
 import { notificationService } from '../services/notificationService';
+import { updateLifeGoalFromAnnualProgress } from '../utils/progressCalculation';
 
 // Initial state
 const initialState: AppState & { loading: boolean } = {
@@ -41,6 +42,14 @@ type Action =
   | { type: 'SET_CURRENT_YEAR'; payload: number }
   | { type: 'SET_CURRENT_QUARTER'; payload: 1 | 2 | 3 | 4 };
 
+// Helper function to update life goal progress when annual goals change
+function updateLifeGoalProgress(state: AppState, updatedAnnualGoals: AnnualGoal[]): LifeGoal[] {
+  return state.lifeGoals.map(lifeGoal => {
+    const updatedGoal = updateLifeGoalFromAnnualProgress(lifeGoal, updatedAnnualGoals);
+    return updatedGoal || lifeGoal;
+  });
+}
+
 // Reducer
 function appReducer(state: AppState, action: Action): AppState {
   console.log('Dispatching action:', action.type, action.payload);
@@ -66,9 +75,13 @@ function appReducer(state: AppState, action: Action): AppState {
       };
     case 'ADD_ANNUAL_GOAL':
       console.log('Adding annual goal:', action.payload);
+      const newAnnualGoals = [...state.annualGoals, action.payload];
+      const updatedLifeGoalsFromAdd = updateLifeGoalProgress(state, newAnnualGoals);
+      
       return {
         ...state,
-        annualGoals: [...state.annualGoals, action.payload],
+        annualGoals: newAnnualGoals,
+        lifeGoals: updatedLifeGoalsFromAdd,
       };
     case 'UPDATE_ANNUAL_GOAL': {
       const oldGoal = state.annualGoals.find(goal => goal.id === action.payload.id);
@@ -79,17 +92,27 @@ function appReducer(state: AppState, action: Action): AppState {
         notificationService.celebrateGoalCompletion(newGoal.title, 'Annual');
       }
       
+      const updatedAnnualGoals = state.annualGoals.map(goal =>
+        goal.id === action.payload.id ? action.payload : goal
+      );
+      
+      // Update life goal progress based on annual goal changes
+      const updatedLifeGoals = updateLifeGoalProgress(state, updatedAnnualGoals);
+      
       return {
         ...state,
-        annualGoals: state.annualGoals.map(goal =>
-          goal.id === action.payload.id ? action.payload : goal
-        ),
+        annualGoals: updatedAnnualGoals,
+        lifeGoals: updatedLifeGoals,
       };
     }
     case 'DELETE_ANNUAL_GOAL':
+      const filteredAnnualGoals = state.annualGoals.filter(goal => goal.id !== action.payload);
+      const updatedLifeGoalsFromDelete = updateLifeGoalProgress(state, filteredAnnualGoals);
+      
       return {
         ...state,
-        annualGoals: state.annualGoals.filter(goal => goal.id !== action.payload),
+        annualGoals: filteredAnnualGoals,
+        lifeGoals: updatedLifeGoalsFromDelete,
       };
     case 'ADD_QUARTERLY_GOAL':
       return {

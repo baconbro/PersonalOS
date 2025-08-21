@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Target, Plus, Edit, Trash2, Heart, Brain, Briefcase, DollarSign, Activity, Users, Compass, Building, Plane, Gift, List, Grid, Share2 } from 'lucide-react';
 import type { LifeGoal, LifeGoalCategory } from '../types';
 import AIRefiner from './AIRefiner';
 import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
 import { usePageTitleSuffix } from '../utils/usePageTitle';
+import { updateLifeGoalFromAnnualProgress, getRelatedAnnualGoals as getRelatedGoals } from '../utils/progressCalculation';
 import './LifeGoals.css';
 
 const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
@@ -69,6 +70,40 @@ const LifeGoals: React.FC = () => {
     setIsAddingGoal(false);
     setEditingGoal(null);
   };
+
+  const getRelatedAnnualGoals = (lifeGoalId: string) => {
+    return getRelatedGoals(lifeGoalId, state.annualGoals);
+  };
+
+  const updateLifeGoalProgress = (lifeGoalId: string) => {
+    const lifeGoal = state.lifeGoals.find(goal => goal.id === lifeGoalId);
+    if (!lifeGoal) return;
+
+    const updatedGoal = updateLifeGoalFromAnnualProgress(lifeGoal, state.annualGoals);
+    
+    if (updatedGoal) {
+      dispatch({ type: 'UPDATE_LIFE_GOAL', payload: updatedGoal });
+      console.log(`📈 Updated life goal "${lifeGoal.title}" progress to ${updatedGoal.progress}%`);
+    }
+  };
+
+  // Update all life goal progress when annual goals change
+  const updateAllLifeGoalProgress = () => {
+    state.lifeGoals.forEach(lifeGoal => {
+      updateLifeGoalProgress(lifeGoal.id);
+    });
+  };
+
+  // Auto-update life goal progress when annual goals change or component mounts
+  useEffect(() => {
+    updateAllLifeGoalProgress();
+  }, [state.annualGoals, state.lifeGoals]); // Re-run when annual goals or life goals change
+
+  // Additional effect to ensure progress is calculated when component first loads
+  useEffect(() => {
+    // Run progress calculation when component mounts
+    updateAllLifeGoalProgress();
+  }, []); // Run once on mount
 
     const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,10 +243,6 @@ const LifeGoals: React.FC = () => {
         console.log('✅ Deletion completed for goal:', goalId);
       }, 1000);
     }
-  };
-
-  const getRelatedAnnualGoals = (lifeGoalId: string) => {
-    return state.annualGoals.filter(goal => goal.lifeGoalId === lifeGoalId);
   };
 
   const getLifeGoalsByCategory = (category: LifeGoalCategory | 'All') => {
