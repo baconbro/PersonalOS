@@ -1,14 +1,16 @@
 import { useApp } from '../context/AppContext';
-import { TrendingUp, Target, Calendar, CheckSquare, Clock, Star, GitBranch } from 'lucide-react';
+import { TrendingUp, Target, Calendar, CheckSquare, Clock, Star, GitBranch, Heart } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { DashboardStats } from '../types';
 import GoalTree from './GoalTree';
+import CheckInModal from './CheckInModal';
 import { useState } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
   const { state } = useApp();
   const [showGoalTree, setShowGoalTree] = useState(false);
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
 
   // Balance Wheel Data Calculation
   const calculateBalanceWheelData = () => {
@@ -113,7 +115,7 @@ function Dashboard() {
       </p>
 
       {/* Stats Grid */}
-      <div className="grid grid-3" style={{ marginBottom: '2rem' }}>
+      <div className="grid grid-4" style={{ marginBottom: '2rem' }}>
         <div className="card">
           <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Target size={20} />
@@ -179,6 +181,39 @@ function Dashboard() {
             </div>
             <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)' }}>
               Tasks Completed • Click for Weekly Huddle
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className="card"
+          style={{ 
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+            border: '2px solid #e53e3e',
+            color: 'white'
+          }}
+          onClick={() => setShowCheckInModal(true)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 107, 107, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+          }}
+        >
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white' }}>
+            <Heart size={20} />
+            Check-In
+          </div>
+          <div className="card-content">
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>
+              {state.checkIns.length}
+            </div>
+            <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)' }}>
+              Today's Check-ins • Log your energy & focus
             </div>
           </div>
         </div>
@@ -555,6 +590,12 @@ function Dashboard() {
       <GoalTree 
         isOpen={showGoalTree}
         onClose={() => setShowGoalTree(false)}
+      />
+      
+      {/* Check-In Modal */}
+      <CheckInModal 
+        isOpen={showCheckInModal}
+        onClose={() => setShowCheckInModal(false)}
       />
     </div>
   );

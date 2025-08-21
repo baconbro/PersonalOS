@@ -17,7 +17,8 @@ export type ActivityType =
   | 'KEY_RESULT_UPDATED'
   | 'GOLDEN_THREAD_CREATED'
   | 'USER_LOGIN'
-  | 'USER_LOGOUT';
+  | 'USER_LOGOUT'
+  | 'CHECK_IN_LOGGED';
 
 export interface ActivityLog {
   id: string;
@@ -26,8 +27,17 @@ export interface ActivityLog {
   description: string;
   timestamp: Date;
   entityId?: string; // ID of the item that was modified
-  entityType?: 'life_goal' | 'quarterly_goal' | 'weekly_task' | 'weekly_review';
+  entityType?: 'life_goal' | 'quarterly_goal' | 'weekly_task' | 'weekly_review' | 'check_in';
   metadata?: Record<string, any>; // Additional context data
+}
+
+export interface CheckIn {
+  id: string;
+  timestamp: Date;
+  energyLevel: number; // 1-5 scale
+  focusLevel: number; // 1-5 scale
+  mood: string; // Emoji representation
+  notes?: string; // Optional notes
 }
 
 export type LifeGoalCategory = 
@@ -141,6 +151,7 @@ export interface AppState {
   weeklyTasks: WeeklyTask[];
   weeklyReviews: WeeklyReviewData[];
   activityLogs: ActivityLog[];
+  checkIns: CheckIn[];
   currentYear: number;
   currentQuarter: 1 | 2 | 3 | 4;
   loading?: boolean;

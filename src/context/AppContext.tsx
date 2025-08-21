@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog } from '../types';
+import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn } from '../types';
 import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
@@ -15,6 +15,7 @@ const initialState: AppState & { loading: boolean } = {
   weeklyTasks: [],
   weeklyReviews: [],
   activityLogs: [],
+  checkIns: [],
   currentYear: new Date().getFullYear(),
   currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
   loading: false,
@@ -37,6 +38,7 @@ type Action =
   | { type: 'ADD_WEEKLY_REVIEW'; payload: WeeklyReviewData }
   | { type: 'UPDATE_WEEKLY_REVIEW'; payload: WeeklyReviewData }
   | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLog }
+  | { type: 'ADD_CHECK_IN'; payload: CheckIn }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_CURRENT_YEAR'; payload: number }
@@ -201,10 +203,17 @@ function appReducer(state: AppState, action: Action): AppState {
         activityLogs: newActivityLogs,
       };
     }
+    case 'ADD_CHECK_IN': {
+      return {
+        ...state,
+        checkIns: [action.payload, ...state.checkIns],
+      };
+    }
     case 'LOAD_STATE':
       return { 
         ...action.payload, 
         activityLogs: action.payload.activityLogs || [], 
+        checkIns: action.payload.checkIns || [],
         loading: false 
       };
     case 'SET_LOADING':
@@ -407,6 +416,7 @@ export function AppProvider({ children }: AppProviderProps) {
         weeklyTasks: newState.weeklyTasks,
         weeklyReviews: newState.weeklyReviews,
         activityLogs: newState.activityLogs,
+        checkIns: newState.checkIns,
         currentYear: newState.currentYear,
         currentQuarter: newState.currentQuarter,
       };
