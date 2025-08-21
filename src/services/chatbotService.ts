@@ -10,6 +10,21 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   context?: string;
+  taskSuggestion?: TaskSuggestion;
+}
+
+export interface TaskSuggestion {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  estimatedHours: number;
+  quarterlyGoalId?: string;
+  quarterlyGoalTitle?: string;
+  reasoning: string;
+  accepted?: boolean;
+  snoozed?: boolean;
+  snoozeUntil?: Date;
 }
 
 export interface ContextualInsight {
@@ -319,12 +334,18 @@ export class ChatbotService {
     // Generate AI response based on context and message
     const response = await this.generateAIResponse(message, context, userState);
     
+    // Check if we should suggest a task
+    const taskSuggestion = this.shouldSuggestTask(message, context, userState) 
+      ? this.generateTaskSuggestion(message, context, userState)
+      : undefined;
+    
     const assistantMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: response,
       timestamp: new Date(),
-      context
+      context,
+      taskSuggestion
     };
 
     this.chatHistory.push(assistantMsg);
@@ -462,12 +483,212 @@ Remember: Consistent execution beats perfect planning. Small daily actions compo
     }
   }
 
+  // Determine if the current conversation context suggests creating a task
+  private shouldSuggestTask(message: string, context: string, userState: AppState): boolean {
+    const lowerMessage = message.toLowerCase();
+    
+    // Keywords that suggest actionable intent
+    const actionKeywords = [
+      'should', 'need to', 'want to', 'plan to', 'going to', 'will',
+      'start', 'begin', 'work on', 'focus on', 'prioritize', 'complete',
+      'finish', 'deliver', 'create', 'build', 'develop', 'improve',
+      'organize', 'schedule', 'book', 'call', 'meet', 'review',
+      'research', 'study', 'learn', 'practice', 'exercise',
+      'tomorrow', 'this week', 'next week', 'soon', 'today',
+      'help me', 'how do', 'what should', 'next steps'
+    ];
+
+    // Check for action-oriented language
+    const hasActionIntent = actionKeywords.some(keyword => lowerMessage.includes(keyword));
+    
+    // Check if user has active quarterly goals that could be advanced
+    const hasActiveQuarterlyGoals = userState.quarterlyGoals.some(goal => goal.status !== 'completed');
+    
+    // Check if it's in a planning context
+    const isPlanningContext = ['weekly-dashboard', 'weekly-huddle', 'quarterly-goals', 'life-goals-viewing'].includes(context);
+    
+    // Check if user is asking about next steps or planning
+    const isSeekingDirection = lowerMessage.includes('next') || lowerMessage.includes('what should') || 
+                              lowerMessage.includes('how do') || lowerMessage.includes('help me') ||
+                              lowerMessage.includes('plan') || lowerMessage.includes('focus') ||
+                              lowerMessage.includes('work on') || lowerMessage.includes('improve');
+
+    // More generous triggering for demonstration
+    return hasActionIntent || isSeekingDirection || (isPlanningContext && (userState.quarterlyGoals.length > 0 || hasActiveQuarterlyGoals));
+  }
+
+  // Generate a contextual task suggestion
+  private generateTaskSuggestion(message: string, context: string, userState: AppState): TaskSuggestion {
+    const relevantQuarterlyGoal = this.findMostRelevantQuarterlyGoal(message, userState);
+    const priority = this.determinePriority(message, context);
+    const estimatedHours = this.estimateHours(message);
+
+    // Generate task based on message content and context
+    const taskTitle = this.generateTaskTitle(message, relevantQuarterlyGoal);
+    const taskDescription = this.generateTaskDescription(message, relevantQuarterlyGoal);
+    const reasoning = this.generateTaskReasoning(message, relevantQuarterlyGoal, context);
+
+    return {
+      id: crypto.randomUUID(),
+      title: taskTitle,
+      description: taskDescription,
+      priority,
+      estimatedHours,
+      quarterlyGoalId: relevantQuarterlyGoal?.id,
+      quarterlyGoalTitle: relevantQuarterlyGoal?.title,
+      reasoning
+    };
+  }
+
+  private findMostRelevantQuarterlyGoal(message: string, userState: AppState): any {
+    const activeGoals = userState.quarterlyGoals.filter(goal => goal.status !== 'completed');
+    if (activeGoals.length === 0) return null;
+
+    // Simple keyword matching - could be enhanced with more sophisticated NLP
+    const lowerMessage = message.toLowerCase();
+    
+    // Find goal with most keyword matches
+    let bestMatch = activeGoals[0];
+    let maxMatches = 0;
+
+    activeGoals.forEach(goal => {
+      const goalKeywords = goal.title.toLowerCase().split(' ').concat(
+        goal.description.toLowerCase().split(' ')
+      );
+      
+      const matches = goalKeywords.filter(keyword => 
+        keyword.length > 3 && lowerMessage.includes(keyword)
+      ).length;
+
+      if (matches > maxMatches) {
+        maxMatches = matches;
+        bestMatch = goal;
+      }
+    });
+
+    return bestMatch;
+  }
+
+  private determinePriority(message: string, _context: string): 'high' | 'medium' | 'low' {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('urgent') || lowerMessage.includes('asap') || 
+        lowerMessage.includes('critical') || lowerMessage.includes('important')) {
+      return 'high';
+    }
+    
+    if (lowerMessage.includes('later') || lowerMessage.includes('eventually') || 
+        lowerMessage.includes('when i have time')) {
+      return 'low';
+    }
+    
+    // Default to medium for most suggestions
+    return 'medium';
+  }
+
+  private estimateHours(message: string): number {
+    const lowerMessage = message.toLowerCase();
+    
+    // Look for explicit time mentions
+    if (lowerMessage.includes('hour')) {
+      const hourMatch = lowerMessage.match(/(\d+)\s*hour/);
+      if (hourMatch) return parseInt(hourMatch[1]);
+    }
+    
+    if (lowerMessage.includes('day')) {
+      const dayMatch = lowerMessage.match(/(\d+)\s*day/);
+      if (dayMatch) return parseInt(dayMatch[1]) * 8; // Assume 8 hours per day
+    }
+    
+    // Default estimates based on task complexity indicators
+    if (lowerMessage.includes('quick') || lowerMessage.includes('brief') || 
+        lowerMessage.includes('short')) {
+      return 1;
+    }
+    
+    if (lowerMessage.includes('deep') || lowerMessage.includes('thorough') || 
+        lowerMessage.includes('comprehensive')) {
+      return 4;
+    }
+    
+    return 2; // Default 2 hours
+  }
+
+  private generateTaskTitle(message: string, quarterlyGoal: any): string {
+    // Extract action-oriented phrases from the message
+    const actionPatterns = [
+      /(?:need to|want to|should|will|plan to)\s+([^.!?]+)/i,
+      /(?:start|begin|work on|focus on)\s+([^.!?]+)/i,
+      /(?:create|build|develop|improve)\s+([^.!?]+)/i
+    ];
+
+    for (const pattern of actionPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        const extracted = match[1].trim();
+        // Clean up and capitalize
+        return extracted.charAt(0).toUpperCase() + extracted.slice(1);
+      }
+    }
+
+    // Fallback: generate based on quarterly goal
+    if (quarterlyGoal) {
+      return `Advance progress on: ${quarterlyGoal.title}`;
+    }
+
+    return 'Complete suggested action item';
+  }
+
+  private generateTaskDescription(message: string, quarterlyGoal: any): string {
+    let description = `Task suggested based on our conversation: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`;
+    
+    if (quarterlyGoal) {
+      description += `\n\nThis task will contribute to your quarterly goal: ${quarterlyGoal.title}`;
+    }
+    
+    return description;
+  }
+
+  private generateTaskReasoning(_message: string, quarterlyGoal: any, context: string): string {
+    let reasoning = "Based on our conversation, this seems like a concrete next step you could take.";
+    
+    if (quarterlyGoal) {
+      reasoning += ` It aligns with your quarterly goal "${quarterlyGoal.title}" and would move you closer to completion.`;
+    }
+    
+    const contextReasons: Record<string, string> = {
+      'weekly-dashboard': ' Adding this to your weekly tasks would help maintain momentum.',
+      'weekly-huddle': ' This fits well with your weekly planning session.',
+      'quarterly-goals': ' This would be a good weekly milestone toward your quarterly objective.'
+    };
+    
+    if (contextReasons[context]) {
+      reasoning += contextReasons[context];
+    }
+    
+    return reasoning;
+  }
+  
   getChatHistory(): ChatMessage[] {
     return [...this.chatHistory];
   }
 
   clearChatHistory(): void {
     this.chatHistory = [];
+  }
+
+  // Test function to add some example task-generating messages
+  addExampleConversation(userState: AppState): void {
+    const exampleMessages = [
+      "I need to work on my fitness goals this week",
+      "I should start planning my quarterly review",
+      "I want to focus on improving my productivity",
+      "Help me plan my week to advance my career goals"
+    ];
+
+    // Add an example that would trigger task suggestions
+    const testMessage = exampleMessages[0];
+    this.processUserMessage(testMessage, 'weekly-dashboard', userState);
   }
 }
 

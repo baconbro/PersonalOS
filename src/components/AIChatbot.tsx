@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Lightbulb, Target, Calendar, ChevronDown } from 'lucide-react';
+import { MessageCircle, Send, X, Lightbulb, Target, Calendar, ChevronDown, CheckCircle, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { chatbotService, type ChatMessage, type ContextualInsight } from '../services/chatbotService';
+import { chatbotService, type ChatMessage, type ContextualInsight, type TaskSuggestion } from '../services/chatbotService';
 import './AIChatbot.css';
 
 interface AIChatbotProps {
@@ -15,7 +15,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
   isVisible = false, 
   onToggle 
 }) => {
-  const { state } = useApp();
+  const { state, dispatch, logActivity, createActivityLog } = useApp();
   const [isOpen, setIsOpen] = useState(isVisible);
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -71,6 +71,78 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
     if (insight.actionable) {
       setMessage(`Tell me more about: ${insight.title}`);
     }
+  };
+
+  const handleAcceptTask = async (taskSuggestion: any) => {
+    try {
+      // Create a weekly task from the suggestion
+      const newTask = {
+        id: crypto.randomUUID(),
+        title: taskSuggestion.title,
+        description: taskSuggestion.description,
+        quarterlyGoalId: taskSuggestion.quarterlyGoalId || '',
+        priority: taskSuggestion.priority,
+        estimatedHours: taskSuggestion.estimatedHours,
+        completed: false,
+        status: 'todo' as const,
+        weekOf: new Date(),
+        roadblocks: [],
+        notes: `Suggested by AI: ${taskSuggestion.reasoning}`
+      };
+
+      // Add the task to state
+      dispatch({ type: 'ADD_WEEKLY_TASK', payload: newTask });
+
+      // Log activity
+      const activityLog = createActivityLog(
+        'WEEKLY_TASK_CREATED',
+        'AI suggested task accepted',
+        `Created task: ${newTask.title}`,
+        newTask.id,
+        'weekly_task',
+        { 
+          source: 'ai_suggestion',
+          originalSuggestion: taskSuggestion 
+        }
+      );
+      logActivity(activityLog);
+
+      // Mark the suggestion as accepted in chat history
+      const updatedHistory = chatHistory.map(msg => {
+        if (msg.taskSuggestion?.id === taskSuggestion.id) {
+          return {
+            ...msg,
+            taskSuggestion: {
+              ...msg.taskSuggestion,
+              accepted: true
+            }
+          } as ChatMessage;
+        }
+        return msg;
+      });
+      setChatHistory(updatedHistory);
+
+    } catch (error) {
+      console.error('Error accepting task suggestion:', error);
+    }
+  };
+
+  const handleSnoozeTask = (taskSuggestion: any) => {
+    // Mark the suggestion as snoozed in chat history
+    const updatedHistory = chatHistory.map(msg => {
+      if (msg.taskSuggestion?.id === taskSuggestion.id) {
+        return {
+          ...msg,
+          taskSuggestion: {
+            ...msg.taskSuggestion,
+            snoozed: true,
+            snoozeUntil: new Date(Date.now() + 24 * 60 * 60 * 1000) // Snooze for 24 hours
+          }
+        } as ChatMessage;
+      }
+      return msg;
+    });
+    setChatHistory(updatedHistory);
   };
 
   const getContextIcon = () => {
@@ -202,6 +274,66 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
               <div className="message-content">
                 {msg.content}
               </div>
+              {msg.taskSuggestion && !msg.taskSuggestion.accepted && !msg.taskSuggestion.snoozed && (
+                <div className="task-suggestion-card">
+                  <div className="task-suggestion-header">
+                    <Target size={16} />
+                    <span className="task-suggestion-title">Suggested Task</span>
+                    <span className={`priority-badge ${msg.taskSuggestion.priority}`}>
+                      {msg.taskSuggestion.priority}
+                    </span>
+                  </div>
+                  
+                  <h4 className="suggested-task-title">{msg.taskSuggestion.title}</h4>
+                  <p className="suggested-task-description">{msg.taskSuggestion.description}</p>
+                  
+                  {msg.taskSuggestion.quarterlyGoalTitle && (
+                    <div className="task-goal-connection">
+                      <Calendar size={14} />
+                      <span>Advances: {msg.taskSuggestion.quarterlyGoalTitle}</span>
+                    </div>
+                  )}
+                  
+                  <div className="task-details">
+                    <span className="estimated-hours">
+                      ⏱ {msg.taskSuggestion.estimatedHours}h estimated
+                    </span>
+                  </div>
+                  
+                  <div className="task-reasoning">
+                    <strong>Why this task?</strong> {msg.taskSuggestion.reasoning}
+                  </div>
+                  
+                  <div className="task-suggestion-actions">
+                    <button 
+                      className="accept-task-btn"
+                      onClick={() => handleAcceptTask(msg.taskSuggestion)}
+                    >
+                      <CheckCircle size={16} />
+                      Accept & Add to This Week
+                    </button>
+                    <button 
+                      className="snooze-task-btn"
+                      onClick={() => handleSnoozeTask(msg.taskSuggestion)}
+                    >
+                      <Clock size={16} />
+                      Snooze
+                    </button>
+                  </div>
+                </div>
+              )}
+              {msg.taskSuggestion?.accepted && (
+                <div className="task-suggestion-accepted">
+                  <CheckCircle size={16} />
+                  <span>Task added to your weekly tasks!</span>
+                </div>
+              )}
+              {msg.taskSuggestion?.snoozed && (
+                <div className="task-suggestion-snoozed">
+                  <Clock size={16} />
+                  <span>Task suggestion snoozed</span>
+                </div>
+              )}
               <div className="message-timestamp">
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
