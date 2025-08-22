@@ -361,6 +361,7 @@ export class FirebaseService {
         weeklyReviews,
         lifeGoals,
         activityLogs: [], // Activity logs are handled locally, not stored in Firebase
+        checkIns: [], // Check-ins are local-only for now
         currentYear: new Date().getFullYear(),
         currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
       };

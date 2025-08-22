@@ -18,7 +18,9 @@ export type ActivityType =
   | 'GOLDEN_THREAD_CREATED'
   | 'USER_LOGIN'
   | 'USER_LOGOUT'
-  | 'CHECK_IN_LOGGED';
+  | 'CHECK_IN_LOGGED'
+  | 'DATA_EXPORTED'
+  | 'DATA_IMPORTED';
 
 export interface ActivityLog {
   id: string;

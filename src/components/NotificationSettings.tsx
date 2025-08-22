@@ -11,6 +11,9 @@ import {
   Smartphone
 } from 'lucide-react';
 import { notificationService, type NotificationSettings as NotificationSettingsType } from '../services/notificationService';
+import { useApp } from '../context/AppContext';
+import { LocalStorageService } from '../lib/localStorageService';
+import { createExportBundle, downloadJson, validateExportBundle, toNormalizedState, mergeStates } from '../utils/exportImport';
 import './NotificationSettings.css';
 
 interface NotificationSettingsProps {
@@ -19,8 +22,11 @@ interface NotificationSettingsProps {
 }
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onClose }) => {
+  const { state, dispatch, createActivityLog, logActivity } = useApp();
   const [settings, setSettings] = useState<NotificationSettingsType>(notificationService.getSettings());
   const [hasChanges, setHasChanges] = useState(false);
+  const [importInfo, setImportInfo] = useState<{ preview: string; counts?: Record<string, number>; error?: string } | null>(null);
+  const [mergeStrategy, setMergeStrategy] = useState<'merge' | 'replace'>('merge');
 
   useEffect(() => {
     if (isOpen) {
@@ -69,6 +75,78 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
     });
   };
 
+  // Export current data as JSON
+  const handleExport = () => {
+    const bundle = createExportBundle({
+      lifeGoals: state.lifeGoals,
+      annualGoals: state.annualGoals,
+      quarterlyGoals: state.quarterlyGoals,
+      weeklyTasks: state.weeklyTasks,
+      weeklyReviews: state.weeklyReviews,
+      activityLogs: state.activityLogs,
+      checkIns: state.checkIns,
+      currentYear: state.currentYear,
+      currentQuarter: state.currentQuarter,
+    });
+    downloadJson(`personal-os-export-${new Date().toISOString().slice(0,10)}.json`, bundle);
+    logActivity(createActivityLog(
+      'DATA_EXPORTED',
+      'Data exported',
+      'Downloaded JSON backup'
+    ));
+  };
+
+  // Import JSON file
+  const handleImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      validateExportBundle(parsed);
+      const normalized = toNormalizedState(parsed);
+      const counts = {
+        lifeGoals: normalized.lifeGoals.length,
+        annualGoals: normalized.annualGoals.length,
+        quarterlyGoals: normalized.quarterlyGoals.length,
+        weeklyTasks: normalized.weeklyTasks.length,
+        weeklyReviews: normalized.weeklyReviews.length,
+        activityLogs: normalized.activityLogs.length,
+        checkIns: normalized.checkIns.length,
+      };
+      setImportInfo({ preview: file.name, counts });
+      // Stash normalized state on the element for apply step
+      (window as any).__importNormalizedState = normalized;
+    } catch (e: any) {
+      setImportInfo({ preview: file.name, error: e?.message || 'Invalid file' });
+    }
+  };
+
+  // Apply imported data
+  const handleApplyImport = () => {
+    const incoming = (window as any).__importNormalizedState;
+    if (!incoming) return;
+    const merged = mergeStates({
+      lifeGoals: state.lifeGoals,
+      annualGoals: state.annualGoals,
+      quarterlyGoals: state.quarterlyGoals,
+      weeklyTasks: state.weeklyTasks,
+      weeklyReviews: state.weeklyReviews,
+      activityLogs: state.activityLogs,
+      checkIns: state.checkIns,
+      currentYear: state.currentYear,
+      currentQuarter: state.currentQuarter,
+    }, incoming, mergeStrategy);
+
+    // Persist via LocalStorageService and dispatch LOAD_STATE for immediate UI update
+    LocalStorageService.save(merged);
+    dispatch({ type: 'LOAD_STATE', payload: merged });
+    logActivity(createActivityLog(
+      'DATA_IMPORTED',
+      'Data import applied',
+      `Imported data (${mergeStrategy}) from backup`
+    ));
+    setImportInfo(null);
+  };
+
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const timeOptions = Array.from({ length: 24 }, (_, i) => {
     const hour = i.toString().padStart(2, '0');
@@ -89,6 +167,65 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
         </div>
 
         <div className="settings-content">
+          {/* Data Export & Import */}
+          <section className="settings-section">
+            <div className="section-header">
+              <Settings size={20} />
+              <h3>Data Export & Import</h3>
+            </div>
+
+            <div className="setting-item">
+              <div className="setting-info">
+                <label>Export your data</label>
+                <span>Download a JSON backup of all goals, tasks, reviews, activity logs, and check-ins.</span>
+              </div>
+              <button className="test-button" onClick={handleExport}>
+                Download JSON
+              </button>
+            </div>
+
+            <div className="setting-item">
+              <div className="setting-info">
+                <label>Import from JSON</label>
+                <span>Restore from a previously exported file. Choose merge to keep existing items, or replace to overwrite them.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <select
+                  value={mergeStrategy}
+                  onChange={(e) => setMergeStrategy(e.target.value as 'merge' | 'replace')}
+                  className="setting-select"
+                >
+                  <option value="merge">Merge</option>
+                  <option value="replace">Replace</option>
+                </select>
+                <label className="test-button" style={{ cursor: 'pointer' }}>
+                  <input type="file" accept="application/json" style={{ display: 'none' }} onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImportFile(f);
+                  }} />
+                  Choose File
+                </label>
+              </div>
+            </div>
+
+            {importInfo && (
+              <div className="setting-item" style={{ background: '#fff' }}>
+                <div className="setting-info">
+                  <label>Import Preview: {importInfo.preview}</label>
+                  {importInfo.error ? (
+                    <span style={{ color: '#ef4444' }}>Error: {importInfo.error}</span>
+                  ) : (
+                    <span>
+                      {`Life Goals: ${importInfo.counts?.lifeGoals || 0}, Annual: ${importInfo.counts?.annualGoals || 0}, Quarterly: ${importInfo.counts?.quarterlyGoals || 0}, Tasks: ${importInfo.counts?.weeklyTasks || 0}, Reviews: ${importInfo.counts?.weeklyReviews || 0}, Activity: ${importInfo.counts?.activityLogs || 0}, Check-Ins: ${importInfo.counts?.checkIns || 0}`}
+                    </span>
+                  )}
+                </div>
+                {!importInfo.error && (
+                  <button className="save-button" onClick={handleApplyImport}>Apply Import</button>
+                )}
+              </div>
+            )}
+          </section>
           {/* Master Toggle */}
           <section className="settings-section">
             <div className="section-header">

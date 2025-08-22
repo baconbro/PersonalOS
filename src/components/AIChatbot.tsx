@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Lightbulb, Target, Calendar, ChevronDown, CheckCircle, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { chatbotService, type ChatMessage, type ContextualInsight, type TaskSuggestion } from '../services/chatbotService';
+import { chatbotService, type ChatMessage, type ContextualInsight } from '../services/chatbotService';
 import './AIChatbot.css';
 
 interface AIChatbotProps {
