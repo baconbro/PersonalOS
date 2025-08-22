@@ -14,6 +14,7 @@ import LifeArchitectureWizard from './components/LifeArchitectureWizard.tsx'
 import AIChatbot from './components/AIChatbot.tsx'
 import DevToastContainer from './components/DevToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
+import LandingPage from './components/LandingPage.tsx'
 import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
@@ -32,11 +33,29 @@ function App() {
   const [showWizard, setShowWizard] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const [path, setPath] = useState<string>(window.location.pathname);
 
   // Check if user has any data - if not, show wizard
   const isNewUser = state.lifeGoals.length === 0 && 
                    state.annualGoals.length === 0 && 
                    state.quarterlyGoals.length === 0;
+
+  useEffect(() => {
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // Welcome route should be available to anyone (even when logged in) via URL
+  if (path === '/welcome') {
+    return (
+      <LandingPage
+        isAuthenticated={!!user}
+        onGetStarted={() => { window.history.pushState({}, '', '/'); setPath('/'); }}
+        onEnterApp={() => { window.history.pushState({}, '', '/'); setPath('/'); }}
+      />
+    );
+  }
 
   useEffect(() => {
     if (user && isNewUser) {
@@ -130,7 +149,17 @@ function App() {
   }
 
   if (!user) {
-    return <AuthComponent />;
+    // Simple path-based router for auth vs landing
+    if (path === '/login') {
+      return <AuthComponent />;
+    }
+    return (
+      <LandingPage
+        isAuthenticated={false}
+        onGetStarted={() => { window.history.pushState({}, '', '/login'); setPath('/login'); }}
+        onEnterApp={() => {}}
+      />
+    );
   }
 
   const getChatbotContext = (): string => {
