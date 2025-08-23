@@ -24,6 +24,14 @@ const UserGuide: React.FC = () => {
             Personal OS is a strategic goal management system that helps you transform big dreams into actionable results. 
             It follows a proven four-tier approach that connects your life vision to daily execution.
           </p>
+          <div className="feature-highlight">
+            <h4>New in this build</h4>
+            <ul>
+              <li>Public landing page at <code>/welcome</code> (accessible even when logged in)</li>
+              <li>Settings → Data Export & Import (JSON backup/restore with merge/replace)</li>
+              <li>Dev-only RL Debug Log drawer (Q-learning traces) — visible only in development</li>
+            </ul>
+          </div>
           
           <div className="methodology">
             <div className="tier">

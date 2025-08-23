@@ -8,12 +8,14 @@ import {
   Star, 
   Volume2, 
   VolumeX,
-  Smartphone
+  Smartphone,
+  Sparkles
 } from 'lucide-react';
 import { notificationService, type NotificationSettings as NotificationSettingsType } from '../services/notificationService';
 import { useApp } from '../context/AppContext';
 import { LocalStorageService } from '../lib/localStorageService';
 import { createExportBundle, downloadJson, validateExportBundle, toNormalizedState, mergeStates } from '../utils/exportImport';
+import { appSettingsService } from '../services/appSettingsService';
 import './NotificationSettings.css';
 
 interface NotificationSettingsProps {
@@ -27,11 +29,15 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
   const [hasChanges, setHasChanges] = useState(false);
   const [importInfo, setImportInfo] = useState<{ preview: string; counts?: Record<string, number>; error?: string } | null>(null);
   const [mergeStrategy, setMergeStrategy] = useState<'merge' | 'replace'>('merge');
+  const [appSettings, setAppSettings] = useState(appSettingsService.getSettings());
+  const [activeSection, setActiveSection] = useState<'general'|'weekly'|'quarterly'|'annual'|'celebrations'|'data'|'experiments'>('general');
 
   useEffect(() => {
     if (isOpen) {
       setSettings(notificationService.getSettings());
       setHasChanges(false);
+  setAppSettings(appSettingsService.getSettings());
+  setActiveSection('general');
     }
   }, [isOpen]);
 
@@ -48,18 +54,17 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
     setSettings(newSettings);
     setHasChanges(true);
   };
-
   const handleSave = () => {
     notificationService.updateSettings(settings);
     setHasChanges(false);
   };
-
   const handleCancel = () => {
     setSettings(notificationService.getSettings());
     setHasChanges(false);
     onClose();
   };
 
+  // app settings save immediately on toggle via handler
   const handleTestNotification = () => {
     notificationService.scheduleNotification({
       id: `test-${Date.now()}`,
@@ -166,373 +171,424 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <p>Configure your strategic rhythm notifications</p>
         </div>
 
-        <div className="settings-content">
-          {/* Data Export & Import */}
-          <section className="settings-section">
-            <div className="section-header">
-              <Settings size={20} />
-              <h3>Data Export & Import</h3>
+        <div className="settings-content" style={{display:'grid', gridTemplateColumns:'220px 1fr', gap:16}}>
+          {/* Left nav */}
+          <aside style={{background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, overflow:'hidden'}}>
+            <div className="section-header" style={{border:'none'}}>
+              <h3 style={{fontSize:16, margin:0}}>Sections</h3>
             </div>
-
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Export your data</label>
-                <span>Download a JSON backup of all goals, tasks, reviews, activity logs, and check-ins.</span>
-              </div>
-              <button className="test-button" onClick={handleExport}>
-                Download JSON
-              </button>
+            <div style={{display:'flex', flexDirection:'column'}}>
+              {[
+                {key:'general', label:'Master Controls', icon:<Bell size={16}/>},
+                {key:'weekly', label:'Weekly Huddle', icon:<Target size={16}/>},
+                {key:'quarterly', label:'Quarterly Planning', icon:<Calendar size={16}/>},
+                {key:'annual', label:'Annual Review', icon:<Clock size={16}/>},
+                {key:'celebrations', label:'Celebrations', icon:<Star size={16}/>},
+                {key:'data', label:'Export / Import', icon:<Settings size={16}/>},
+                {key:'experiments', label:'Experiments', icon:<Sparkles size={16}/>},
+              ].map((item:any) => (
+                <button key={item.key} className="nav-item" style={{
+                  textAlign:'left', padding:'12px 16px', background: activeSection===item.key ? '#eef2ff':'transparent',
+                  border:'none', borderTop:'1px solid #f1f5f9', display:'flex', gap:8, alignItems:'center', cursor:'pointer'
+                }} onClick={() => setActiveSection(item.key)}>
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </div>
+          </aside>
 
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Import from JSON</label>
-                <span>Restore from a previously exported file. Choose merge to keep existing items, or replace to overwrite them.</span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <select
-                  value={mergeStrategy}
-                  onChange={(e) => setMergeStrategy(e.target.value as 'merge' | 'replace')}
-                  className="setting-select"
-                >
-                  <option value="merge">Merge</option>
-                  <option value="replace">Replace</option>
-                </select>
-                <label className="test-button" style={{ cursor: 'pointer' }}>
-                  <input type="file" accept="application/json" style={{ display: 'none' }} onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleImportFile(f);
-                  }} />
-                  Choose File
-                </label>
-              </div>
-            </div>
-
-            {importInfo && (
-              <div className="setting-item" style={{ background: '#fff' }}>
-                <div className="setting-info">
-                  <label>Import Preview: {importInfo.preview}</label>
-                  {importInfo.error ? (
-                    <span style={{ color: '#ef4444' }}>Error: {importInfo.error}</span>
-                  ) : (
-                    <span>
-                      {`Life Goals: ${importInfo.counts?.lifeGoals || 0}, Annual: ${importInfo.counts?.annualGoals || 0}, Quarterly: ${importInfo.counts?.quarterlyGoals || 0}, Tasks: ${importInfo.counts?.weeklyTasks || 0}, Reviews: ${importInfo.counts?.weeklyReviews || 0}, Activity: ${importInfo.counts?.activityLogs || 0}, Check-Ins: ${importInfo.counts?.checkIns || 0}`}
-                    </span>
-                  )}
+          {/* Right pane */}
+          <div style={{display:'flex', flexDirection:'column', gap:16}}>
+            {activeSection==='data' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Settings size={20} />
+                  <h3>Data Export & Import</h3>
                 </div>
-                {!importInfo.error && (
-                  <button className="save-button" onClick={handleApplyImport}>Apply Import</button>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Export your data</label>
+                    <span>Download a JSON backup of all goals, tasks, reviews, activity logs, and check-ins.</span>
+                  </div>
+                  <button className="test-button" onClick={handleExport}>
+                    Download JSON
+                  </button>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Import from JSON</label>
+                    <span>Restore from a previously exported file. Choose merge to keep existing items, or replace to overwrite them.</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <select
+                      value={mergeStrategy}
+                      onChange={(e) => setMergeStrategy(e.target.value as 'merge' | 'replace')}
+                      className="setting-select"
+                    >
+                      <option value="merge">Merge</option>
+                      <option value="replace">Replace</option>
+                    </select>
+                    <label className="test-button" style={{ cursor: 'pointer' }}>
+                      <input type="file" accept="application/json" style={{ display: 'none' }} onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleImportFile(f);
+                      }} />
+                      Choose File
+                    </label>
+                  </div>
+                </div>
+                {importInfo && (
+                  <div className="setting-item" style={{ background: '#fff' }}>
+                    <div className="setting-info">
+                      <label>Import Preview: {importInfo.preview}</label>
+                      {importInfo.error ? (
+                        <span style={{ color: '#ef4444' }}>Error: {importInfo.error}</span>
+                      ) : (
+                        <span>
+                          {`Life Goals: ${importInfo.counts?.lifeGoals || 0}, Annual: ${importInfo.counts?.annualGoals || 0}, Quarterly: ${importInfo.counts?.quarterlyGoals || 0}, Tasks: ${importInfo.counts?.weeklyTasks || 0}, Reviews: ${importInfo.counts?.weeklyReviews || 0}, Activity: ${importInfo.counts?.activityLogs || 0}, Check-Ins: ${importInfo.counts?.checkIns || 0}`}
+                        </span>
+                      )}
+                    </div>
+                    {!importInfo.error && (
+                      <button className="save-button" onClick={handleApplyImport}>Apply Import</button>
+                    )}
+                  </div>
                 )}
-              </div>
+              </section>
             )}
-          </section>
-          {/* Master Toggle */}
-          <section className="settings-section">
-            <div className="section-header">
-              <Bell size={20} />
-              <h3>Master Controls</h3>
-            </div>
-            
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Enable Notifications</label>
-                <span>Turn on/off all Personal OS notifications</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.enabled}
-                  onChange={(e) => handleSettingChange('enabled', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
 
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Browser Notifications</label>
-                <span>Show notifications even when Personal OS is not active</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.browserNotifications}
-                  onChange={(e) => handleSettingChange('browserNotifications', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Sound Notifications</label>
-                <span>Play notification sounds</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.soundEnabled}
-                  onChange={(e) => handleSettingChange('soundEnabled', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-              {settings.soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </div>
-          </section>
-
-          {/* Weekly Huddle Settings */}
-          <section className="settings-section">
-            <div className="section-header">
-              <Target size={20} />
-              <h3>Weekly Command Huddle</h3>
-            </div>
-            
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Enable Weekly Huddle Notifications</label>
-                <span>Remind you to do your 15-minute strategic session</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.weeklyHuddle.enabled}
-                  onChange={(e) => handleSettingChange('weeklyHuddle.enabled', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {settings.weeklyHuddle.enabled && (
-              <>
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Huddle Day</label>
-                    <span>Which day to schedule your weekly huddle</span>
-                  </div>
-                  <select
-                    value={settings.weeklyHuddle.dayOfWeek}
-                    onChange={(e) => handleSettingChange('weeklyHuddle.dayOfWeek', parseInt(e.target.value))}
-                    className="setting-select"
-                  >
-                    {dayNames.map((day, index) => (
-                      <option key={index} value={index}>{day}</option>
-                    ))}
-                  </select>
+            {activeSection==='general' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Bell size={20} />
+                  <h3>Master Controls</h3>
                 </div>
-
                 <div className="setting-item">
                   <div className="setting-info">
-                    <label>Huddle Time</label>
-                    <span>When to schedule your weekly huddle</span>
-                  </div>
-                  <select
-                    value={settings.weeklyHuddle.time}
-                    onChange={(e) => handleSettingChange('weeklyHuddle.time', e.target.value)}
-                    className="setting-select"
-                  >
-                    {timeOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Reminder (minutes before)</label>
-                    <span>How early to remind you before the huddle</span>
-                  </div>
-                  <select
-                    value={settings.weeklyHuddle.reminderMinutes}
-                    onChange={(e) => handleSettingChange('weeklyHuddle.reminderMinutes', parseInt(e.target.value))}
-                    className="setting-select"
-                  >
-                    <option value={0}>No reminder</option>
-                    <option value={5}>5 minutes</option>
-                    <option value={15}>15 minutes</option>
-                    <option value={30}>30 minutes</option>
-                    <option value={60}>1 hour</option>
-                  </select>
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* Quarterly Planning Settings */}
-          <section className="settings-section">
-            <div className="section-header">
-              <Calendar size={20} />
-              <h3>Quarterly Sprint Planning</h3>
-            </div>
-            
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Enable Quarterly Planning Notifications</label>
-                <span>Remind you to plan your next 90-day sprint</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.quarterlyPlanning.enabled}
-                  onChange={(e) => handleSettingChange('quarterlyPlanning.enabled', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {settings.quarterlyPlanning.enabled && (
-              <>
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Days Before Quarter End</label>
-                    <span>How many days before quarter ends to remind you</span>
-                  </div>
-                  <select
-                    value={settings.quarterlyPlanning.daysBefore}
-                    onChange={(e) => handleSettingChange('quarterlyPlanning.daysBefore', parseInt(e.target.value))}
-                    className="setting-select"
-                  >
-                    <option value={3}>3 days</option>
-                    <option value={7}>1 week</option>
-                    <option value={14}>2 weeks</option>
-                    <option value={21}>3 weeks</option>
-                  </select>
-                </div>
-
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Planning Time</label>
-                    <span>Preferred time for quarterly planning</span>
-                  </div>
-                  <select
-                    value={settings.quarterlyPlanning.time}
-                    onChange={(e) => handleSettingChange('quarterlyPlanning.time', e.target.value)}
-                    className="setting-select"
-                  >
-                    {timeOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* Annual Review Settings */}
-          <section className="settings-section">
-            <div className="section-header">
-              <Clock size={20} />
-              <h3>Annual Flight Plan Review</h3>
-            </div>
-            
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Enable Annual Review Notifications</label>
-                <span>Remind you to review and plan your annual goals</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.annualReview.enabled}
-                  onChange={(e) => handleSettingChange('annualReview.enabled', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {settings.annualReview.enabled && (
-              <>
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Days Before Year End</label>
-                    <span>How many days before year ends to remind you</span>
-                  </div>
-                  <select
-                    value={settings.annualReview.daysBefore}
-                    onChange={(e) => handleSettingChange('annualReview.daysBefore', parseInt(e.target.value))}
-                    className="setting-select"
-                  >
-                    <option value={7}>1 week</option>
-                    <option value={14}>2 weeks</option>
-                    <option value={30}>1 month</option>
-                    <option value={60}>2 months</option>
-                  </select>
-                </div>
-
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Review Time</label>
-                    <span>Preferred time for annual review</span>
-                  </div>
-                  <select
-                    value={settings.annualReview.time}
-                    onChange={(e) => handleSettingChange('annualReview.time', e.target.value)}
-                    className="setting-select"
-                  >
-                    {timeOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* Celebration Settings */}
-          <section className="settings-section">
-            <div className="section-header">
-              <Star size={20} />
-              <h3>Celebrations & Achievements</h3>
-            </div>
-            
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Enable Celebration Notifications</label>
-                <span>Celebrate your achievements and milestones</span>
-              </div>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={settings.celebrations.enabled}
-                  onChange={(e) => handleSettingChange('celebrations.enabled', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {settings.celebrations.enabled && (
-              <>
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Goal Completions</label>
-                    <span>Celebrate when you complete goals</span>
+                    <label>Enable Notifications</label>
+                    <span>Turn on/off all Personal OS notifications</span>
                   </div>
                   <label className="toggle">
                     <input
                       type="checkbox"
-                      checked={settings.celebrations.goalCompletions}
-                      onChange={(e) => handleSettingChange('celebrations.goalCompletions', e.target.checked)}
+                      checked={settings.enabled}
+                      onChange={(e) => handleSettingChange('enabled', e.target.checked)}
                     />
                     <span className="toggle-slider"></span>
                   </label>
                 </div>
-
                 <div className="setting-item">
                   <div className="setting-info">
-                    <label>Streak Milestones</label>
-                    <span>Celebrate weekly review streaks (4, 8, 12+ weeks)</span>
+                    <label>Browser Notifications</label>
+                    <span>Show notifications even when Personal OS is not active</span>
                   </div>
                   <label className="toggle">
                     <input
                       type="checkbox"
-                      checked={settings.celebrations.streakMilestones}
-                      onChange={(e) => handleSettingChange('celebrations.streakMilestones', e.target.checked)}
+                      checked={settings.browserNotifications}
+                      onChange={(e) => handleSettingChange('browserNotifications', e.target.checked)}
                     />
                     <span className="toggle-slider"></span>
                   </label>
                 </div>
-              </>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Sound Notifications</label>
+                    <span>Play notification sounds</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.soundEnabled}
+                      onChange={(e) => handleSettingChange('soundEnabled', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  {settings.soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                </div>
+              </section>
             )}
-          </section>
+
+            {activeSection==='weekly' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Target size={20} />
+                  <h3>Weekly Command Huddle</h3>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Enable Weekly Huddle Notifications</label>
+                    <span>Remind you to do your 15-minute strategic session</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.weeklyHuddle.enabled}
+                      onChange={(e) => handleSettingChange('weeklyHuddle.enabled', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {settings.weeklyHuddle.enabled && (
+                  <>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Huddle Day</label>
+                        <span>Which day to schedule your weekly huddle</span>
+                      </div>
+                      <select
+                        value={settings.weeklyHuddle.dayOfWeek}
+                        onChange={(e) => handleSettingChange('weeklyHuddle.dayOfWeek', parseInt(e.target.value))}
+                        className="setting-select"
+                      >
+                        {dayNames.map((day, index) => (
+                          <option key={index} value={index}>{day}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Huddle Time</label>
+                        <span>When to schedule your weekly huddle</span>
+                      </div>
+                      <select
+                        value={settings.weeklyHuddle.time}
+                        onChange={(e) => handleSettingChange('weeklyHuddle.time', e.target.value)}
+                        className="setting-select"
+                      >
+                        {timeOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Reminder (minutes before)</label>
+                        <span>How early to remind you before the huddle</span>
+                      </div>
+                      <select
+                        value={settings.weeklyHuddle.reminderMinutes}
+                        onChange={(e) => handleSettingChange('weeklyHuddle.reminderMinutes', parseInt(e.target.value))}
+                        className="setting-select"
+                      >
+                        <option value={0}>No reminder</option>
+                        <option value={5}>5 minutes</option>
+                        <option value={15}>15 minutes</option>
+                        <option value={30}>30 minutes</option>
+                        <option value={60}>1 hour</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
+            {activeSection==='quarterly' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Calendar size={20} />
+                  <h3>Quarterly Sprint Planning</h3>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Enable Quarterly Planning Notifications</label>
+                    <span>Remind you to plan your next 90-day sprint</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.quarterlyPlanning.enabled}
+                      onChange={(e) => handleSettingChange('quarterlyPlanning.enabled', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {settings.quarterlyPlanning.enabled && (
+                  <>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Days Before Quarter End</label>
+                        <span>How many days before quarter ends to remind you</span>
+                      </div>
+                      <select
+                        value={settings.quarterlyPlanning.daysBefore}
+                        onChange={(e) => handleSettingChange('quarterlyPlanning.daysBefore', parseInt(e.target.value))}
+                        className="setting-select"
+                      >
+                        <option value={3}>3 days</option>
+                        <option value={7}>1 week</option>
+                        <option value={14}>2 weeks</option>
+                        <option value={21}>3 weeks</option>
+                      </select>
+                    </div>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Planning Time</label>
+                        <span>Preferred time for quarterly planning</span>
+                      </div>
+                      <select
+                        value={settings.quarterlyPlanning.time}
+                        onChange={(e) => handleSettingChange('quarterlyPlanning.time', e.target.value)}
+                        className="setting-select"
+                      >
+                        {timeOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
+            {activeSection==='annual' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Clock size={20} />
+                  <h3>Annual Flight Plan Review</h3>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Enable Annual Review Notifications</label>
+                    <span>Remind you to review and plan your annual goals</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.annualReview.enabled}
+                      onChange={(e) => handleSettingChange('annualReview.enabled', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {settings.annualReview.enabled && (
+                  <>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Days Before Year End</label>
+                        <span>How many days before year ends to remind you</span>
+                      </div>
+                      <select
+                        value={settings.annualReview.daysBefore}
+                        onChange={(e) => handleSettingChange('annualReview.daysBefore', parseInt(e.target.value))}
+                        className="setting-select"
+                      >
+                        <option value={7}>1 week</option>
+                        <option value={14}>2 weeks</option>
+                        <option value={30}>1 month</option>
+                        <option value={60}>2 months</option>
+                      </select>
+                    </div>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Review Time</label>
+                        <span>Preferred time for annual review</span>
+                      </div>
+                      <select
+                        value={settings.annualReview.time}
+                        onChange={(e) => handleSettingChange('annualReview.time', e.target.value)}
+                        className="setting-select"
+                      >
+                        {timeOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
+            {activeSection==='celebrations' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Star size={20} />
+                  <h3>Celebrations & Achievements</h3>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Enable Celebration Notifications</label>
+                    <span>Celebrate your achievements and milestones</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.celebrations.enabled}
+                      onChange={(e) => handleSettingChange('celebrations.enabled', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {settings.celebrations.enabled && (
+                  <>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Goal Completions</label>
+                        <span>Celebrate when you complete goals</span>
+                      </div>
+                      <label className="toggle">
+                        <input
+                          type="checkbox"
+                          checked={settings.celebrations.goalCompletions}
+                          onChange={(e) => handleSettingChange('celebrations.goalCompletions', e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                    <div className="setting-item">
+                      <div className="setting-info">
+                        <label>Streak Milestones</label>
+                        <span>Celebrate weekly review streaks (4, 8, 12+ weeks)</span>
+                      </div>
+                      <label className="toggle">
+                        <input
+                          type="checkbox"
+                          checked={settings.celebrations.streakMilestones}
+                          onChange={(e) => handleSettingChange('celebrations.streakMilestones', e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
+            {activeSection==='experiments' && (
+              <section className="settings-section">
+                <div className="section-header">
+                  <Sparkles size={20} />
+                  <h3>Experiments</h3>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <label>Reinforcement Learning Engine</label>
+                    <span>Enable the RL engine (dev-only). When off, it won’t step or log.</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={appSettings.rlEngineEnabled}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setAppSettings(prev => ({...prev, rlEngineEnabled: val}));
+                        appSettingsService.updateSettings({ rlEngineEnabled: val });
+                      }}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {import.meta.env.MODE === 'production' && (
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <span style={{color:'#b91c1c'}}>Available only in development builds.</span>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
         </div>
 
         <div className="settings-footer">

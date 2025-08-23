@@ -15,6 +15,9 @@ import AIChatbot from './components/AIChatbot.tsx'
 import DevToastContainer from './components/DevToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
 import LandingPage from './components/LandingPage.tsx'
+import DevRLModal from './components/DevRLModal.tsx'
+import { rlEngine } from './services/rlEngine'
+import { appSettingsService } from './services/appSettingsService'
 import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
@@ -34,6 +37,7 @@ function App() {
   const [showChatbot, setShowChatbot] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [path, setPath] = useState<string>(window.location.pathname);
+  const [showRLDrawer, setShowRLDrawer] = useState(false);
 
   // Check if user has any data - if not, show wizard
   const isNewUser = state.lifeGoals.length === 0 && 
@@ -45,6 +49,23 @@ function App() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  // Dev-only: initialize RL engine and tick periodically when feature toggle is enabled
+  useEffect(() => {
+    if (import.meta.env.MODE === 'production') return;
+    rlEngine.init(() => state);
+    const settings = appSettingsService.getSettings();
+    let id: number | undefined;
+    const start = () => { if (!id) id = window.setInterval(() => rlEngine.step(), 4000); };
+    const stop = () => { if (id) { clearInterval(id); id = undefined; } };
+    if (settings.rlEngineEnabled) start(); else stop();
+    const onChange = (e: Event) => {
+      const s = (e as CustomEvent).detail;
+      if (s.rlEngineEnabled) start(); else stop();
+    };
+    window.addEventListener('app-settings-changed', onChange as EventListener);
+    return () => { stop(); window.removeEventListener('app-settings-changed', onChange as EventListener); };
+  }, [state]);
 
   // Welcome route should be available to anyone (even when logged in) via URL
   if (path === '/welcome') {
@@ -233,6 +254,23 @@ function App() {
             {user.email}
           </span>
           <button
+            onClick={() => setShowRLDrawer(true)}
+            style={{
+              padding: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '6px',
+              color: 'white',
+              cursor: 'pointer',
+              display: import.meta.env.MODE === 'production' ? 'none' : 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            title="RL Debug Log (dev)"
+          >
+            RL
+          </button>
+          <button
             onClick={() => setShowNotificationSettings(true)}
             style={{
               padding: '0.5rem',
@@ -387,6 +425,11 @@ function App() {
         isOpen={showActivityLog}
         onClose={() => setShowActivityLog(false)}
       />
+
+      {/* Dev-only RL Modal */}
+      {import.meta.env.MODE !== 'production' && (
+        <DevRLModal isOpen={showRLDrawer} onClose={() => setShowRLDrawer(false)} />
+      )}
 
       {/* Development Toast Notifications */}
       <DevToastContainer />

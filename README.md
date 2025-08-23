@@ -16,7 +16,7 @@ npm run dev
 # Open your browser to http://localhost:5173
 ```
 
-### Firebase Setup (Required for Data Persistence)
+### Firebase Setup (Cloud Sync)
 
 **Important**: The app now uses Firebase for data storage instead of localStorage for better reliability and cross-device sync.
 
@@ -28,7 +28,7 @@ npm run dev
 
 4. **Deploy**: Use `npm run build && firebase deploy` to deploy to Firebase Hosting
 
-> **Note**: Without proper Firebase configuration, the app will show authentication screens but won't save data persistently.
+> Note: Without Firebase, the app works locally (localStorage) but won’t sync across devices.
 
 ## 📋 System Overview
 
@@ -39,6 +39,11 @@ Personal OS implements a strategic framework based on three time horizons:
 - **✅ Weekly Execution Reviews**: Weekly accountability loops for progress review and priority setting
 
 ## 🎮 How to Use the App
+
+### 🪄 Public Landing Page
+
+- When logged out, the root shows a modern landing page explaining the system.
+- You can access it anytime at `/welcome` (even when logged in). It’s not in the navigation.
 
 ### 📖 Built-in User Guide
 
@@ -178,9 +183,18 @@ The Dashboard provides an overview of your entire strategic system:
 
 ## 💾 Data Persistence
 
-- All your data is automatically saved to browser localStorage
-- Your goals, tasks, and reviews persist between sessions
-- No account creation or cloud storage required
+- Hybrid model:
+   - When authenticated: data syncs with Firebase (life goals, annual, quarterly, weekly tasks, reviews)
+   - When not authenticated: data is saved in localStorage
+- Check-Ins are currently stored locally only
+- Activity logs are local (not in Firestore)
+
+### Backup & Restore (Export / Import)
+
+- Open Notification Settings → “Data Export & Import”
+- Export: Download a versioned JSON bundle of your AppState
+- Import: Validate JSON, preview counts, choose Merge or Replace, and apply
+- Developer details: see `EXPORT_IMPORT_DEVELOPER_GUIDE.md`
 
 ## 🎯 Best Practices
 
@@ -209,7 +223,14 @@ The Dashboard provides an overview of your entire strategic system:
 - **Icons**: Lucide React
 - **Styling**: Custom CSS with responsive design
 - **State Management**: React Context + useReducer
-- **Data Storage**: Browser localStorage
+- **Data Storage**: Firebase (when signed in) + localStorage fallback
+
+### 🧪 RL Engine (Dev-only)
+
+- Lightweight Q-learning engine runs only in development
+- Opens a debug drawer via the “RL” button in the header (dev builds only)
+- Learns from: KR progress/velocity, task completion/density, recent check-ins, planning consistency
+- Reward: `w1*ΔKR + w2*Tasks + w3*Wellbeing - w4*Burnout`
 
 ## 📝 Development
 
