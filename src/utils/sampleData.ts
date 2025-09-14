@@ -15,6 +15,7 @@ export const sampleData = {
       targetDate: new Date('2025-12-31'),
       progress: 35,
       year: 2025,
+      lifeGoalId: 'life-1',
       quarterlyGoals: ['quarterly-1', 'quarterly-2'],
     },
     {
@@ -29,6 +30,7 @@ export const sampleData = {
       targetDate: new Date('2025-11-30'),
       progress: 25,
       year: 2025,
+      lifeGoalId: 'life-1',
       quarterlyGoals: ['quarterly-3'],
     },
     {
@@ -43,6 +45,7 @@ export const sampleData = {
       targetDate: new Date('2025-12-31'),
       progress: 20,
       year: 2025,
+      lifeGoalId: 'life-1',
       quarterlyGoals: ['quarterly-4'],
     },
   ] as AnnualGoal[],

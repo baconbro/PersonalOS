@@ -1,7 +1,7 @@
 // Page title management utility for PersonalOS
 // Provides context-aware page titles based on current view
 
-type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide';
+type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table';
 
 interface PageTitleConfig {
   title: string;
@@ -39,6 +39,10 @@ const PAGE_TITLES: Record<ViewType, PageTitleConfig> = {
   'guide': {
     title: 'User Guide',
     description: 'Learn how to use PersonalOS effectively'
+  },
+  'goals-table': {
+    title: 'Goals Table',
+    description: 'Professional table view of all your goals'
   }
 };
 

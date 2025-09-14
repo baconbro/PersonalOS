@@ -27,9 +27,11 @@ const UserGuide: React.FC = () => {
           <div className="feature-highlight">
             <h4>New in this build</h4>
             <ul>
-              <li>Public landing page at <code>/welcome</code> (accessible even when logged in)</li>
-              <li>Settings → Data Export & Import (JSON backup/restore with merge/replace)</li>
-              <li>Dev-only RL Debug Log drawer (Q-learning traces) — visible only in development</li>
+              <li>🏗️ <strong>Goals Table View:</strong> Professional hierarchical table with expandable Life → Annual → Quarterly structure</li>
+              <li>📊 <strong>Atlassian-style Goal Details:</strong> Comprehensive goal management with About, Updates, Learnings, Risks, and Decisions tabs</li>
+              <li>📁 <strong>Data Export & Import:</strong> JSON backup/restore with merge/replace options in Settings</li>
+              <li>🎯 <strong>Sample Data Loading:</strong> Quick setup with realistic goal examples</li>
+              <li>🔍 <strong>Enhanced Navigation:</strong> Streamlined interface focused on core productivity features</li>
             </ul>
           </div>
           
@@ -432,6 +434,110 @@ const UserGuide: React.FC = () => {
           </div>
         </section>
 
+        {/* Goals Table Section */}
+        <section className="guide-section">
+          <h2>
+            <TrendingUp className="section-icon" />
+            Goals Table View
+          </h2>
+          <p>
+            The Goals Table provides a professional, hierarchical view of all your goals in one place. 
+            It's designed like enterprise project management tools with expandable rows and detailed tracking.
+          </p>
+          
+          <div className="feature-highlight">
+            <h4>🗂️ Hierarchical Structure</h4>
+            <p>Goals are organized in a three-level hierarchy that you can expand and collapse:</p>
+            <ul>
+              <li><strong>Life Goals</strong> (Level 0) - Your long-term vision</li>
+              <li><strong>Annual Goals</strong> (Level 1) - This year's strategic objectives</li>
+              <li><strong>Quarterly Goals</strong> (Level 2) - Current quarter's focus areas</li>
+            </ul>
+          </div>
+          
+          <div className="example-box">
+            <h4>How to Use the Goals Table</h4>
+            <div className="goal-examples">
+              <div className="goal-example">
+                <div className="goal-category">🔽 Click Chevrons</div>
+                <div className="goal-text">Expand/collapse goal levels to see connected objectives</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">📊 Progress Tracking</div>
+                <div className="goal-text">Visual progress bars and status indicators for each goal</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">🎯 Goal Details</div>
+                <div className="goal-text">Click any goal title to open detailed management view</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">📈 Load Sample Data</div>
+                <div className="goal-text">Use "Load Sample Data" button to see realistic examples</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="tips">
+            <h4>💡 Pro Tips for Goals Table</h4>
+            <ul>
+              <li><strong>Start with sample data:</strong> Click "Load Sample Data" to see the hierarchy in action</li>
+              <li><strong>Navigate strategically:</strong> Life Goals → Annual Goals → Quarterly Goals shows strategic alignment</li>
+              <li><strong>Track visually:</strong> Progress bars and status badges give quick overview of momentum</li>
+              <li><strong>Drill down:</strong> Click goal titles to access detailed About, Updates, Learnings, Risks, and Decisions</li>
+              <li><strong>Focus by level:</strong> Collapse sections to focus on specific time horizons</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Goal Details Section */}
+        <section className="guide-section">
+          <h2>
+            <Target className="section-icon" />
+            Goal Details View
+          </h2>
+          <p>
+            Each goal has a comprehensive details page inspired by professional project management tools like Atlassian. 
+            Click any goal title in the table to access rich tracking and documentation features.
+          </p>
+          
+          <div className="example-box">
+            <h4>Goal Details Tabs</h4>
+            <div className="goal-examples">
+              <div className="goal-example">
+                <div className="goal-category">📖 About</div>
+                <div className="goal-text">Goal description, objectives, key results, and team collaboration with comments</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">📰 Updates</div>
+                <div className="goal-text">Progress updates, status changes, and milestone achievements with timestamps</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">🧠 Learnings</div>
+                <div className="goal-text">Insights, lessons learned, and knowledge gained during goal pursuit</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">⚠️ Risks</div>
+                <div className="goal-text">Potential obstacles, mitigation strategies, and risk assessments</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">🤔 Decisions</div>
+                <div className="goal-text">Key decisions made, rationale, and strategic choices documented</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="tips">
+            <h4>💡 Pro Tips for Goal Documentation</h4>
+            <ul>
+              <li><strong>Use About for collaboration:</strong> Add comments and context for team members or accountability partners</li>
+              <li><strong>Regular Updates:</strong> Log progress weekly to maintain momentum and track patterns</li>
+              <li><strong>Capture Learnings:</strong> Document insights immediately - they're easy to forget later</li>
+              <li><strong>Proactive Risk Management:</strong> Identify risks early and plan mitigation strategies</li>
+              <li><strong>Decision Documentation:</strong> Record the why behind key choices for future reference</li>
+            </ul>
+          </div>
+        </section>
+
         {/* Getting Started Section */}
         <section className="guide-section">
           <h2>
@@ -495,6 +601,14 @@ const UserGuide: React.FC = () => {
           
           <div className="workflow-steps">
             <div className="workflow-step">
+              <h4>🗂️ 0. Explore with Goals Table</h4>
+              <p>
+                Start with <strong>Goals Table</strong> to see the complete hierarchy. Click "Load Sample Data" 
+                to see realistic examples, then explore how Life Goals → Annual Goals → Quarterly Goals connect strategically.
+              </p>
+            </div>
+            
+            <div className="workflow-step">
               <h4>🎯 1. Start with Life Goals</h4>
               <p>
                 Navigate to <strong>Life Goals</strong> and define your long-term vision across all life categories. 
@@ -506,7 +620,7 @@ const UserGuide: React.FC = () => {
               <h4>📅 2. Create Annual Goals</h4>
               <p>
                 Go to <strong>Annual Flight Plan</strong> and create 2-3 annual goals. Link each goal to a specific Life Goal 
-                to maintain strategic alignment. You'll see the Life Goal's colored icon on your annual goal cards.
+                to maintain strategic alignment. You'll see this connection in the Goals Table hierarchy.
               </p>
             </div>
             
@@ -514,6 +628,7 @@ const UserGuide: React.FC = () => {
               <h4>🚀 3. Break into Quarterly Sprints</h4>
               <p>
                 Use <strong>90-Day Sprint</strong> to create quarterly objectives and key results (OKRs) that support your annual goals.
+                These will appear as the deepest level in your Goals Table hierarchy.
               </p>
             </div>
             
@@ -523,6 +638,14 @@ const UserGuide: React.FC = () => {
                 Navigate to <strong>"This Week"</strong> and start your <strong>Weekly Command Huddle</strong>—a 15-minute 
                 strategic session that guides you through Review → Re-align → Plan. This transforms weekly planning 
                 from a chore into focused executive-level decision making.
+              </p>
+            </div>
+            
+            <div className="workflow-step">
+              <h4>📊 5. Track Progress Professionally</h4>
+              <p>
+                Return to <strong>Goals Table</strong> regularly to see progress across all levels. Click goal titles 
+                to access detailed tracking with About, Updates, Learnings, Risks, and Decisions tabs.
               </p>
             </div>
           </div>

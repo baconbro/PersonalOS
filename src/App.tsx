@@ -16,9 +16,10 @@ import DevToastContainer from './components/DevToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
 import LandingPage from './components/LandingPage.tsx'
 import DevRLModal from './components/DevRLModal.tsx'
+import GoalsTable from './components/GoalsTable.tsx'
 import { rlEngine } from './services/rlEngine'
 import { appSettingsService } from './services/appSettingsService'
-import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock } from 'lucide-react'
+import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
 import { notificationService } from './services/notificationService'
@@ -26,7 +27,7 @@ import { updatePageTitle, resetPageTitle } from './utils/pageTitle'
 // Import Firebase connection test
 import './utils/firebaseTest'
 
-type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide'
+type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table'
 
 function App() {
   const { user, loading, logout } = useAuth();
@@ -216,6 +217,8 @@ function App() {
         return <WeeklyReview />
       case 'guide':
         return <UserGuide />
+      case 'goals-table':
+        return <GoalsTable onNavigate={(view) => setCurrentView(view)} />
       default:
         return <Dashboard />
     }
@@ -355,6 +358,13 @@ function App() {
         >
           <Heart size={20} />
           Life Goals
+        </button>
+        <button 
+          className={currentView === 'goals-table' ? 'nav-button active' : 'nav-button'}
+          onClick={() => setCurrentView('goals-table')}
+        >
+          <Table size={20} />
+          Goals Table
         </button>
         <button 
           className={currentView === 'annual' ? 'nav-button active' : 'nav-button'}
