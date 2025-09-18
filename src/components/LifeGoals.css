@@ -94,6 +94,48 @@
   color: white;
 }
 
+/* Category Description */
+.category-description {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 2px solid #e1e5e9;
+}
+
+.category-description-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.category-description-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.category-description-text h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.category-description-text p {
+  margin: 0;
+  color: #5a6c7d;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;

@@ -11,7 +11,6 @@ import {
   Circle,
   Clock,
   AlertTriangle,
-  Heart,
   ChevronDown
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -25,9 +24,8 @@ interface GoalDetailsProps {
 
 const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) => {
   const { state } = useApp();
-  const [activeTab, setActiveTab] = useState<'about' | 'updates' | 'learnings' | 'risks' | 'decisions'>('updates');
+  const [activeTab, setActiveTab] = useState<'about' | 'updates' | 'learnings' | 'roadblocks' | 'decisions' | 'wins' | 'check-ins'>('updates');
   const [newUpdate, setNewUpdate] = useState('');
-  const [newComment, setNewComment] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('on-track');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showDateDropdown, setShowDateDropdown] = useState(false);
@@ -36,6 +34,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
   const [selectedYear, setSelectedYear] = useState(2025);
   const [selectedMonth, setSelectedMonth] = useState(11); // December (0-indexed)
   const [selectedDay, setSelectedDay] = useState<number | null>(31);
+
+  // Annual goal specific fields
+  const [whyImportant, setWhyImportant] = useState('');
+  const [myPlan, setMyPlan] = useState('');
+  const [currentBarrier, setCurrentBarrier] = useState('');
+  const [myReward, setMyReward] = useState('');
 
   const statusOptions = [
     { value: 'pending', label: 'PENDING', color: '#6b7280' },
@@ -160,39 +164,487 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
 
   const goal = getGoal();
 
-  const mockSubGoals = [
-    {
-      id: 'sub-1',
-      title: 'Expand AlpacaTravel market share',
-      status: 'on-track',
-      progress: 75,
-      type: 'sub-goal'
-    },
-    {
-      id: 'sub-2',
-      title: 'Improve SEO funnel by 15%',
-      status: 'at-risk',
-      progress: 45,
-      type: 'sub-goal'
-    }
-  ];
+  // Get weekly review learnings linked to this goal AND its children
+  const getLinkedLearnings = () => {
+    if (!goal) return [];
+    
+    const linkedLearnings: Array<{
+      id: string;
+      text: string;
+      weekOf: Date;
+      reviewId: string;
+      linkedToGoalId: string;
+      linkedToGoalTitle: string;
+      linkedToGoalType: string;
+      isDirectLink: boolean;
+    }> = [];
 
-  const mockComments = [
-    {
-      id: 'comment-1',
-      author: 'John Doe',
-      authorAvatar: 'JD',
-      timestamp: new Date('2025-02-05'),
-      content: 'Great progress on this goal! The team is doing excellent work.'
-    },
-    {
-      id: 'comment-2',
-      author: 'Sarah Smith',
-      authorAvatar: 'SS',
-      timestamp: new Date('2025-02-04'),
-      content: 'Thanks for the update. Let me know if you need any additional resources.'
+    // Get all child goal IDs for this goal
+    const getChildGoalIds = (currentGoalId: string, currentGoalType: string): string[] => {
+      const childIds: string[] = [currentGoalId]; // Include the goal itself
+      
+      switch (currentGoalType) {
+        case 'life':
+          // Life goal children are annual goals with lifeGoalId reference
+          state.annualGoals
+            .filter(ag => ag.lifeGoalId === currentGoalId)
+            .forEach(ag => {
+              childIds.push(...getChildGoalIds(ag.id, 'annual'));
+            });
+          break;
+        case 'annual':
+          // Annual goal children are quarterly goals with annualGoalId reference
+          state.quarterlyGoals
+            .filter(qg => qg.annualGoalId === currentGoalId)
+            .forEach(qg => {
+              childIds.push(...getChildGoalIds(qg.id, 'quarterly'));
+            });
+          break;
+        case 'quarterly':
+          // Quarterly goal children are weekly tasks with quarterlyGoalId reference
+          state.weeklyTasks
+            .filter(wt => wt.quarterlyGoalId === currentGoalId)
+            .forEach(wt => {
+              childIds.push(wt.id);
+            });
+          break;
+      }
+      
+      return childIds;
+    };
+
+    const relevantGoalIds = getChildGoalIds(goalId, goalType);
+
+    // Helper function to get goal info by ID
+    const getGoalInfo = (id: string) => {
+      // Check life goals
+      const lifeGoal = state.lifeGoals.find(lg => lg.id === id);
+      if (lifeGoal) return { title: lifeGoal.title, type: 'life' };
+      
+      // Check annual goals
+      const annualGoal = state.annualGoals.find(ag => ag.id === id);
+      if (annualGoal) return { title: annualGoal.title, type: 'annual' };
+      
+      // Check quarterly goals
+      const quarterlyGoal = state.quarterlyGoals.find(qg => qg.id === id);
+      if (quarterlyGoal) return { title: quarterlyGoal.title, type: 'quarterly' };
+      
+      // Check weekly tasks
+      const weeklyTask = state.weeklyTasks.find(wt => wt.id === id);
+      if (weeklyTask) return { title: weeklyTask.title, type: 'task' };
+      
+      return { title: 'Unknown Goal', type: 'unknown' };
+    };
+
+    // Search through all weekly reviews
+    state.weeklyReviews.forEach(review => {
+      // Check if this review has lesson links (new format: Record<string, LinkedReflection>)
+      if (review.lessonLink && typeof review.lessonLink === 'object') {
+        // Split the keyLesson back into individual lessons
+        const lessonTexts = review.keyLesson ? review.keyLesson.split('\n').filter((text: string) => text.trim()) : [];
+        
+        // Handle new format where lessonLink is Record<string, LinkedReflection>
+        const lessonEntries = Object.entries(review.lessonLink as Record<string, any>);
+        
+        lessonEntries.forEach(([lessonId, link]) => {
+          if (relevantGoalIds.includes(link.goalId)) {
+            // Find the lesson text that corresponds to this lessonId
+            const lessonIndex = parseInt(lessonId.split('-').pop() || '0');
+            const lessonText = lessonTexts[lessonIndex] || lessonTexts[0] || review.keyLesson || '';
+            
+            if (lessonText.trim()) {
+              const goalInfo = getGoalInfo(link.goalId);
+              linkedLearnings.push({
+                id: `${review.id}-lesson-${lessonId}`,
+                text: lessonText.trim(),
+                weekOf: review.weekOf,
+                reviewId: review.id,
+                linkedToGoalId: link.goalId,
+                linkedToGoalTitle: goalInfo.title,
+                linkedToGoalType: goalInfo.type,
+                isDirectLink: link.goalId === goalId
+              });
+            }
+          }
+        });
+      }
+      // Handle legacy format where lessonLink is a single LinkedReflection
+      else if (review.lessonLink && relevantGoalIds.includes((review.lessonLink as any).goalId)) {
+        const lessonText = review.keyLesson || '';
+        if (lessonText.trim()) {
+          const goalInfo = getGoalInfo((review.lessonLink as any).goalId);
+          linkedLearnings.push({
+            id: `${review.id}-lesson-legacy`,
+            text: lessonText.trim(),
+            weekOf: review.weekOf,
+            reviewId: review.id,
+            linkedToGoalId: (review.lessonLink as any).goalId,
+            linkedToGoalTitle: goalInfo.title,
+            linkedToGoalType: goalInfo.type,
+            isDirectLink: (review.lessonLink as any).goalId === goalId
+          });
+        }
+      }
+    });
+
+    // Sort by most recent first
+    return linkedLearnings.sort((a, b) => new Date(b.weekOf).getTime() - new Date(a.weekOf).getTime());
+  };
+
+  // Get weekly review roadblocks (gaps) linked to this goal AND its children
+  const getLinkedRoadblocks = () => {
+    if (!goal) return [];
+    
+    const linkedRoadblocks: Array<{
+      id: string;
+      text: string;
+      weekOf: Date;
+      reviewId: string;
+      linkedToGoalId: string;
+      linkedToGoalTitle: string;
+      linkedToGoalType: string;
+      isDirectLink: boolean;
+    }> = [];
+
+    // Get all child goal IDs for this goal (reuse the same function)
+    const getChildGoalIds = (currentGoalId: string, currentGoalType: string): string[] => {
+      const childIds: string[] = [currentGoalId];
+      
+      switch (currentGoalType) {
+        case 'life':
+          state.annualGoals
+            .filter(ag => ag.lifeGoalId === currentGoalId)
+            .forEach(ag => {
+              childIds.push(...getChildGoalIds(ag.id, 'annual'));
+            });
+          break;
+        case 'annual':
+          state.quarterlyGoals
+            .filter(qg => qg.annualGoalId === currentGoalId)
+            .forEach(qg => {
+              childIds.push(...getChildGoalIds(qg.id, 'quarterly'));
+            });
+          break;
+        case 'quarterly':
+          state.weeklyTasks
+            .filter(wt => wt.quarterlyGoalId === currentGoalId)
+            .forEach(wt => {
+              childIds.push(wt.id);
+            });
+          break;
+      }
+      
+      return childIds;
+    };
+
+    const relevantGoalIds = getChildGoalIds(goalId, goalType);
+
+    // Helper function to get goal info by ID
+    const getGoalInfo = (id: string) => {
+      const lifeGoal = state.lifeGoals.find(lg => lg.id === id);
+      if (lifeGoal) return { title: lifeGoal.title, type: 'life' };
+      
+      const annualGoal = state.annualGoals.find(ag => ag.id === id);
+      if (annualGoal) return { title: annualGoal.title, type: 'annual' };
+      
+      const quarterlyGoal = state.quarterlyGoals.find(qg => qg.id === id);
+      if (quarterlyGoal) return { title: quarterlyGoal.title, type: 'quarterly' };
+      
+      const weeklyTask = state.weeklyTasks.find(wt => wt.id === id);
+      if (weeklyTask) return { title: weeklyTask.title, type: 'task' };
+      
+      return { title: 'Unknown Goal', type: 'unknown' };
+    };
+
+    // Search through all weekly reviews
+    state.weeklyReviews.forEach(review => {
+      // Check if this review has gap links (new format: Record<string, LinkedReflection>)
+      if (review.gapsLink && typeof review.gapsLink === 'object') {
+        // Split the gapsAnalysis back into individual items
+        const gapTexts = review.gapsAnalysis ? review.gapsAnalysis.split('\n').filter((text: string) => text.trim()) : [];
+        
+        // Handle new format where gapsLink is Record<string, LinkedReflection>
+        const gapEntries = Object.entries(review.gapsLink as Record<string, any>);
+        
+        gapEntries.forEach(([gapId, link]) => {
+          if (relevantGoalIds.includes(link.goalId)) {
+            // Find the gap text that corresponds to this gapId
+            const gapIndex = parseInt(gapId.split('-').pop() || '0');
+            const gapText = gapTexts[gapIndex] || gapTexts[0] || review.gapsAnalysis || '';
+            
+            if (gapText.trim()) {
+              const goalInfo = getGoalInfo(link.goalId);
+              linkedRoadblocks.push({
+                id: `${review.id}-gap-${gapId}`,
+                text: gapText.trim(),
+                weekOf: review.weekOf,
+                reviewId: review.id,
+                linkedToGoalId: link.goalId,
+                linkedToGoalTitle: goalInfo.title,
+                linkedToGoalType: goalInfo.type,
+                isDirectLink: link.goalId === goalId
+              });
+            }
+          }
+        });
+      }
+      // Handle legacy format where gapsLink is a single LinkedReflection
+      else if (review.gapsLink && relevantGoalIds.includes((review.gapsLink as any).goalId)) {
+        const gapText = review.gapsAnalysis || '';
+        if (gapText.trim()) {
+          const goalInfo = getGoalInfo((review.gapsLink as any).goalId);
+          linkedRoadblocks.push({
+            id: `${review.id}-gap-legacy`,
+            text: gapText.trim(),
+            weekOf: review.weekOf,
+            reviewId: review.id,
+            linkedToGoalId: (review.gapsLink as any).goalId,
+            linkedToGoalTitle: goalInfo.title,
+            linkedToGoalType: goalInfo.type,
+            isDirectLink: (review.gapsLink as any).goalId === goalId
+          });
+        }
+      }
+    });
+
+    // Sort by most recent first
+    return linkedRoadblocks.sort((a, b) => new Date(b.weekOf).getTime() - new Date(a.weekOf).getTime());
+  };
+
+  // Get weekly review wins linked to this goal AND its children
+  const getLinkedWins = () => {
+    if (!goal) return [];
+    
+    const linkedWins: Array<{
+      id: string;
+      text: string;
+      weekOf: Date;
+      reviewId: string;
+      linkedToGoalId: string;
+      linkedToGoalTitle: string;
+      linkedToGoalType: string;
+      isDirectLink: boolean;
+    }> = [];
+
+    // Get all child goal IDs for this goal (reuse the same function)
+    const getChildGoalIds = (currentGoalId: string, currentGoalType: string): string[] => {
+      const childIds: string[] = [currentGoalId];
+      
+      switch (currentGoalType) {
+        case 'life':
+          state.annualGoals
+            .filter(ag => ag.lifeGoalId === currentGoalId)
+            .forEach(ag => {
+              childIds.push(...getChildGoalIds(ag.id, 'annual'));
+            });
+          break;
+        case 'annual':
+          state.quarterlyGoals
+            .filter(qg => qg.annualGoalId === currentGoalId)
+            .forEach(qg => {
+              childIds.push(...getChildGoalIds(qg.id, 'quarterly'));
+            });
+          break;
+        case 'quarterly':
+          state.weeklyTasks
+            .filter(wt => wt.quarterlyGoalId === currentGoalId)
+            .forEach(wt => {
+              childIds.push(wt.id);
+            });
+          break;
+      }
+      
+      return childIds;
+    };
+
+    const relevantGoalIds = getChildGoalIds(goalId, goalType);
+
+    // Helper function to get goal info by ID
+    const getGoalInfo = (id: string) => {
+      const lifeGoal = state.lifeGoals.find(lg => lg.id === id);
+      if (lifeGoal) return { title: lifeGoal.title, type: 'life' };
+      
+      const annualGoal = state.annualGoals.find(ag => ag.id === id);
+      if (annualGoal) return { title: annualGoal.title, type: 'annual' };
+      
+      const quarterlyGoal = state.quarterlyGoals.find(qg => qg.id === id);
+      if (quarterlyGoal) return { title: quarterlyGoal.title, type: 'quarterly' };
+      
+      const weeklyTask = state.weeklyTasks.find(wt => wt.id === id);
+      if (weeklyTask) return { title: weeklyTask.title, type: 'task' };
+      
+      return { title: 'Unknown Goal', type: 'unknown' };
+    };
+
+    // Search through all weekly reviews
+    state.weeklyReviews.forEach(review => {
+      // Check if this review has win links (new format: Record<string, LinkedReflection>)
+      if (review.winsLink && typeof review.winsLink === 'object') {
+        // Split the winsReflection back into individual items
+        const winTexts = review.winsReflection ? review.winsReflection.split('\n').filter((text: string) => text.trim()) : [];
+        
+        // Handle new format where winsLink is Record<string, LinkedReflection>
+        const winEntries = Object.entries(review.winsLink as Record<string, any>);
+        
+        winEntries.forEach(([winId, link]) => {
+          if (relevantGoalIds.includes(link.goalId)) {
+            // Find the win text that corresponds to this winId
+            const winIndex = parseInt(winId.split('-').pop() || '0');
+            const winText = winTexts[winIndex] || winTexts[0] || review.winsReflection || '';
+            
+            if (winText.trim()) {
+              const goalInfo = getGoalInfo(link.goalId);
+              linkedWins.push({
+                id: `${review.id}-win-${winId}`,
+                text: winText.trim(),
+                weekOf: review.weekOf,
+                reviewId: review.id,
+                linkedToGoalId: link.goalId,
+                linkedToGoalTitle: goalInfo.title,
+                linkedToGoalType: goalInfo.type,
+                isDirectLink: link.goalId === goalId
+              });
+            }
+          }
+        });
+      }
+      // Handle legacy format where winsLink is a single LinkedReflection
+      else if (review.winsLink && relevantGoalIds.includes((review.winsLink as any).goalId)) {
+        const winText = review.winsReflection || '';
+        if (winText.trim()) {
+          const goalInfo = getGoalInfo((review.winsLink as any).goalId);
+          linkedWins.push({
+            id: `${review.id}-win-legacy`,
+            text: winText.trim(),
+            weekOf: review.weekOf,
+            reviewId: review.id,
+            linkedToGoalId: (review.winsLink as any).goalId,
+            linkedToGoalTitle: goalInfo.title,
+            linkedToGoalType: goalInfo.type,
+            isDirectLink: (review.winsLink as any).goalId === goalId
+          });
+        }
+      }
+    });
+
+    // Sort by most recent first
+    return linkedWins.sort((a, b) => new Date(b.weekOf).getTime() - new Date(a.weekOf).getTime());
+  };
+
+  // Get check-ins linked to this goal
+  const getLinkedCheckIns = () => {
+    if (!goal) return [];
+    
+    return state.checkIns.filter(checkIn => checkIn.linkedGoalId === goalId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
+  const linkedLearnings = getLinkedLearnings();
+  const linkedRoadblocks = getLinkedRoadblocks();
+  const linkedWins = getLinkedWins();
+  const linkedCheckIns = getLinkedCheckIns();
+
+  // Get parent goal based on goal type
+  const getParentGoal = () => {
+    if (!goal) return null;
+    
+    switch (goalType) {
+      case 'annual':
+        const annualGoal = goal as any;
+        if (annualGoal.lifeGoalId) {
+          return state.lifeGoals.find(lg => lg.id === annualGoal.lifeGoalId);
+        }
+        return null;
+      case 'quarterly':
+        const quarterlyGoal = goal as any;
+        if (quarterlyGoal.annualGoalId) {
+          return state.annualGoals.find(ag => ag.id === quarterlyGoal.annualGoalId);
+        }
+        return null;
+      case 'weekly':
+        const weeklyTask = goal as any;
+        if (weeklyTask.quarterlyGoalId) {
+          return state.quarterlyGoals.find(qg => qg.id === weeklyTask.quarterlyGoalId);
+        }
+        return null;
+      default:
+        return null;
     }
-  ];
+  };
+
+  // Get child goals based on goal type
+  const getChildGoals = () => {
+    if (!goal) return [];
+    
+    console.log('Getting child goals for:', goalType, goal.id);
+    
+    switch (goalType) {
+      case 'life':
+        // Find annual goals that reference this life goal
+        const lifeChildren = state.annualGoals.filter(ag => {
+          console.log('Checking annual goal:', ag.id, 'lifeGoalId:', ag.lifeGoalId);
+          return ag.lifeGoalId === goal.id;
+        });
+        console.log('Found life children:', lifeChildren);
+        return lifeChildren;
+      case 'annual':
+        // Find quarterly goals that reference this annual goal
+        const annualChildren = state.quarterlyGoals.filter(qg => {
+          console.log('Checking quarterly goal:', qg.id, 'annualGoalId:', qg.annualGoalId);
+          return qg.annualGoalId === goal.id;
+        });
+        console.log('Found annual children:', annualChildren);
+        return annualChildren;
+      case 'quarterly':
+        // Find weekly tasks that reference this quarterly goal
+        const quarterlyChildren = state.weeklyTasks.filter(wt => {
+          console.log('Checking weekly task:', wt.id, 'quarterlyGoalId:', wt.quarterlyGoalId);
+          return wt.quarterlyGoalId === goal.id;
+        });
+        console.log('Found quarterly children:', quarterlyChildren);
+        return quarterlyChildren;
+      default:
+        return [];
+    }
+  };
+
+  const parentGoal = getParentGoal();
+  const childGoals = getChildGoals();
+
+  // Debug logging
+  if (goal) {
+    console.log('Goal Details Debug:', {
+      goalType,
+      goalId,
+      goal,
+      parentGoal,
+      childGoals,
+      allAnnualGoals: state.annualGoals,
+      allQuarterlyGoals: state.quarterlyGoals,
+      allWeeklyTasks: state.weeklyTasks
+    });
+  }
+
+  // Get goal type display name
+  const getGoalTypeLabel = (type: string) => {
+    switch (type) {
+      case 'life': return 'Life Goal';
+      case 'annual': return 'Annual Goal';
+      case 'quarterly': return 'Quarterly Goal';
+      case 'weekly': return 'Weekly Task';
+      default: return 'Goal';
+    }
+  };
+
+  // Get child goal type name
+  const getChildGoalTypeName = () => {
+    switch (goalType) {
+      case 'life': return 'Annual Goals';
+      case 'annual': return 'Quarterly Goals';
+      case 'quarterly': return 'Weekly Tasks';
+      default: return 'Sub-goals';
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -282,17 +734,19 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
 
       {/* Navigation Tabs */}
       <div className="goal-nav-tabs">
-        {['about', 'updates', 'learnings', 'risks', 'decisions'].map((tab) => (
+        {['about', 'updates', 'learnings', 'roadblocks', 'decisions', 'wins', 'check-ins'].map((tab) => (
           <button
             key={tab}
             className={`nav-tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab as any)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === 'check-ins' ? 'Check-ins' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             {tab === 'updates' && <span className="tab-count">2</span>}
-            {tab === 'learnings' && <span className="tab-count">1</span>}
-            {tab === 'risks' && <span className="tab-count">1</span>}
+            {tab === 'learnings' && <span className="tab-count">{linkedLearnings.length}</span>}
+            {tab === 'roadblocks' && <span className="tab-count">{linkedRoadblocks.length}</span>}
+            {tab === 'wins' && <span className="tab-count">{linkedWins.length}</span>}
             {tab === 'decisions' && <span className="tab-count">1</span>}
+            {tab === 'check-ins' && <span className="tab-count">{linkedCheckIns.length}</span>}
           </button>
         ))}
       </div>
@@ -677,72 +1131,54 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                 </div>
               </div>
 
-              {/* Comments Section */}
-              <div className="comments-section">
-                <h3>Comments</h3>
-                
-                {/* Comment Composer */}
-                <div className="comment-composer">
-                  <div className="composer-avatar">
-                    <div className="avatar-circle user-avatar">FG</div>
-                  </div>
-                  <div className="composer-input">
+              {/* Annual Goal Specific Fields */}
+              {goalType === 'annual' && (
+                <div className="annual-goal-fields">
+                  <div className="annual-field">
+                    <h3>Why it's important</h3>
                     <textarea
-                      placeholder="Add a comment... ask if the team needs any help"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="comment-textarea"
-                      rows={2}
+                      placeholder="Explain why achieving this goal matters to you..."
+                      value={whyImportant}
+                      onChange={(e) => setWhyImportant(e.target.value)}
+                      className="annual-textarea"
+                      rows={3}
                     />
-                    {newComment.trim() && (
-                      <div className="composer-actions">
-                        <button 
-                          className="btn-secondary"
-                          onClick={() => setNewComment('')}
-                        >
-                          Cancel
-                        </button>
-                        <button 
-                          className="btn-primary"
-                          onClick={() => {
-                            // Handle comment submission
-                            setNewComment('');
-                          }}
-                        >
-                          Comment
-                        </button>
-                      </div>
-                    )}
+                  </div>
+
+                  <div className="annual-field">
+                    <h3>My plan to achieve this goal</h3>
+                    <textarea
+                      placeholder="Describe your strategy and approach to reach this goal..."
+                      value={myPlan}
+                      onChange={(e) => setMyPlan(e.target.value)}
+                      className="annual-textarea"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="annual-field">
+                    <h3>Current barrier (if any)</h3>
+                    <textarea
+                      placeholder="What obstacles or challenges are you facing? (optional)"
+                      value={currentBarrier}
+                      onChange={(e) => setCurrentBarrier(e.target.value)}
+                      className="annual-textarea"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="annual-field">
+                    <h3>My reward for achieving it</h3>
+                    <textarea
+                      placeholder="How will you celebrate or reward yourself when you achieve this goal?"
+                      value={myReward}
+                      onChange={(e) => setMyReward(e.target.value)}
+                      className="annual-textarea"
+                      rows={3}
+                    />
                   </div>
                 </div>
-
-                {/* Existing Comments */}
-                <div className="comments-list">
-                  {mockComments.map((comment) => (
-                    <div key={comment.id} className="comment-item">
-                      <div className="comment-avatar">
-                        <div className="avatar-circle">{comment.authorAvatar}</div>
-                      </div>
-                      <div className="comment-content">
-                        <div className="comment-header">
-                          <span className="comment-author">{comment.author}</span>
-                          <span className="comment-time">
-                            {Math.floor((Date.now() - comment.timestamp.getTime()) / (1000 * 60 * 60 * 24))} days ago
-                          </span>
-                        </div>
-                        <div className="comment-text">{comment.content}</div>
-                        <div className="comment-actions">
-                          <button className="comment-action">
-                            <Heart size={14} />
-                            Like
-                          </button>
-                          <button className="comment-action">Reply</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -807,45 +1243,94 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
 
               {/* Existing Learnings */}
               <div className="existing-learnings">
-                <div className="learning-item">
-                  <div className="learning-header">
-                    <div className="lightbulb-icon">💡</div>
-                    <h3>test</h3>
-                    <button className="expand-btn">⌃</button>
-                  </div>
-                  
-                  <div className="learning-content">
-                    <p>test</p>
-                  </div>
-                  
-                  <div className="learning-footer">
-                    <div className="learning-meta">
-                      <div className="author-avatar-small">FG</div>
-                      <span className="learning-author">Learning created by Frederic Gouverneur less than a minute ago</span>
+                {linkedLearnings.length > 0 ? (
+                  linkedLearnings.map((learning) => (
+                    <div key={learning.id} className="learning-item">
+                      <div className="learning-header">
+                        <div className="lightbulb-icon">💡</div>
+                        <h3>Weekly Review Learning</h3>
+                        <button className="expand-btn">⌃</button>
+                      </div>
+                      
+                      <div className="learning-content">
+                        <p>{learning.text}</p>
+                      </div>
+                      
+                      <div className="learning-footer">
+                        <div className="learning-meta">
+                          <div className="author-avatar-small">WR</div>
+                          <span className="learning-author">
+                            Learning from weekly review - Week of {new Date(learning.weekOf).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </span>
+                          {!learning.isDirectLink && (
+                            <span className={`goal-link-indicator ${learning.linkedToGoalType}`}>
+                              <span className="goal-type-icon">
+                                {learning.linkedToGoalType === 'life' && '🎯'}
+                                {learning.linkedToGoalType === 'annual' && '📅'}
+                                {learning.linkedToGoalType === 'quarterly' && '📊'}
+                                {learning.linkedToGoalType === 'task' && '✓'}
+                              </span>
+                              from {learning.linkedToGoalType}: {learning.linkedToGoalTitle}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    
-                    <div className="learning-reactions">
-                      <button className="reaction-btn" title="Thumbs up">👍</button>
-                      <button className="reaction-btn" title="Clap">👏</button>
-                      <button className="reaction-btn" title="Pin">📌</button>
-                      <button className="reaction-btn" title="Heart">❤️</button>
-                      <button className="reaction-btn" title="Eyes">👀</button>
-                      <button className="reaction-btn" title="Refresh">🔄</button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="no-learnings-message">
+                    <p>No learnings linked to this goal yet.</p>
+                    <p>Learnings will appear here when you link them to this goal during your weekly reviews.</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
 
-          {activeTab === 'risks' && (
-            <div className="risks-section">
-              <h2>What risks do we need to manage?</h2>
+          {activeTab === 'roadblocks' && (
+            <div className="roadblocks-section">
+              <h2>What roadblocks do we need to overcome?</h2>
               
-              {/* Risk Creation Form */}
+              {linkedRoadblocks.length > 0 ? (
+                <div className="linked-roadblocks">
+                  {linkedRoadblocks.map((roadblock) => (
+                    <div key={roadblock.id} className="learning-item">
+                      <div className="learning-content">
+                        <p>{roadblock.text}</p>
+                        <div className="learning-meta">
+                          <span className="learning-date">
+                            Week of {new Date(roadblock.weekOf).toLocaleDateString()}
+                          </span>
+                          {!roadblock.isDirectLink && (
+                            <span className={`goal-link-indicator ${roadblock.linkedToGoalType}`}>
+                              <span className="goal-type-icon">
+                                {roadblock.linkedToGoalType === 'life' && '🎯'}
+                                {roadblock.linkedToGoalType === 'annual' && '📅'}
+                                {roadblock.linkedToGoalType === 'quarterly' && '📊'}
+                                {roadblock.linkedToGoalType === 'task' && '✓'}
+                              </span>
+                              from {roadblock.linkedToGoalType}: {roadblock.linkedToGoalTitle}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-learnings-message">
+                  <p>No roadblocks linked to this goal yet. Add roadblocks in your weekly reviews and link them to this goal to see them here.</p>
+                </div>
+              )}
+
+              {/* Legacy Risk Creation Form - keeping for backward compatibility */}
               <div className="risk-form">
                 <div className="risk-form-header">
-                  <div className="risk-icon">⚠️</div>
+                  <div className="risk-icon">🚧</div>
                   <input 
                     type="text" 
                     placeholder="What's the summary of your risk?"
@@ -914,15 +1399,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                     <div className="risk-meta">
                       <div className="author-avatar-small">FG</div>
                       <span className="risk-author">Risk identified by Frederic Gouverneur 2 days ago</span>
-                    </div>
-                    
-                    <div className="risk-reactions">
-                      <button className="reaction-btn" title="Acknowledge">👍</button>
-                      <button className="reaction-btn" title="Concern">😟</button>
-                      <button className="reaction-btn" title="Pin">📌</button>
-                      <button className="reaction-btn" title="Heart">❤️</button>
-                      <button className="reaction-btn" title="Eyes">👀</button>
-                      <button className="reaction-btn" title="Alert">🚨</button>
                     </div>
                   </div>
                 </div>
@@ -1007,18 +1483,160 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                       <div className="author-avatar-small">FG</div>
                       <span className="decision-author">Decision made by Frederic Gouverneur 1 week ago</span>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'wins' && (
+            <div className="wins-section">
+              <h2>What wins have contributed to this goal?</h2>
+              
+              {linkedWins.length > 0 ? (
+                <div className="linked-wins">
+                  {linkedWins.map((win) => (
+                    <div key={win.id} className="learning-item">
+                      <div className="learning-content">
+                        <p>{win.text}</p>
+                        <div className="learning-meta">
+                          <span className="learning-date">
+                            Week of {new Date(win.weekOf).toLocaleDateString()}
+                          </span>
+                          {!win.isDirectLink && (
+                            <span className={`goal-link-indicator ${win.linkedToGoalType}`}>
+                              <span className="goal-type-icon">
+                                {win.linkedToGoalType === 'life' && '🎯'}
+                                {win.linkedToGoalType === 'annual' && '📅'}
+                                {win.linkedToGoalType === 'quarterly' && '📊'}
+                                {win.linkedToGoalType === 'task' && '✓'}
+                              </span>
+                              from {win.linkedToGoalType}: {win.linkedToGoalTitle}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-learnings-message">
+                  <p>No wins linked to this goal yet. Add wins in your weekly reviews and link them to this goal to see them here.</p>
+                </div>
+              )}
+              
+              {/* Legacy Accomplishment Creation Form - keeping for backward compatibility */}
+              <div className="accomplishment-form">
+                <div className="accomplishment-form-header">
+                  <div className="trophy-icon">🏆</div>
+                  <input 
+                    type="text" 
+                    placeholder="What accomplishment would you like to celebrate?"
+                    className="accomplishment-title-input"
+                  />
+                </div>
+                
+                <div className="accomplishment-form-body">
+                  <textarea
+                    placeholder="Describe what was accomplished and its impact..."
+                    className="accomplishment-description"
+                    rows={4}
+                  />
+                  
+                  <div className="accomplishment-meta">
+                    <div className="accomplishment-date">
+                      <Calendar size={16} />
+                      <input type="date" className="date-input" />
+                    </div>
                     
-                    <div className="decision-reactions">
-                      <button className="reaction-btn" title="Approve">✅</button>
-                      <button className="reaction-btn" title="Celebrate">🎉</button>
-                      <button className="reaction-btn" title="Pin">📌</button>
-                      <button className="reaction-btn" title="Heart">❤️</button>
-                      <button className="reaction-btn" title="Eyes">👀</button>
-                      <button className="reaction-btn" title="Check">☑️</button>
+                    <div className="accomplishment-actions">
+                      <button className="btn-secondary">Cancel</button>
+                      <button className="btn-primary">Add Accomplishment</button>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Existing Accomplishments */}
+              <div className="existing-accomplishments">
+                <div className="accomplishment-item">
+                  <div className="accomplishment-icon">🎯</div>
+                  <div className="accomplishment-content">
+                    <div className="accomplishment-header">
+                      <h4>Reached 50% milestone</h4>
+                      <span className="accomplishment-date">Dec 15, 2024</span>
+                    </div>
+                    <p className="accomplishment-description">
+                      Successfully completed the first half of our annual goal ahead of schedule. 
+                      The team's dedication and new process improvements made this possible.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'check-ins' && (
+            <div className="check-ins-section">
+              <h2>Check-ins for this goal</h2>
+              
+              {linkedCheckIns.length > 0 ? (
+                <div className="check-ins-list">
+                  {linkedCheckIns.map((checkIn) => (
+                    <div key={checkIn.id} className="check-in-item">
+                      <div className="check-in-header">
+                        <div className="check-in-date">
+                          {new Date(checkIn.timestamp).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                        <div className="check-in-mood">
+                          <span className="mood-emoji">{checkIn.mood}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="check-in-metrics">
+                        <div className="metric-item">
+                          <span className="metric-label">Energy</span>
+                          <div className="metric-bar">
+                            <div 
+                              className="metric-fill" 
+                              style={{ width: `${(checkIn.energyLevel / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="metric-value">{checkIn.energyLevel}/5</span>
+                        </div>
+                        
+                        <div className="metric-item">
+                          <span className="metric-label">Focus</span>
+                          <div className="metric-bar">
+                            <div 
+                              className="metric-fill" 
+                              style={{ width: `${(checkIn.focusLevel / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="metric-value">{checkIn.focusLevel}/5</span>
+                        </div>
+                      </div>
+                      
+                      {checkIn.notes && (
+                        <div className="check-in-notes">
+                          <p>{checkIn.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-check-ins">
+                  <p>No check-ins recorded for this goal yet.</p>
+                  <p className="hint">Check-ins help track your energy, focus, and overall progress toward achieving this goal.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1048,12 +1666,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
           </div>
 
           {/* Parent Goal */}
-          {goalType !== 'life' && (
+          {goalType !== 'life' && parentGoal && (
             <div className="sidebar-section">
-              <h4>Parent goal</h4>
+              <h4>Parent {getGoalTypeLabel(parentGoal.type)}</h4>
               <div className="parent-goal">
                 <Target size={16} />
-                <span>Expand AlpacaTravel market share</span>
+                <span>{parentGoal.title}</span>
                 <button className="edit-link-btn">
                   <Edit size={14} />
                 </button>
@@ -1061,36 +1679,47 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
             </div>
           )}
 
-          {/* Sub-goals */}
+          {/* Child Goals */}
           <div className="sidebar-section">
             <h4>
-              Sub-goals 
-              <span className="count">{mockSubGoals.length}</span>
+              {getChildGoalTypeName()}
+              <span className="count">{childGoals.length}</span>
               <button className="add-btn">
                 <Plus size={14} />
               </button>
             </h4>
-            <div className="sub-goals-list">
-              {mockSubGoals.map((subGoal) => (
-                <div key={subGoal.id} className="sub-goal-item">
-                  <div className="sub-goal-icon" style={{ color: getStatusColor(subGoal.status) }}>
-                    {getStatusIcon(subGoal.status)}
-                  </div>
-                  <div className="sub-goal-content">
-                    <span className="sub-goal-title">{subGoal.title}</span>
-                    <div className="sub-goal-progress">
-                      <div 
-                        className="progress-bar"
-                        style={{ 
-                          backgroundColor: getStatusColor(subGoal.status),
-                          width: `${subGoal.progress}%`
-                        }}
-                      />
+            {childGoals.length > 0 ? (
+              <div className="sub-goals-list">
+                {childGoals.map((childGoal: any) => (
+                  <div key={childGoal.id} className="sub-goal-item">
+                    <div className="sub-goal-icon" style={{ color: getStatusColor(childGoal.status) }}>
+                      {getStatusIcon(childGoal.status)}
+                    </div>
+                    <div className="sub-goal-content">
+                      <span className="sub-goal-title">{childGoal.title}</span>
+                      <div className="sub-goal-progress">
+                        <div 
+                          className="progress-bar"
+                          style={{ 
+                            backgroundColor: getStatusColor(childGoal.status),
+                            width: `${childGoal.progress || 0}%`
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-children">
+                <p>No {getChildGoalTypeName().toLowerCase()} found</p>
+                {goalType === 'annual' && (
+                  <p className="debug-info">
+                    Looking for quarterly goals with annualGoalId: {goal?.id}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Start Date */}

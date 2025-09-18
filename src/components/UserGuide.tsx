@@ -25,13 +25,15 @@ const UserGuide: React.FC = () => {
             It follows a proven four-tier approach that connects your life vision to daily execution.
           </p>
           <div className="feature-highlight">
-            <h4>New in this build</h4>
+            <h4>Latest Updates</h4>
             <ul>
-              <li>🏗️ <strong>Goals Table View:</strong> Professional hierarchical table with expandable Life → Annual → Quarterly structure</li>
-              <li>📊 <strong>Atlassian-style Goal Details:</strong> Comprehensive goal management with About, Updates, Learnings, Risks, and Decisions tabs</li>
-              <li>📁 <strong>Data Export & Import:</strong> JSON backup/restore with merge/replace options in Settings</li>
-              <li>🎯 <strong>Sample Data Loading:</strong> Quick setup with realistic goal examples</li>
-              <li>🔍 <strong>Enhanced Navigation:</strong> Streamlined interface focused on core productivity features</li>
+              <li>🗂️ <strong>Streamlined Goals Table:</strong> Removed social features (Owner/Following columns) for cleaner professional interface</li>
+              <li>📅 <strong>Enhanced Date Picker:</strong> Real calendar with Day/Month/Quarter tabs for precise target date selection</li>
+              <li>🎯 <strong>Interactive Status Dropdown:</strong> Color-coded status options (ON TRACK, AT RISK, OFF TRACK, etc.)</li>
+              <li>🏆 <strong>Accomplishments Tracking:</strong> New tab to celebrate and document goal achievements</li>
+              <li>� <strong>Annual Goal Planning:</strong> Dedicated fields for importance, plan, barriers, and rewards</li>
+              <li>🔗 <strong>Real Goal Hierarchy:</strong> Parent-child relationships now show actual linked goals (not dummy data)</li>
+              <li>🎨 <strong>Professional UI:</strong> Atlassian-inspired design focused on productivity and goal management</li>
             </ul>
           </div>
           
@@ -145,36 +147,57 @@ const UserGuide: React.FC = () => {
           </h2>
           <p>
             Your annual goals bridge your life vision and quarterly execution. They should directly connect to your 
-            Life Goals and provide clear direction for the year. Link each annual goal to a specific Life Goal 
-            to maintain strategic alignment.
+            Life Goals and provide clear direction for the year. The enhanced Annual Goal planning includes 
+            dedicated fields for comprehensive strategy development.
           </p>
           
+          <div className="feature-highlight">
+            <h4>🎯 Annual Goal Planning Framework</h4>
+            <p>When creating or editing Annual Goals, use these four strategic planning fields:</p>
+            <ul>
+              <li><strong>Why it's important:</strong> Your motivation, values, and purpose behind this goal</li>
+              <li><strong>My plan to achieve this goal:</strong> Strategy, approach, and key tactics</li>
+              <li><strong>Current barriers (if any):</strong> Obstacles, challenges, and potential risks</li>
+              <li><strong>My reward for achieving it:</strong> How you'll celebrate and recognize success</li>
+            </ul>
+          </div>
+          
           <div className="example-box">
-            <h4>Example Annual Goals Linked to Life Goals</h4>
+            <h4>Example Annual Goal Planning</h4>
             <div className="goal-examples">
               <div className="goal-example">
-                <div className="goal-category">→ Career Life Goal</div>
-                <div className="goal-text">"Complete Stanford AI Certificate and launch first AI pilot project"</div>
+                <div className="goal-category">🎯 Goal</div>
+                <div className="goal-text">"Launch profitable consulting business with $50K revenue"</div>
               </div>
               <div className="goal-example">
-                <div className="goal-category">→ Health Life Goal</div>
-                <div className="goal-text">"Run first half-marathon and establish consistent strength training routine"</div>
+                <div className="goal-category">🤔 Why Important</div>
+                <div className="goal-text">"Financial independence, creative control, and using my expertise to help others"</div>
               </div>
               <div className="goal-example">
-                <div className="goal-category">→ Finance Life Goal</div>
-                <div className="goal-text">"Increase savings rate to 30% and max out retirement contributions"</div>
+                <div className="goal-category">📋 My Plan</div>
+                <div className="goal-text">"Build portfolio, network with 50 prospects, create 3 service packages, focus on LinkedIn marketing"</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">⚠️ Current Barriers</div>
+                <div className="goal-text">"Limited time due to current job, need to build confidence in pricing, lack of sales experience"</div>
+              </div>
+              <div className="goal-example">
+                <div className="goal-category">🏆 My Reward</div>
+                <div className="goal-text">"Week-long vacation to Japan and upgrade home office setup"</div>
               </div>
             </div>
           </div>
 
           <div className="tips">
-            <h4>💡 Pro Tips for Annual Goals</h4>
+            <h4>💡 Enhanced Annual Goal Strategy</h4>
             <ul>
+              <li><strong>Complete the planning fields:</strong> Use all four fields for comprehensive goal strategy</li>
               <li><strong>Link to Life Goals:</strong> Each annual goal should connect to a specific Life Goal</li>
-              <li><strong>Limit to 2-3 goals:</strong> Focus is power. Too many goals dilute your energy.</li>
-              <li><strong>Make them specific:</strong> "Get healthy" → "Run a half-marathon in under 2 hours"</li>
-              <li><strong>Include metrics:</strong> How will you know you've succeeded?</li>
-              <li><strong>One-year achievable:</strong> Ambitious but realistic for a 12-month timeframe</li>
+              <li><strong>Limit to 2-3 goals:</strong> Focus is power. Too many goals dilute your energy</li>
+              <li><strong>Be specific and measurable:</strong> "Get healthy" → "Run a half-marathon in under 2 hours"</li>
+              <li><strong>Plan your celebration:</strong> Having a reward increases motivation and completion rates</li>
+              <li><strong>Address barriers upfront:</strong> Identifying obstacles early helps you plan around them</li>
+              <li><strong>Review and adjust quarterly:</strong> Update your plan as you learn and circumstances change</li>
             </ul>
           </div>
         </section>
@@ -441,38 +464,42 @@ const UserGuide: React.FC = () => {
             Goals Table View
           </h2>
           <p>
-            The Goals Table provides a professional, hierarchical view of all your goals in one place. 
-            It's designed like enterprise project management tools with expandable rows and detailed tracking.
+            The Goals Table provides a professional, streamlined view of all your goals in one place. 
+            Recently updated with a cleaner interface focused on productivity and goal management.
           </p>
           
           <div className="feature-highlight">
-            <h4>🗂️ Hierarchical Structure</h4>
-            <p>Goals are organized in a three-level hierarchy that you can expand and collapse:</p>
+            <h4>🗂️ Streamlined Interface</h4>
+            <p>The table now focuses on essential goal management with these columns:</p>
             <ul>
-              <li><strong>Life Goals</strong> (Level 0) - Your long-term vision</li>
-              <li><strong>Annual Goals</strong> (Level 1) - This year's strategic objectives</li>
-              <li><strong>Quarterly Goals</strong> (Level 2) - Current quarter's focus areas</li>
+              <li><strong>Name</strong> - Goal titles with hierarchical indentation</li>
+              <li><strong>Status</strong> - Color-coded status indicators (ON TRACK, AT RISK, etc.)</li>
+              <li><strong>Progress</strong> - Visual progress bars showing completion percentage</li>
+              <li><strong>Target Date</strong> - Enhanced date picker with calendar interface</li>
+              <li><strong>Last Updated</strong> - Recent activity timestamps</li>
+              <li><strong>Actions</strong> - Quick access menu for goal management</li>
             </ul>
+            <p><em>Social features (Owner/Following) have been removed for a cleaner, professional experience.</em></p>
           </div>
           
           <div className="example-box">
-            <h4>How to Use the Goals Table</h4>
+            <h4>Enhanced Features</h4>
             <div className="goal-examples">
               <div className="goal-example">
-                <div className="goal-category">🔽 Click Chevrons</div>
-                <div className="goal-text">Expand/collapse goal levels to see connected objectives</div>
+                <div className="goal-category">� Smart Date Picker</div>
+                <div className="goal-text">Calendar interface with Day/Month/Quarter tabs for precise target dates</div>
               </div>
               <div className="goal-example">
-                <div className="goal-category">📊 Progress Tracking</div>
-                <div className="goal-text">Visual progress bars and status indicators for each goal</div>
+                <div className="goal-category">🎯 Interactive Status</div>
+                <div className="goal-text">Dropdown with 7 color-coded status options and visual feedback</div>
               </div>
               <div className="goal-example">
-                <div className="goal-category">🎯 Goal Details</div>
-                <div className="goal-text">Click any goal title to open detailed management view</div>
+                <div className="goal-category">🔗 Real Relationships</div>
+                <div className="goal-text">Hierarchical structure shows actual parent-child goal connections</div>
               </div>
               <div className="goal-example">
-                <div className="goal-category">📈 Load Sample Data</div>
-                <div className="goal-text">Use "Load Sample Data" button to see realistic examples</div>
+                <div className="goal-category">⚡ Quick Navigation</div>
+                <div className="goal-text">Sorting, filtering, and search for efficient goal management</div>
               </div>
             </div>
           </div>
@@ -496,20 +523,31 @@ const UserGuide: React.FC = () => {
             Goal Details View
           </h2>
           <p>
-            Each goal has a comprehensive details page inspired by professional project management tools like Atlassian. 
-            Click any goal title in the table to access rich tracking and documentation features.
+            Each goal has a comprehensive details page with enhanced features for professional goal management. 
+            Click any goal title in the table to access rich tracking, planning, and documentation capabilities.
           </p>
+          
+          <div className="feature-highlight">
+            <h4>🆕 Enhanced Goal Planning</h4>
+            <p>For Annual Goals, the About tab now includes dedicated planning sections:</p>
+            <ul>
+              <li><strong>Why it's important</strong> - Capture your motivation and purpose</li>
+              <li><strong>My plan to achieve this goal</strong> - Document your strategy and approach</li>
+              <li><strong>Current barriers (if any)</strong> - Identify obstacles and challenges</li>
+              <li><strong>My reward for achieving it</strong> - Plan your celebration and recognition</li>
+            </ul>
+          </div>
           
           <div className="example-box">
             <h4>Goal Details Tabs</h4>
             <div className="goal-examples">
               <div className="goal-example">
                 <div className="goal-category">📖 About</div>
-                <div className="goal-text">Goal description, objectives, key results, and team collaboration with comments</div>
+                <div className="goal-text">Goal description, planning fields (for Annual Goals), and streamlined interface</div>
               </div>
               <div className="goal-example">
                 <div className="goal-category">📰 Updates</div>
-                <div className="goal-text">Progress updates, status changes, and milestone achievements with timestamps</div>
+                <div className="goal-text">Progress updates with enhanced date picker and interactive status selection</div>
               </div>
               <div className="goal-example">
                 <div className="goal-category">🧠 Learnings</div>
@@ -523,17 +561,22 @@ const UserGuide: React.FC = () => {
                 <div className="goal-category">🤔 Decisions</div>
                 <div className="goal-text">Key decisions made, rationale, and strategic choices documented</div>
               </div>
+              <div className="goal-example">
+                <div className="goal-category">🏆 Accomplishments</div>
+                <div className="goal-text">Celebrate achievements, milestones, and victories with date tracking</div>
+              </div>
             </div>
           </div>
 
           <div className="tips">
-            <h4>💡 Pro Tips for Goal Documentation</h4>
+            <h4>💡 Enhanced Goal Management</h4>
             <ul>
-              <li><strong>Use About for collaboration:</strong> Add comments and context for team members or accountability partners</li>
-              <li><strong>Regular Updates:</strong> Log progress weekly to maintain momentum and track patterns</li>
-              <li><strong>Capture Learnings:</strong> Document insights immediately - they're easy to forget later</li>
-              <li><strong>Proactive Risk Management:</strong> Identify risks early and plan mitigation strategies</li>
-              <li><strong>Decision Documentation:</strong> Record the why behind key choices for future reference</li>
+              <li><strong>Annual Goal Planning:</strong> Use the four planning fields to create comprehensive goal strategies</li>
+              <li><strong>Status Tracking:</strong> Interactive dropdown with 7 status options (PENDING, ON TRACK, AT RISK, etc.)</li>
+              <li><strong>Date Precision:</strong> Calendar interface lets you set exact target dates by day, month, or quarter</li>
+              <li><strong>Accomplishment Celebration:</strong> Document wins and milestones to maintain motivation</li>
+              <li><strong>Real Hierarchy:</strong> Sidebar shows actual parent goals and child goals based on your data</li>
+              <li><strong>Professional Focus:</strong> Streamlined interface without social features for productivity</li>
             </ul>
           </div>
         </section>

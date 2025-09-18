@@ -36,6 +36,20 @@ const categoryColors: Record<LifeGoalCategory, string> = {
   'Other': '#6c757d'
 };
 
+const categoryDescriptions: Record<LifeGoalCategory, string> = {
+  'Creativity & Passion': 'Self-expression, creation, ideas, inspiration, interests, innovation',
+  'Mind': 'Learning, growing, studying, education, mental health',
+  'Career': 'Professional development, job, vocation, skills, occupation',
+  'Finance': 'Financial security, saving, investing, wealth',
+  'Health': 'Physical well-being, fitness, nutrition, strength',
+  'Relationships': 'Commitment, communication, intimacy, partnership(s)',
+  'Spirit': 'Mindfulness, going inward, compassion, purpose, soul',
+  'Community': 'Connection, shared values, family, friends, society',
+  'Travel': 'Expanding horizons, exploring, adventure, discovery',
+  'Giving Back': 'Charity, philanthropy, conserving the environment, empathy, advocacy',
+  'Other': 'Personal goals that don\'t fit into other categories'
+};
+
 const LifeGoals: React.FC = () => {
   const { state, dispatch } = useApp();
   const [isAddingGoal, setIsAddingGoal] = useState(false);
@@ -818,6 +832,24 @@ const LifeGoals: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Category Description */}
+      {selectedCategory !== 'All' && (
+        <div className="category-description">
+          <div className="category-description-content">
+            <div className="category-description-icon">
+              {React.createElement(categoryIcons[selectedCategory as LifeGoalCategory], { 
+                size: 24,
+                style: { color: categoryColors[selectedCategory as LifeGoalCategory] }
+              })}
+            </div>
+            <div className="category-description-text">
+              <h3>{selectedCategory}</h3>
+              <p>{categoryDescriptions[selectedCategory as LifeGoalCategory]}</p>
+            </div>
           </div>
         </div>
       )}

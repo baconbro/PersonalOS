@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
 import { notificationService } from '../services/notificationService';
-import { updateLifeGoalFromAnnualProgress } from '../utils/progressCalculation';
+import { updateLifeGoalFromAnnualProgress, updateAnnualGoalFromQuarterlyProgress } from '../utils/progressCalculation';
 
 // Initial state
 const initialState: AppState & { loading: boolean } = {
@@ -52,9 +52,17 @@ function updateLifeGoalProgress(state: AppState, updatedAnnualGoals: AnnualGoal[
   });
 }
 
+// Helper function to update annual goal progress when quarterly goals change
+function updateAnnualGoalProgress(state: AppState, updatedQuarterlyGoals: QuarterlyGoal[]): AnnualGoal[] {
+  return state.annualGoals.map(annualGoal => {
+    const updatedGoal = updateAnnualGoalFromQuarterlyProgress(annualGoal, updatedQuarterlyGoals);
+    return updatedGoal || annualGoal;
+  });
+}
+
 // Reducer
 function appReducer(state: AppState, action: Action): AppState {
-  console.log('Dispatching action:', action.type, action.payload);
+  console.log('Dispatching action:', action.type, 'payload' in action ? action.payload : '(no payload)');
   
   switch (action.type) {
     case 'ADD_LIFE_GOAL':
@@ -116,11 +124,18 @@ function appReducer(state: AppState, action: Action): AppState {
         annualGoals: filteredAnnualGoals,
         lifeGoals: updatedLifeGoalsFromDelete,
       };
-    case 'ADD_QUARTERLY_GOAL':
+    case 'ADD_QUARTERLY_GOAL': {
+      const newQuarterlyGoals = [...state.quarterlyGoals, action.payload];
+      const updatedAnnualGoals = updateAnnualGoalProgress(state, newQuarterlyGoals);
+      const updatedLifeGoals = updateLifeGoalProgress(state, updatedAnnualGoals);
+      
       return {
         ...state,
-        quarterlyGoals: [...state.quarterlyGoals, action.payload],
+        quarterlyGoals: newQuarterlyGoals,
+        annualGoals: updatedAnnualGoals,
+        lifeGoals: updatedLifeGoals,
       };
+    }
     case 'UPDATE_QUARTERLY_GOAL': {
       const oldGoal = state.quarterlyGoals.find(goal => goal.id === action.payload.id);
       const newGoal = action.payload;
@@ -130,18 +145,31 @@ function appReducer(state: AppState, action: Action): AppState {
         notificationService.celebrateGoalCompletion(newGoal.title, 'Quarterly');
       }
       
+      const updatedQuarterlyGoals = state.quarterlyGoals.map(goal =>
+        goal.id === action.payload.id ? action.payload : goal
+      );
+      const updatedAnnualGoals = updateAnnualGoalProgress(state, updatedQuarterlyGoals);
+      const updatedLifeGoals = updateLifeGoalProgress(state, updatedAnnualGoals);
+
       return {
         ...state,
-        quarterlyGoals: state.quarterlyGoals.map(goal =>
-          goal.id === action.payload.id ? action.payload : goal
-        ),
+        quarterlyGoals: updatedQuarterlyGoals,
+        annualGoals: updatedAnnualGoals,
+        lifeGoals: updatedLifeGoals,
       };
     }
-    case 'DELETE_QUARTERLY_GOAL':
+    case 'DELETE_QUARTERLY_GOAL': {
+      const filteredQuarterlyGoals = state.quarterlyGoals.filter(goal => goal.id !== action.payload);
+      const updatedAnnualGoals = updateAnnualGoalProgress(state, filteredQuarterlyGoals);
+      const updatedLifeGoals = updateLifeGoalProgress(state, updatedAnnualGoals);
+      
       return {
         ...state,
-        quarterlyGoals: state.quarterlyGoals.filter(goal => goal.id !== action.payload),
+        quarterlyGoals: filteredQuarterlyGoals,
+        annualGoals: updatedAnnualGoals,
+        lifeGoals: updatedLifeGoals,
       };
+    }
     case 'ADD_WEEKLY_TASK':
       return {
         ...state,
@@ -421,6 +449,11 @@ export function AppProvider({ children }: AppProviderProps) {
         currentQuarter: newState.currentQuarter,
       };
       
+      // Debug logging for Firebase sync
+      if (action.type === 'UPDATE_QUARTERLY_GOAL') {
+        console.log('🔄 Will also sync updated annual goals to Firebase...');
+      }
+      
       LocalStorageService.save(stateToSave);
     } catch (error) {
       console.error('❌ Failed to save to localStorage:', error);
@@ -489,6 +522,22 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'UPDATE_QUARTERLY_GOAL':
           await firebaseService.updateQuarterlyGoal(action.payload);
+          
+          // Also sync any annual goals that were automatically updated
+          const currentState = state;
+          const updatedQuarterlyGoals = currentState.quarterlyGoals.map(goal =>
+            goal.id === action.payload.id ? action.payload : goal
+          );
+          const updatedAnnualGoals = updateAnnualGoalProgress(currentState, updatedQuarterlyGoals);
+          
+          // Sync each annual goal that was updated
+          for (const annualGoal of updatedAnnualGoals) {
+            const originalAnnualGoal = currentState.annualGoals.find(g => g.id === annualGoal.id);
+            if (originalAnnualGoal && originalAnnualGoal.progress !== annualGoal.progress) {
+              console.log(`🔄 Syncing automatically updated annual goal: ${annualGoal.title} (${originalAnnualGoal.progress}% → ${annualGoal.progress}%)`);
+              await firebaseService.updateAnnualGoal(annualGoal);
+            }
+          }
           break;
         case 'DELETE_QUARTERLY_GOAL':
           await firebaseService.deleteQuarterlyGoal(action.payload);
@@ -509,6 +558,9 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'UPDATE_WEEKLY_REVIEW':
           await firebaseService.updateWeeklyReview(action.payload);
+          break;
+        case 'ADD_CHECK_IN':
+          await firebaseService.addCheckIn(action.payload);
           break;
       }
       console.log('✅ Firebase sync completed');

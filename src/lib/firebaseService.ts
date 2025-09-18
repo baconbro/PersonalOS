@@ -25,6 +25,9 @@ const convertTimestamps = (data: any) => {
   if (converted.weekOf && converted.weekOf.toDate) {
     converted.weekOf = converted.weekOf.toDate();
   }
+  if (converted.timestamp && converted.timestamp.toDate) {
+    converted.timestamp = converted.timestamp.toDate();
+  }
   return converted;
 };
 
@@ -39,6 +42,9 @@ const convertDatesToTimestamps = (data: any) => {
   }
   if (converted.weekOf instanceof Date) {
     converted.weekOf = Timestamp.fromDate(converted.weekOf);
+  }
+  if (converted.timestamp instanceof Date) {
+    converted.timestamp = Timestamp.fromDate(converted.timestamp);
   }
   return converted;
 };
@@ -343,15 +349,112 @@ export class FirebaseService {
     }
   }
 
+  // Check-in methods
+  async getCheckIns(): Promise<any[]> {
+    try {
+      const checkInsRef = collection(db, 'users', this.userId, 'checkIns');
+      const q = query(checkInsRef, orderBy('timestamp', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => {
+        const data = convertTimestamps(doc.data());
+        console.log('📥 Loading check-in - Firestore ID:', doc.id, 'Custom ID:', data.customId);
+        return {
+          ...data,
+          id: data.customId || doc.id, // Use customId if available, fallback to Firestore ID
+          firestoreId: doc.id
+        };
+      });
+    } catch (error) {
+      console.error('Error getting check-ins:', error);
+      throw error;
+    }
+  }
+
+  async addCheckIn(checkIn: any): Promise<string> {
+    try {
+      const checkInsRef = collection(db, 'users', this.userId, 'checkIns');
+      const checkInData = {
+        ...convertDatesToTimestamps(checkIn),
+        customId: checkIn.id // Store the original ID as customId
+      };
+      const docRef = await addDoc(checkInsRef, checkInData);
+      console.log('📤 Added check-in to Firebase:', docRef.id, 'Custom ID:', checkIn.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding check-in:', error);
+      throw error;
+    }
+  }
+
+  async updateCheckIn(checkIn: any): Promise<void> {
+    try {
+      // Find the document by customId
+      const checkInsRef = collection(db, 'users', this.userId, 'checkIns');
+      const snapshot = await getDocs(checkInsRef);
+      
+      let firestoreDocId = null;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.customId === checkIn.id) {
+          firestoreDocId = doc.id;
+        }
+      });
+
+      if (!firestoreDocId) {
+        throw new Error(`Check-in with ID ${checkIn.id} not found in Firestore`);
+      }
+
+      const checkInRef = doc(db, 'users', this.userId, 'checkIns', firestoreDocId);
+      const { id, ...checkInData } = checkIn;
+      await updateDoc(checkInRef, {
+        ...convertDatesToTimestamps(checkInData),
+        customId: id
+      });
+      console.log('📤 Updated check-in in Firebase:', firestoreDocId, 'Custom ID:', id);
+    } catch (error) {
+      console.error('Error updating check-in:', error);
+      throw error;
+    }
+  }
+
+  async deleteCheckIn(checkInId: string): Promise<void> {
+    try {
+      // Find the document by customId
+      const checkInsRef = collection(db, 'users', this.userId, 'checkIns');
+      const snapshot = await getDocs(checkInsRef);
+      
+      let firestoreDocId = null;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.customId === checkInId) {
+          firestoreDocId = doc.id;
+        }
+      });
+
+      if (!firestoreDocId) {
+        throw new Error(`Check-in with ID ${checkInId} not found in Firestore`);
+      }
+
+      const checkInRef = doc(db, 'users', this.userId, 'checkIns', firestoreDocId);
+      await deleteDoc(checkInRef);
+      console.log('📤 Deleted check-in from Firebase:', firestoreDocId, 'Custom ID:', checkInId);
+    } catch (error) {
+      console.error('Error deleting check-in:', error);
+      throw error;
+    }
+  }
+
   // Load all user data
   async loadAllData(): Promise<AppState> {
     try {
-      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals] = await Promise.all([
+      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns] = await Promise.all([
         this.getAnnualGoals(),
         this.getQuarterlyGoals(),
         this.getWeeklyTasks(),
         this.getWeeklyReviews(),
-        this.getLifeGoals()
+        this.getLifeGoals(),
+        this.getCheckIns()
       ]);
 
       return {
@@ -361,7 +464,7 @@ export class FirebaseService {
         weeklyReviews,
         lifeGoals,
         activityLogs: [], // Activity logs are handled locally, not stored in Firebase
-        checkIns: [], // Check-ins are local-only for now
+        checkIns,
         currentYear: new Date().getFullYear(),
         currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
       };

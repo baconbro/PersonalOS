@@ -1,4 +1,4 @@
-import type { LifeGoal, AnnualGoal } from '../types';
+import type { LifeGoal, AnnualGoal, QuarterlyGoal } from '../types';
 
 /**
  * Calculate life goal progress based on connected annual goals
@@ -60,4 +60,54 @@ export function updateLifeGoalFromAnnualProgress(lifeGoal: LifeGoal, annualGoals
  */
 export function getRelatedAnnualGoals(lifeGoalId: string, annualGoals: AnnualGoal[]): AnnualGoal[] {
   return annualGoals.filter(goal => goal.lifeGoalId === lifeGoalId);
+}
+
+/**
+ * Calculate progress for an annual goal based on its quarterly goals
+ * @param annualGoalId - The ID of the annual goal
+ * @param quarterlyGoals - Array of all quarterly goals
+ * @returns Calculated progress percentage (0-100)
+ */
+export function calculateAnnualGoalProgress(annualGoalId: string, quarterlyGoals: QuarterlyGoal[]): number {
+  const relatedQuarterly = getRelatedQuarterlyGoals(annualGoalId, quarterlyGoals);
+  
+  if (relatedQuarterly.length === 0) {
+    return 0; // No quarterly goals, so 0% progress
+  }
+  
+  const totalProgress = relatedQuarterly.reduce((sum, goal) => sum + goal.progress, 0);
+  return Math.round(totalProgress / relatedQuarterly.length);
+}
+
+/**
+ * Update annual goal progress and status based on quarterly goals
+ * @param annualGoal - The annual goal to update
+ * @param quarterlyGoals - Array of all quarterly goals
+ * @returns Updated annual goal or null if no update needed
+ */
+export function updateAnnualGoalFromQuarterlyProgress(annualGoal: AnnualGoal, quarterlyGoals: QuarterlyGoal[]): AnnualGoal | null {
+  const calculatedProgress = calculateAnnualGoalProgress(annualGoal.id, quarterlyGoals);
+  
+  // Only update if progress has changed
+  if (annualGoal.progress !== calculatedProgress) {
+    const updatedStatus = getStatusFromProgress(calculatedProgress);
+    
+    return {
+      ...annualGoal,
+      progress: calculatedProgress,
+      status: updatedStatus
+    };
+  }
+  
+  return null; // No update needed
+}
+
+/**
+ * Get quarterly goals related to a specific annual goal
+ * @param annualGoalId - The ID of the annual goal
+ * @param quarterlyGoals - Array of all quarterly goals
+ * @returns Array of related quarterly goals
+ */
+export function getRelatedQuarterlyGoals(annualGoalId: string, quarterlyGoals: QuarterlyGoal[]): QuarterlyGoal[] {
+  return quarterlyGoals.filter(goal => goal.annualGoalId === annualGoalId);
 }

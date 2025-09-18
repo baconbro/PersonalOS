@@ -40,6 +40,7 @@ export interface CheckIn {
   focusLevel: number; // 1-5 scale
   mood: string; // Emoji representation
   notes?: string; // Optional notes
+  linkedGoalId?: string; // Optional reference to any goal having the biggest impact
 }
 
 export type LifeGoalCategory = 
@@ -134,6 +135,29 @@ export interface WeeklyReviewData {
   customId?: string; // Optional custom ID from document data
   satisfaction: 1 | 2 | 3 | 4 | 5;
   notes: string;
+  // New After-Action Review fields
+  winsReflection?: string; // Celebrate step reflection
+  gapsAnalysis?: string; // Analyze step reflection  
+  keyLesson?: string; // Learn step key takeaway
+  // Linked reflection data for contextual intelligence
+  winsLink?: {
+    goalId?: string;
+    goalTitle?: string;
+    goalType?: 'life' | 'annual' | 'quarterly' | 'task';
+    isGeneral?: boolean;
+  };
+  gapsLink?: {
+    goalId?: string;
+    goalTitle?: string;
+    goalType?: 'life' | 'annual' | 'quarterly' | 'task';
+    isGeneral?: boolean;
+  };
+  lessonLink?: {
+    goalId?: string;
+    goalTitle?: string;
+    goalType?: 'life' | 'annual' | 'quarterly' | 'task';
+    isGeneral?: boolean;
+  };
 }
 
 export interface DashboardStats {

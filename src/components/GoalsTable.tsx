@@ -1,10 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Search, 
-  Filter, 
-  Users, 
-  BarChart3, 
-  Flag, 
   Calendar,
   Plus,
   MoreVertical,
@@ -12,8 +8,6 @@ import {
   Circle,
   Clock,
   Target,
-  List,
-  Grid3X3,
   ChevronDown,
   ChevronRight,
   Heart,
@@ -47,9 +41,6 @@ type GoalItem = {
   type?: string;
   annualGoals?: string[];
 };
-
-type SortBy = 'name' | 'status' | 'progress' | 'target-date' | 'last-updated';
-type StatusFilter = 'all' | 'on-track' | 'at-risk' | 'pending' | 'completed';
 
 // Quick Goal Form Component
 interface QuickGoalFormProps {
@@ -247,21 +238,11 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
 const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
   const { state, dispatch } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState<SortBy>('name');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedGoalType, setSelectedGoalType] = useState<string | null>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedGoalType2, setSelectedGoalType2] = useState<'life' | 'annual' | 'quarterly' | 'weekly' | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-
-  const handleStatusFilterToggle = () => {
-    const statusOptions: StatusFilter[] = ['all', 'on-track', 'at-risk', 'pending', 'completed'];
-    const currentIndex = statusOptions.indexOf(filterStatus as StatusFilter);
-    const nextIndex = (currentIndex + 1) % statusOptions.length;
-    setFilterStatus(statusOptions[nextIndex]);
-  };
 
   const handleGoalTypeSelect = (type: string) => {
     setSelectedGoalType(type);
@@ -386,64 +367,15 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
     return flattened;
   }, [hierarchicalGoals, expandedRows]);
 
-  // Convert all goals to unified format (keeping original for backward compatibility)
-  const allGoals: GoalItem[] = useMemo(() => {
-    const goals: GoalItem[] = [];
+  // Apply search filter to flattened goals
+  const filteredFlattenedGoals = useMemo(() => {
+    if (!searchTerm) return flattenedGoals;
     
-    // Life goals
-    state.lifeGoals.forEach(goal => {
-      goals.push({
-        ...goal,
-        goalType: 'life' as const,
-        status: goal.status as any,
-        progress: goal.progress || 0,
-        createdAt: goal.createdAt,
-        targetDate: goal.targetDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // Default to 1 year from now
-      });
-    });
-
-    // Annual goals
-    state.annualGoals.forEach(goal => {
-      goals.push({
-        ...goal,
-        goalType: 'annual' as const,
-        status: goal.status as any,
-        progress: goal.progress || 0,
-        createdAt: goal.createdAt,
-        targetDate: goal.targetDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // Default to 1 year from now
-      });
-    });
-
-    // Quarterly goals
-    state.quarterlyGoals.forEach(goal => {
-      goals.push({
-        ...goal,
-        goalType: 'quarterly' as const,
-        status: goal.status as any,
-        progress: goal.progress || 0,
-        createdAt: goal.createdAt,
-        targetDate: goal.targetDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // Default to 90 days from now
-      });
-    });
-
-    // Weekly tasks as goals
-    state.weeklyTasks.forEach(task => {
-      goals.push({
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        goalType: 'weekly' as const,
-        status: task.status === 'done' ? 'completed' : task.status === 'in-progress' ? 'in-progress' : 'not-started',
-        progress: task.completed ? 100 : 0,
-        priority: task.priority,
-        targetDate: task.weekOf,
-        createdAt: task.weekOf, // Use weekOf as creation date for tasks
-        category: 'Task'
-      });
-    });
-
-    return goals;
-  }, [state.lifeGoals, state.annualGoals, state.quarterlyGoals, state.weeklyTasks]);
+    return flattenedGoals.filter(goal =>
+      goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      goal.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [flattenedGoals, searchTerm]);
 
   // Auto-load sample data if no goals exist
   React.useEffect(() => {
@@ -452,56 +384,6 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
       loadSampleData();
     }
   }, [state.lifeGoals.length, state.annualGoals.length, state.quarterlyGoals.length, state.weeklyTasks.length]);
-
-  // Filter and sort goals - MUST be before any early returns
-  const filteredGoals = useMemo(() => {
-    let filtered = allGoals;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(goal =>
-        goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        goal.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(goal => {
-        switch (filterStatus) {
-          case 'on-track':
-            return goal.status === 'in-progress' && goal.progress >= 70;
-          case 'at-risk':
-            return goal.status === 'in-progress' && goal.progress < 70;
-          case 'pending':
-            return goal.status === 'not-started' || goal.status === 'on-hold';
-          case 'completed':
-            return goal.status === 'completed';
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.title.localeCompare(b.title);
-        case 'status':
-          return a.status.localeCompare(b.status);
-        case 'progress':
-          return (b.progress || 0) - (a.progress || 0);
-        case 'target-date':
-          return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
-        case 'last-updated':
-        default:
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-    });
-
-    return filtered;
-  }, [allGoals, searchTerm, filterStatus, sortBy]);
 
   // If viewing goal details, show the GoalDetails component
   if (selectedGoalId && selectedGoalType2) {
@@ -572,24 +454,8 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
       <div className="goals-header">
         <div className="header-left">
           <h1>Goals</h1>
-          <div className="tab-group">
-            <button className="tab active">
-              All goals
-            </button>
-            <button className="tab">
-              Strategy 25
-              <span className="tab-count">25</span>
-            </button>
-            <button className="tab-add">
-              <Plus size={16} />
-            </button>
-          </div>
         </div>
         <div className="header-right">
-          <button className="btn btn-secondary" onClick={loadSampleData}>
-            <Plus size={16} />
-            Load Sample Data
-          </button>
           <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
             <Plus size={16} />
             Create goal
@@ -610,85 +476,6 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      <div className="filters-section">
-        <div className="filter-group">
-          <button className="filter-btn">
-            <Filter size={16} />
-            Filter by Tag
-            <ChevronDown size={14} />
-          </button>
-          
-          <button className={`filter-btn ${filterStatus !== 'all' ? 'active' : ''}`} 
-                  onClick={handleStatusFilterToggle}>
-            <Flag size={16} />
-            Status: {filterStatus === 'all' ? 'All' : filterStatus.replace('-', ' ')}
-            <ChevronDown size={14} />
-          </button>
-
-          <button className="filter-btn">
-            <Users size={16} />
-            Team
-            <ChevronDown size={14} />
-          </button>
-
-          <button className="filter-btn">
-            <BarChart3 size={16} />
-            Metric
-            <ChevronDown size={14} />
-          </button>
-
-          <button className="filter-btn">
-            <Flag size={16} />
-            Reporting line
-            <ChevronDown size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Results and View Controls */}
-      <div className="results-section">
-        <div className="results-info">
-          <span className="results-count">{filteredGoals.length} goals</span>
-        </div>
-        <div className="view-controls">
-          <div className="view-toggle">
-            <button
-              className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-              onClick={() => setViewMode('table')}
-            >
-              <List size={16} />
-            </button>
-            <button
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3X3 size={16} />
-            </button>
-          </div>
-          <div className="sort-control">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
-            >
-              <option value="name">Sort by name</option>
-              <option value="status">Sort by status</option>
-              <option value="progress">Sort by progress</option>
-              <option value="target-date">Sort by target date</option>
-              <option value="last-updated">Sort by last updated</option>
-            </select>
-            <ChevronDown size={14} />
-          </div>
-          <button className="columns-btn">
-            <Grid3X3 size={16} />
-            Columns
-            <ChevronDown size={14} />
-          </button>
-          <button className="menu-btn">
-            <MoreVertical size={16} />
-          </button>
-        </div>
-      </div>
-
       {/* Table */}
       <div className="table-container">
         <table className="goals-table-view">
@@ -703,7 +490,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
             </tr>
           </thead>
           <tbody>
-            {flattenedGoals.map((goal) => {
+            {filteredFlattenedGoals.map((goal) => {
               const status = getStatusDisplay(goal);
               const isExpanded = goal.isExpanded;
               const hasChildren = goal.hasChildren;
@@ -780,7 +567,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
         </table>
       </div>
 
-      {flattenedGoals.length === 0 && (
+      {filteredFlattenedGoals.length === 0 && (
         <div className="empty-state">
           <Target size={48} />
           <h3>No goals found</h3>

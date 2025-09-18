@@ -128,18 +128,7 @@ function AnnualPlan() {
     setShowGoldenThread(true);
   };
 
-  const updateProgress = (goalId: string, progress: number) => {
-    const goal = currentYearGoals.find(g => g.id === goalId);
-    if (goal) {
-      const updatedGoal = { ...goal, progress };
-      if (progress === 100 && goal.status !== 'completed') {
-        updatedGoal.status = 'completed';
-      } else if (progress > 0 && goal.status === 'not-started') {
-        updatedGoal.status = 'in-progress';
-      }
-      dispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: updatedGoal });
-    }
-  };
+
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -165,6 +154,7 @@ function AnnualPlan() {
         <Target size={32} />
         Annual Flight Plan {state.currentYear}
       </div>
+      
       <p className="component-description">
         Set 2-3 high-level strategic goals that will define your year. These should be significant achievements
         that align with your long-term vision and can be broken down into quarterly objectives.
@@ -400,16 +390,8 @@ function AnnualPlan() {
               <div style={{ marginTop: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748' }}>
-                    Progress: {goal.progress}%
+                    Progress: {goal.progress}% (Auto-calculated from quarterly goals)
                   </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={goal.progress}
-                    onChange={(e) => updateProgress(goal.id, parseInt(e.target.value))}
-                    style={{ width: '150px' }}
-                  />
                 </div>
                 <div className="progress-bar">
                   <div 
