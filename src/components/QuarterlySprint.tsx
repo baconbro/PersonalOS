@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Calendar, Plus, Edit3, Trash2, Target, TrendingUp } from 'lucide-react';
-import { format, startOfQuarter, endOfQuarter } from 'date-fns';
+import { Calendar, Plus, Edit3, Trash2, Target, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import type { QuarterlyGoal, KeyResult } from '../types';
 import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
 
@@ -22,12 +22,20 @@ function QuarterlySprint() {
   const [titleError, setTitleError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
 
+  const getQuarterDates = (quarter: number, year: number) => {
+    const quarterStartDate = new Date(year, (quarter - 1) * 3, 1);
+    const quarterEndDate = new Date(year, quarter * 3, 0);
+    return {
+      start: quarterStartDate,
+      end: quarterEndDate
+    };
+  };
+
   const currentQuarterGoals = state.quarterlyGoals.filter(
     goal => goal.quarter === state.currentQuarter && goal.year === state.currentYear
   );
 
-  const quarterStart = startOfQuarter(new Date());
-  const quarterEnd = endOfQuarter(new Date());
+  const currentQuarterDates = getQuarterDates(state.currentQuarter, state.currentYear);
 
   const resetForm = () => {
     setFormData({
@@ -127,7 +135,7 @@ function QuarterlySprint() {
         priority: formData.priority,
         status: editingGoal?.status || 'not-started',
         createdAt: editingGoal?.createdAt || new Date(),
-        targetDate: quarterEnd,
+        targetDate: currentQuarterDates.end,
         progress,
         quarter: state.currentQuarter,
         year: state.currentYear,
@@ -212,6 +220,24 @@ function QuarterlySprint() {
     return quarters[quarter - 1];
   };
 
+  const navigateToPreviousQuarter = () => {
+    if (state.currentQuarter === 1) {
+      dispatch({ type: 'SET_CURRENT_QUARTER', payload: 4 });
+      dispatch({ type: 'SET_CURRENT_YEAR', payload: state.currentYear - 1 });
+    } else {
+      dispatch({ type: 'SET_CURRENT_QUARTER', payload: (state.currentQuarter - 1) as 1 | 2 | 3 | 4 });
+    }
+  };
+
+  const navigateToNextQuarter = () => {
+    if (state.currentQuarter === 4) {
+      dispatch({ type: 'SET_CURRENT_QUARTER', payload: 1 });
+      dispatch({ type: 'SET_CURRENT_YEAR', payload: state.currentYear + 1 });
+    } else {
+      dispatch({ type: 'SET_CURRENT_QUARTER', payload: (state.currentQuarter + 1) as 1 | 2 | 3 | 4 });
+    }
+  };
+
   return (
     <div className="component-container">
       <div className="component-title">
@@ -232,8 +258,49 @@ function QuarterlySprint() {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <div>
-          <strong>Quarter Period:</strong> {format(quarterStart, 'MMM dd')} - {format(quarterEnd, 'MMM dd, yyyy')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <strong>Quarter Period:</strong>
+            <button 
+              onClick={navigateToPreviousQuarter}
+              style={{
+                background: 'transparent',
+                border: '1px solid #cbd5e0',
+                borderRadius: '4px',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#4a5568'
+              }}
+              title="Previous Quarter"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span style={{ minWidth: '200px', textAlign: 'center' }}>
+              {format(currentQuarterDates.start, 'MMM dd')} - {format(currentQuarterDates.end, 'MMM dd, yyyy')}
+            </span>
+            <button 
+              onClick={navigateToNextQuarter}
+              style={{
+                background: 'transparent',
+                border: '1px solid #cbd5e0',
+                borderRadius: '4px',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#4a5568'
+              }}
+              title="Next Quarter"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
         <div>
           <strong>Active OKRs:</strong> <span style={{ color: '#667eea' }}>{currentQuarterGoals.length}</span>
