@@ -1,25 +1,22 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Calendar, Target, CheckCircle, Heart, Star, TrendingUp, Clock, GitBranch } from 'lucide-react';
 import { format } from 'date-fns';
-import { useApp } from '../context/AppContext';
+import { useAppContext } from '../context/AppContext';
+import { ensureDate } from '../utils/sampleData';
 import GoalTree from './GoalTree';
 import CheckInModal from './CheckInModal';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { cn } from '../lib/utils';
 
 function Dashboard() {
-  const { state } = useApp();
+  const { state, dispatch } = useAppContext();
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showGoalTree, setShowGoalTree] = useState(false);
-
-  // Helper function to ensure date is a Date object
-  const ensureDate = (date: Date | string): Date => {
-    return typeof date === 'string' ? new Date(date) : date;
-  };
 
   const calculateStats = () => {
     const now = new Date();
@@ -178,16 +175,16 @@ function Dashboard() {
         </Card>
 
         <Card 
-          className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-lg hover:scale-105 border border-green-400 shadow-sm rounded-lg"
+          className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-lg hover:scale-105"
           onClick={() => {
             alert('Weekly Command Huddle feature! Navigate to "This Week" tab to experience the full Weekly Huddle.');
           }}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-white">This Week</CardTitle>
             <CheckCircle className="h-4 w-4 text-white" />
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent>
             <div className="text-2xl font-bold text-white">{stats.weekProgress}%</div>
             <p className="text-xs text-green-100">
               Click for Weekly Command Huddle
@@ -196,14 +193,14 @@ function Dashboard() {
         </Card>
 
         <Card 
-          className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-red-500 to-red-600 text-white hover:shadow-lg hover:scale-105 border border-red-400 shadow-sm rounded-lg"
+          className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-red-500 to-red-600 text-white hover:shadow-lg hover:scale-105"
           onClick={() => setShowCheckInModal(true)}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-white">Check-In</CardTitle>
             <Heart className="h-4 w-4 text-white" />
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent>
             <div className="text-2xl font-bold text-white">{state.checkIns.length}</div>
             <p className="text-xs text-red-100">
               Today's Check-ins • Log your energy & focus
@@ -214,16 +211,16 @@ function Dashboard() {
 
       {/* Goal Tree Overview Card */}
       <Card 
-        className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-yellow-400 to-yellow-500 hover:shadow-lg hover:scale-[1.02] border border-yellow-300 shadow-sm rounded-lg"
+        className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-yellow-400 to-yellow-500 hover:shadow-lg hover:scale-[1.02]"
         onClick={() => setShowGoalTree(true)}
       >
-        <CardHeader className="p-6">
+        <CardHeader>
           <CardTitle className="flex items-center justify-center gap-4 text-lg font-bold text-yellow-900">
             <GitBranch className="h-8 w-8" />
             <span>🌟 Open Goal Tree Overview</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-center p-6 pt-0">
+        <CardContent className="text-center">
           <p className="mb-4 text-yellow-800 leading-relaxed">
             See the complete hierarchy of your goals and tasks. Explore how every action connects 
             to your life vision in an interactive tree view.

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import './App.css'
 import Dashboard from './components/Dashboard.tsx'
 import AnnualPlan from './components/AnnualPlan.tsx'
 import QuarterlySprint from './components/QuarterlySprint.tsx'
@@ -17,13 +16,15 @@ import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
 import LandingPage from './components/LandingPage.tsx'
 import DevRLModal from './components/DevRLModal.tsx'
 import GoalsTable from './components/GoalsTable.tsx'
+import { Button } from './components/ui/button'
 import { rlEngine } from './services/rlEngine'
 import { appSettingsService } from './services/appSettingsService'
-import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table } from 'lucide-react'
+import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table, Menu, X } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
 import { notificationService } from './services/notificationService'
 import { updatePageTitle, resetPageTitle } from './utils/pageTitle'
+import { cn } from './lib/utils'
 // Import Firebase connection test
 import './utils/firebaseTest'
 
@@ -39,6 +40,7 @@ function App() {
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [path, setPath] = useState<string>(window.location.pathname);
   const [showRLDrawer, setShowRLDrawer] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user has any data - if not, show wizard
   const isNewUser = state.lifeGoals.length === 0 && 
@@ -158,14 +160,8 @@ function App() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{ color: 'white', fontSize: '1.5rem' }}>Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/70">
+        <div className="text-primary-foreground text-xl font-medium">Loading...</div>
       </div>
     );
   }
@@ -225,195 +221,196 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {/* Notification Banner */}
-      <NotificationBanner 
-        onAction={(action) => {
-          // Handle notification actions
-          switch (action) {
-            case 'navigate-this-week':
-              setCurrentView('this-week');
-              break;
-            case 'navigate-quarterly':
-              setCurrentView('quarterly');
-              break;
-            case 'navigate-annual':
-              setCurrentView('annual');
-              break;
-            case 'navigate-dashboard':
-              setCurrentView('dashboard');
-              break;
-          }
-        }}
-      />
-
-      <header className="app-header">
-        <div>
-          <h1>Personal OS</h1>
-          <p>Transform your 5-year marathon into manageable strategic actions</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: '#718096', fontSize: '0.9rem' }}>
-            {user.email}
-          </span>
-          <button
-            onClick={() => setShowRLDrawer(true)}
-            style={{
-              padding: '0.5rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: import.meta.env.MODE === 'production' ? 'none' : 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-            title="RL Debug Log (dev)"
-          >
-            RL
-          </button>
-          <button
-            onClick={() => setShowNotificationSettings(true)}
-            style={{
-              padding: '0.5rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-            title="Notification Settings"
-          >
-            <Settings size={16} />
-          </button>
-          <button
-            onClick={() => setShowActivityLog(true)}
-            style={{
-              padding: '0.5rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-            title="Activity Log"
-          >
-            <Clock size={16} />
-          </button>
-          <button
-            onClick={() => setShowWizard(true)}
-            style={{
-              padding: '0.5rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-            title="Life Architecture Wizard"
-          >
-            <Sparkles size={16} />
-          </button>
-          <button
-            onClick={logout}
-            style={{
-              padding: '0.5rem 1rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '6px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
+    <div className="flex min-h-screen bg-background">
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+            <h1 className="text-lg font-semibold">Personal OS</h1>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowChatbot(!showChatbot)}
+            >
+              <Sparkles size={16} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowNotificationSettings(true)}
+            >
+              <Settings size={16} />
+            </Button>
+          </div>
         </div>
       </header>
 
-      <nav className="app-nav">
-        <button 
-          className={currentView === 'dashboard' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('dashboard')}
-        >
-          <TrendingUp size={20} />
-          Dashboard
-        </button>
-        <button 
-          className={currentView === 'life-goals' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('life-goals')}
-        >
-          <Heart size={20} />
-          Life Goals
-        </button>
-        <button 
-          className={currentView === 'goals-table' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('goals-table')}
-        >
-          <Table size={20} />
-          Goals Table
-        </button>
-        <button 
-          className={currentView === 'annual' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('annual')}
-        >
-          <Target size={20} />
-          Annual Flight Plan
-        </button>
-        <button 
-          className={currentView === 'quarterly' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('quarterly')}
-        >
-          <Calendar size={20} />
-          90-Day Sprint
-        </button>
-        <button 
-          className={currentView === 'this-week' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('this-week')}
-        >
-          <Target size={20} />
-          This Week
-        </button>
-        <button 
-          className={currentView === 'weekly' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('weekly')}
-        >
-          <CheckSquare size={20} />
-          Weekly Review
-        </button>
-        <button 
-          className={currentView === 'guide' ? 'nav-button active' : 'nav-button'}
-          onClick={() => setCurrentView('guide')}
-        >
-          <BookOpen size={20} />
-          User Guide
-        </button>
-      </nav>
+      {/* Sidebar Navigation */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {/* Desktop Header */}
+        <div className="hidden lg:flex items-center justify-between p-6 border-b border-border">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Personal OS</h1>
+            <p className="text-sm text-muted-foreground mt-1">Strategic Life Management</p>
+          </div>
+        </div>
 
-      <main className="app-main">
-        {renderView()}
+        {/* User Info */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-primary-foreground">
+                {user?.email?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">
+                {user?.displayName || user?.email?.split('@')[0]}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 p-4 space-y-1">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
+            { id: 'life-goals', label: 'Life Goals', icon: Heart },
+            { id: 'annual', label: 'Annual Plan', icon: Target },
+            { id: 'quarterly', label: '90-Day Sprint', icon: Calendar },
+            { id: 'this-week', label: 'This Week', icon: CheckSquare },
+            { id: 'weekly', label: 'Weekly Review', icon: CheckSquare },
+            { id: 'goals-table', label: 'Goals Table', icon: Table },
+            { id: 'guide', label: 'User Guide', icon: BookOpen },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = currentView === item.id;
+            return (
+              <Button
+                key={item.id}
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start space-x-3 h-11",
+                  isActive && "bg-secondary text-secondary-foreground font-medium"
+                )}
+                onClick={() => {
+                  setCurrentView(item.id as ViewType);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Button>
+            );
+          })}
+        </nav>
+
+        {/* Footer Actions */}
+        <div className="p-4 space-y-2 border-t border-border">
+          <Button
+            variant="ghost"
+            className="w-full justify-start space-x-3"
+            onClick={() => setShowWizard(true)}
+          >
+            <Sparkles size={18} />
+            <span>Life Wizard</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start space-x-3"
+            onClick={() => setShowActivityLog(true)}
+          >
+            <Clock size={18} />
+            <span>Activity Log</span>
+          </Button>
+          {import.meta.env.MODE !== 'production' && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start space-x-3"
+              onClick={() => setShowRLDrawer(true)}
+            >
+              <TrendingUp size={18} />
+              <span>RL Debug</span>
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className="w-full justify-start space-x-3 mt-4"
+            onClick={logout}
+          >
+            <LogOut size={18} />
+            <span>Logout</span>
+          </Button>
+        </div>
+      </aside>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* Notification Banner */}
+        <NotificationBanner 
+          onAction={(action) => {
+            switch (action) {
+              case 'navigate-this-week':
+                setCurrentView('this-week');
+                break;
+              case 'navigate-quarterly':
+                setCurrentView('quarterly');
+                break;
+              case 'navigate-annual':
+                setCurrentView('annual');
+                break;
+              case 'navigate-dashboard':
+                setCurrentView('dashboard');
+                break;
+            }
+          }}
+        />
+
+        {/* Content Area */}
+        <div className="flex-1 pt-16 lg:pt-0 px-4 lg:px-8 py-6 lg:py-8 overflow-auto">
+          {renderView()}
+        </div>
       </main>
 
-      {/* Notification Settings Modal */}
+      {/* Floating Chat Button */}
+      <Button
+        size="icon"
+        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50"
+        onClick={() => setShowChatbot(!showChatbot)}
+      >
+        <Sparkles size={20} />
+      </Button>
+
+      {/* Modals and Overlays */}
       <NotificationSettings
         isOpen={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
       />
 
-      {/* Life Architecture Wizard */}
       <LifeArchitectureWizard
         isOpen={showWizard}
         onClose={() => setShowWizard(false)}
@@ -423,25 +420,21 @@ function App() {
         }}
       />
 
-      {/* AI Chatbot */}
       <AIChatbot
         context={getChatbotContext()}
         isVisible={showChatbot}
         onToggle={() => setShowChatbot(!showChatbot)}
       />
 
-      {/* Activity Log Drawer */}
       <ActivityLogDrawer
         isOpen={showActivityLog}
         onClose={() => setShowActivityLog(false)}
       />
 
-      {/* Dev-only RL Modal */}
       {import.meta.env.MODE !== 'production' && (
         <DevRLModal isOpen={showRLDrawer} onClose={() => setShowRLDrawer(false)} />
       )}
 
-      {/* Development Toast Notifications */}
       <DevToastContainer />
     </div>
   )
