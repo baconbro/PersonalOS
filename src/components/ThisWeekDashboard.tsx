@@ -10,12 +10,14 @@ import {
   Link2,
   Play,
   Edit,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { WeeklyTask, ActivityType } from '../types';
 import WeeklyCommandHuddle from './WeeklyCommandHuddle';
 import GoldenThread from './GoldenThread';
+import { getIncompleteTasksForWeek, getPreviousWeek, performManualTaskRollover } from '../utils/taskRollover';
 import './ThisWeekDashboard.css';
 
 interface WeeklyPriorityCard {
@@ -50,6 +52,8 @@ const ThisWeekDashboard: React.FC = () => {
     priority: 'medium' as 'high' | 'medium' | 'low',
     estimatedHours: 2
   });
+  const [isRolloverLoading, setIsRolloverLoading] = useState(false);
+  const [rolloverMessage, setRolloverMessage] = useState<string | null>(null);
 
   const currentWeek = new Date();
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -309,6 +313,76 @@ const ThisWeekDashboard: React.FC = () => {
     setShowAddTaskForm(false);
   };
 
+  const handleManualRollover = async () => {
+    setIsRolloverLoading(true);
+    setRolloverMessage(null);
+    
+    try {
+      // Check for incomplete tasks before rollover
+      const previousWeek = getPreviousWeek();
+      const incompleteTasks = getIncompleteTasksForWeek(state.weeklyTasks, previousWeek);
+      
+      console.log(`🔍 Manual rollover check:`, { 
+        previousWeek: previousWeek.toISOString(),
+        totalTasks: state.weeklyTasks.length,
+        incompleteTasks: incompleteTasks.length,
+        incompleteTaskTitles: incompleteTasks.map(t => t.title)
+      });
+      
+      if (incompleteTasks.length === 0) {
+        setRolloverMessage('No incomplete tasks found from previous week');
+        return;
+      }
+      
+      // Use manual rollover function that bypasses timing restrictions
+      const { shouldRollover, rolledOverTasks } = performManualTaskRollover(state.weeklyTasks);
+      
+      console.log(`🔄 Rollover result:`, { 
+        shouldRollover, 
+        rolledOverTasksCount: rolledOverTasks.length,
+        rolledOverTaskTitles: rolledOverTasks.map(t => t.title)
+      });
+      
+      if (shouldRollover && rolledOverTasks.length > 0) {
+        // First, remove the original incomplete tasks from previous week
+        incompleteTasks.forEach(originalTask => {
+          console.log(`🗑️ Removing original task from previous week: "${originalTask.title}" with ID: ${originalTask.id}`);
+          dispatch({ type: 'DELETE_WEEKLY_TASK', payload: originalTask.id });
+        });
+        
+        // Then add each rolled over task to current week
+        rolledOverTasks.forEach(task => {
+          console.log(`📝 Dispatching ADD_WEEKLY_TASK for: "${task.title}" with ID: ${task.id}`);
+          dispatch({ type: 'ADD_WEEKLY_TASK', payload: task });
+        });
+        
+        setRolloverMessage(`✅ Successfully rolled over ${rolledOverTasks.length} task${rolledOverTasks.length === 1 ? '' : 's'}`);
+        
+        // Log manual rollover activity
+        const activityLog = createActivityLog(
+          'SYSTEM_ROLLOVER',
+          'Manual task rollover from dashboard',
+          `User manually triggered rollover - ${rolledOverTasks.length} tasks processed`,
+          undefined,
+          'system', 
+          { manualTrigger: true, taskCount: rolledOverTasks.length, source: 'dashboard' }
+        );
+        logActivity(activityLog);
+      } else {
+        console.log(`⚠️ No rollover performed - shouldRollover: ${shouldRollover}, tasks: ${rolledOverTasks.length}`);
+        setRolloverMessage('No tasks needed to be rolled over');
+      }
+      
+    } catch (error) {
+      console.error('Manual rollover failed:', error);
+      setRolloverMessage('❌ Rollover failed - please try again');
+    } finally {
+      setIsRolloverLoading(false);
+      // Clear message after 5 seconds
+      setTimeout(() => setRolloverMessage(null), 5000);
+    }
+  };
+
   const handleAddTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -380,8 +454,9 @@ const ThisWeekDashboard: React.FC = () => {
             Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}
           </p>
         </div>
-        
-        <div className="week-stats">
+      </div>
+
+      <div className="week-stats">
           <div className="stat-card">
             <div className="stat-value">{thisWeekTasks.length}</div>
             <div className="stat-label">Total Priorities</div>
@@ -396,14 +471,40 @@ const ThisWeekDashboard: React.FC = () => {
           </div>
         </div>
 
-        <button 
-          className="weekly-huddle-btn"
-          onClick={() => setShowCommandHuddle(true)}
-        >
-          <Target size={20} />
-          Weekly Huddle
-        </button>
-      </div>
+        <div className="week-actions">
+          <button 
+            className="weekly-huddle-btn"
+            onClick={() => setShowCommandHuddle(true)}
+          >
+            <Target size={20} />
+            Weekly Huddle
+          </button>
+          
+          <button 
+            className="rollover-btn"
+            onClick={handleManualRollover}
+            disabled={isRolloverLoading}
+            title="Check and rollover incomplete tasks from previous week"
+          >
+            {isRolloverLoading ? (
+              <>
+                <RefreshCw size={18} className="spinning" />
+                Rolling over...
+              </>
+            ) : (
+              <>
+                <RefreshCw size={18} />
+                Check Rollover
+              </>
+            )}
+          </button>
+        </div>
+        
+        {rolloverMessage && (
+          <div className={`rollover-message ${rolloverMessage.startsWith('✅') ? 'success' : rolloverMessage.startsWith('❌') ? 'error' : 'info'}`}>
+            {rolloverMessage}
+          </div>
+        )}
 
       {/* Command Huddle Prompt */}
       {shouldShowHuddlePrompt && (

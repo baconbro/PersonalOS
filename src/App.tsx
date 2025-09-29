@@ -12,6 +12,7 @@ import NotificationSettings from './components/NotificationSettings.tsx'
 import LifeArchitectureWizard from './components/LifeArchitectureWizard.tsx'
 import AIChatbot from './components/AIChatbot.tsx'
 import DevToastContainer from './components/DevToastContainer.tsx'
+import ToastContainer from './components/ToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
 import LandingPage from './components/LandingPage.tsx'
 import DevRLModal from './components/DevRLModal.tsx'
@@ -436,6 +437,7 @@ function App() {
       )}
 
       <DevToastContainer />
+      <ToastContainer />
     </div>
   )
 }

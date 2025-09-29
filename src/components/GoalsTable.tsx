@@ -399,12 +399,53 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
     );
   }
 
-  const getStatusDisplay = (goal: GoalItem) => {
-    if (goal.status === 'completed') return { text: 'COMPLETED', color: 'completed' };
-    if (goal.status === 'in-progress' && goal.progress >= 70) return { text: 'ON TRACK', color: 'on-track' };
-    if (goal.status === 'in-progress' && goal.progress < 70) return { text: 'AT RISK', color: 'at-risk' };
-    if (goal.status === 'not-started' || goal.status === 'on-hold') return { text: 'PENDING', color: 'pending' };
-    return { text: 'ON TRACK', color: 'on-track' };
+  const getTimelineDisplay = (goal: GoalItem) => {
+    const currentYear = new Date().getFullYear();
+    const currentQuarter = Math.floor((new Date().getMonth() + 3) / 3);
+    
+    switch (goal.goalType) {
+      case 'life': {
+        // For life goals, check if it has a timeframe
+        const lifeGoal = state.lifeGoals.find(lg => lg.id === goal.id);
+        if (lifeGoal?.timeframe === 'five-year') {
+          const startYear = lifeGoal.createdAt ? new Date(lifeGoal.createdAt).getFullYear() : currentYear;
+          const endYear = startYear + 5;
+          return { text: `${startYear} - ${endYear}`, color: 'life-goal' };
+        } else if (lifeGoal?.timeframe === 'ten-year') {
+          const startYear = lifeGoal.createdAt ? new Date(lifeGoal.createdAt).getFullYear() : currentYear;
+          const endYear = startYear + 10;
+          return { text: `${startYear} - ${endYear}`, color: 'life-goal' };
+        }
+        return { text: 'Life Goal', color: 'life-goal' };
+      }
+      case 'annual': {
+        const annualGoal = state.annualGoals.find(ag => ag.id === goal.id);
+        const year = annualGoal?.year || currentYear;
+        return { text: `${year}`, color: 'annual-goal' };
+      }
+      case 'quarterly': {
+        const quarterlyGoal = state.quarterlyGoals.find(qg => qg.id === goal.id);
+        const quarter = quarterlyGoal?.quarter || currentQuarter;
+        const year = quarterlyGoal?.year || currentYear;
+        return { text: `Q${quarter} ${year}`, color: 'quarterly-goal' };
+      }
+      case 'weekly': {
+        const weeklyTask = state.weeklyTasks.find(wt => wt.id === goal.id);
+        if (weeklyTask?.weekOf) {
+          const weekDate = new Date(weeklyTask.weekOf);
+          const weekStart = new Date(weekDate);
+          weekStart.setDate(weekDate.getDate() - weekDate.getDay() + 1); // Monday
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6); // Sunday
+          
+          const formatWeekDate = (date: Date) => `${date.getMonth() + 1}/${date.getDate()}`;
+          return { text: `${formatWeekDate(weekStart)} - ${formatWeekDate(weekEnd)}`, color: 'weekly-task' };
+        }
+        return { text: 'This Week', color: 'weekly-task' };
+      }
+      default:
+        return { text: 'Unknown', color: 'default' };
+    }
   };
 
   const getProgressColor = (progress: number) => {
@@ -482,7 +523,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Status</th>
+              <th>Timeline</th>
               <th>Progress</th>
               <th>Target date</th>
               <th>Last updated</th>
@@ -491,7 +532,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
           </thead>
           <tbody>
             {filteredFlattenedGoals.map((goal) => {
-              const status = getStatusDisplay(goal);
+              const timeline = getTimelineDisplay(goal);
               const isExpanded = goal.isExpanded;
               const hasChildren = goal.hasChildren;
               
@@ -530,8 +571,8 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
                     </div>
                   </td>
                   <td>
-                    <span className={`status-badge status-${status.color}`}>
-                      {status.text}
+                    <span className={`timeline-badge timeline-${timeline.color}`}>
+                      {timeline.text}
                     </span>
                   </td>
                   <td className="progress-cell">

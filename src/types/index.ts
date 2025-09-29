@@ -20,7 +20,8 @@ export type ActivityType =
   | 'USER_LOGOUT'
   | 'CHECK_IN_LOGGED'
   | 'DATA_EXPORTED'
-  | 'DATA_IMPORTED';
+  | 'DATA_IMPORTED'
+  | 'SYSTEM_ROLLOVER';
 
 export interface ActivityLog {
   id: string;
@@ -29,7 +30,7 @@ export interface ActivityLog {
   description: string;
   timestamp: Date;
   entityId?: string; // ID of the item that was modified
-  entityType?: 'life_goal' | 'quarterly_goal' | 'weekly_task' | 'weekly_review' | 'check_in';
+  entityType?: 'life_goal' | 'quarterly_goal' | 'weekly_task' | 'weekly_review' | 'check_in' | 'system';
   metadata?: Record<string, any>; // Additional context data
 }
 
@@ -158,6 +159,8 @@ export interface WeeklyReviewData {
     goalType?: 'life' | 'annual' | 'quarterly' | 'task';
     isGeneral?: boolean;
   };
+  // Mindset & Clarity Check responses
+  clarityResponses?: Record<string, string>;
 }
 
 export interface DashboardStats {

@@ -156,14 +156,14 @@ function AnnualPlan() {
       </div>
       
       <p className="component-description">
-        Set 2-3 high-level strategic goals that will define your year. These should be significant achievements
+        Set strategic goals that will define your year. These should be significant achievements
         that align with your long-term vision and can be broken down into quarterly objectives.
       </p>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <strong>Current Goals: </strong>
-          <span style={{ color: '#667eea' }}>{currentYearGoals.length}/3</span>
+          <span style={{ color: '#667eea' }}>{currentYearGoals.length}</span>
           <span style={{ marginLeft: '1rem', fontSize: '0.9rem', color: '#666' }}>
             Completed: {currentYearGoals.filter(g => g.status === 'completed').length}
           </span>
@@ -171,7 +171,6 @@ function AnnualPlan() {
         <button 
           className="btn btn-primary"
           onClick={() => setShowForm(true)}
-          disabled={currentYearGoals.length >= 3}
         >
           <Plus size={20} />
           Add Annual Goal
@@ -309,125 +308,232 @@ function AnnualPlan() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-1" style={{ gap: '1.5rem' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+          gap: '1.5rem',
+          marginBottom: '2rem'
+        }}>
           {currentYearGoals.map((goal) => (
-            <div key={goal.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0, color: '#2d3748' }}>{goal.title}</h3>
-                    <span style={{ 
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      backgroundColor: getPriorityColor(goal.priority) + '20',
-                      color: getPriorityColor(goal.priority)
-                    }}>
-                      {goal.priority.toUpperCase()}
-                    </span>
-                    <span style={{ 
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      backgroundColor: getStatusColor(goal.status) + '20',
-                      color: getStatusColor(goal.status)
-                    }}>
-                      {goal.status.replace('-', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                  <p style={{ color: '#4a5568', margin: '0 0 1rem 0', lineHeight: 1.6 }}>
-                    {goal.description}
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', fontSize: '0.9rem', color: '#666' }}>
-                    {goal.lifeGoalId && (() => {
-                      const linkedLifeGoal = state.lifeGoals.find(lg => lg.id === goal.lifeGoalId);
-                      if (linkedLifeGoal) {
-                        const Icon = categoryIcons[linkedLifeGoal.category];
-                        const color = categoryColors[linkedLifeGoal.category];
-                        return (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Icon size={16} style={{ color }} />
-                            <strong>Life Goal:</strong> {linkedLifeGoal.title}
-                          </span>
-                        );
-                      }
-                      return null;
-                    })()}
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Calendar size={16} />
-                      Target: {format(goal.targetDate, 'MMM dd, yyyy')}
-                    </span>
+            <div key={goal.id} style={{
+              background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              transition: 'all 0.2s ease-in-out',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+            }}
+            >
+              {/* Header Section */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <h3 style={{ 
+                    margin: 0, 
+                    fontSize: '1.4rem',
+                    fontWeight: '700',
+                    color: '#1a202c',
+                    lineHeight: '1.3'
+                  }}>
+                    {goal.title}
+                  </h3>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleShowGoldenThread(goal)}
+                      style={{ 
+                        padding: '0.5rem', 
+                        backgroundColor: '#ffd700', 
+                        color: '#8b4513',
+                        border: 'none',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s'
+                      }}
+                      title="See Context - Trace this goal to your life vision"
+                    >
+                      <GitBranch size={16} />
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleEdit(goal)}
+                      style={{ 
+                        padding: '0.5rem',
+                        border: 'none',
+                        borderRadius: '8px',
+                        backgroundColor: '#e2e8f0',
+                        color: '#4a5568',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleDelete(goal.id)}
+                      style={{ 
+                        padding: '0.5rem', 
+                        color: '#f56565',
+                        border: 'none',
+                        borderRadius: '8px',
+                        backgroundColor: '#fed7d7',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => handleShowGoldenThread(goal)}
-                    style={{ padding: '0.5rem', backgroundColor: '#ffd700', color: '#8b4513' }}
-                    title="See Context - Trace this goal to your life vision"
-                  >
-                    <GitBranch size={16} />
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => handleEdit(goal)}
-                    style={{ padding: '0.5rem' }}
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => handleDelete(goal.id)}
-                    style={{ padding: '0.5rem', color: '#f56565' }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                
+                {/* Status and Priority Badges */}
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ 
+                    padding: '0.375rem 0.875rem',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backgroundColor: getPriorityColor(goal.priority) + '15',
+                    color: getPriorityColor(goal.priority),
+                    border: `1px solid ${getPriorityColor(goal.priority)}30`
+                  }}>
+                    {goal.priority.toUpperCase()} PRIORITY
+                  </span>
+                  <span style={{ 
+                    padding: '0.375rem 0.875rem',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backgroundColor: getStatusColor(goal.status) + '15',
+                    color: getStatusColor(goal.status),
+                    border: `1px solid ${getStatusColor(goal.status)}30`
+                  }}>
+                    {goal.status.replace('-', ' ').toUpperCase()}
+                  </span>
                 </div>
               </div>
 
-              <div style={{ marginTop: '1.5rem' }}>
+              {/* Description */}
+              <p style={{ 
+                color: '#4a5568', 
+                margin: '0 0 1.25rem 0', 
+                lineHeight: '1.6',
+                fontSize: '0.95rem'
+              }}>
+                {goal.description}
+              </p>
+
+              {/* Metadata Section */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                {goal.lifeGoalId && (() => {
+                  const linkedLifeGoal = state.lifeGoals.find(lg => lg.id === goal.lifeGoalId);
+                  if (linkedLifeGoal) {
+                    const Icon = categoryIcons[linkedLifeGoal.category];
+                    const color = categoryColors[linkedLifeGoal.category];
+                    return (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem', 
+                        marginBottom: '0.75rem',
+                        padding: '0.75rem',
+                        backgroundColor: color + '10',
+                        borderRadius: '8px',
+                        border: `1px solid ${color}20`
+                      }}>
+                        <Icon size={18} style={{ color }} />
+                        <span style={{ fontSize: '0.9rem', color: '#2d3748', fontWeight: '500' }}>
+                          <strong>Life Goal:</strong> {linkedLifeGoal.title}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  color: '#666',
+                  fontSize: '0.9rem'
+                }}>
+                  <Calendar size={16} />
+                  <span><strong>Target:</strong> {format(goal.targetDate, 'MMM dd, yyyy')}</span>
+                </div>
+              </div>
+
+              {/* Progress Section */}
+              <div style={{ marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748' }}>
-                    Progress: {goal.progress}% (Auto-calculated from quarterly goals)
-                  </label>
+                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748' }}>
+                    Progress
+                  </span>
+                  <span style={{ 
+                    fontSize: '1.1rem', 
+                    fontWeight: '700', 
+                    color: goal.progress >= 75 ? '#38a169' : goal.progress >= 50 ? '#ed8936' : '#e53e3e'
+                  }}>
+                    {goal.progress}%
+                  </span>
                 </div>
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${goal.progress}%` }}
-                  ></div>
+                <div style={{
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: '#e2e8f0',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${goal.progress}%`,
+                    height: '100%',
+                    background: goal.progress >= 75 
+                      ? 'linear-gradient(90deg, #38a169 0%, #48bb78 100%)'
+                      : goal.progress >= 50
+                      ? 'linear-gradient(90deg, #ed8936 0%, #f6ad55 100%)'
+                      : 'linear-gradient(90deg, #e53e3e 0%, #fc8181 100%)',
+                    transition: 'width 0.3s ease'
+                  }}></div>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.25rem' }}>
+                  Auto-calculated from quarterly goals
                 </div>
               </div>
 
+              {/* Quarterly Goals Link */}
               {goal.quarterlyGoals.length > 0 && (
-                <div style={{ marginTop: '1rem', padding: '1rem', background: '#f7fafc', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748', marginBottom: '0.5rem' }}>
+                <div style={{ 
+                  padding: '1rem', 
+                  background: 'linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%)', 
+                  borderRadius: '8px',
+                  border: '1px solid #bee3f8'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.9rem', 
+                    fontWeight: '600', 
+                    color: '#2b6cb0', 
+                    marginBottom: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <Target size={16} />
                     Linked Quarterly Goals: {goal.quarterlyGoals.length}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#4a5568' }}>
                     Break this annual goal into quarterly objectives in the 90-Day Sprint section.
                   </div>
                 </div>
               )}
             </div>
           ))}
-        </div>
-      )}
-
-      {currentYearGoals.length >= 3 && (
-        <div style={{ 
-          marginTop: '2rem', 
-          padding: '1rem', 
-          background: '#fed7d7', 
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
-          <p style={{ margin: 0, color: '#c53030', fontWeight: '500' }}>
-            You've reached the recommended limit of 3 annual goals. 
-            Focus on executing these effectively before adding more.
-          </p>
         </div>
       )}
 

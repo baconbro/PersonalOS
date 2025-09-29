@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval, addWeeks } from 'date-fns';
 import type { WeeklyReviewData, QuarterlyGoal, WeeklyTask } from '../types';
+import { taskRolloverService } from '../services/taskRolloverService';
 import './WeeklyCommandHuddle.css';
 
 interface WeeklyCommandHuddleProps {
@@ -395,6 +396,11 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   // Load last week's tasks and reviews on component mount
   useEffect(() => {
     if (isOpen) {
+      // Trigger automatic rollover check when opening the huddle
+      taskRolloverService.checkAndPerformRollover(state.weeklyTasks).catch(error => {
+        console.warn('Weekly Huddle rollover check failed:', error);
+      });
+
       const lastWeekTasks = state.weeklyTasks.filter(task =>
         isWithinInterval(task.weekOf, { start: lastWeekStart, end: lastWeekEnd })
       );
@@ -710,6 +716,8 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       winsReflection: wins.map(win => win.text).join('\n'), // Convert individual wins to string for storage
       gapsAnalysis: gaps.map(gap => gap.text).join('\n'), // Convert individual gaps to string for storage
       keyLesson: lessons.map(lesson => lesson.text).join('\n'), // Convert individual lessons to string for storage
+      // Add Mindset & Clarity Check responses
+      clarityResponses: clarityResponses,
       // Add linked reflection data - map each win to its link
       winsLink: wins.reduce((acc, win) => {
         if (win.link) {
@@ -730,6 +738,14 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         return acc;
       }, {} as Record<string, LinkedReflection>)
     };
+
+    // Debug: Log clarity responses to verify they're being saved
+    console.log('🔍 Weekly Huddle Review Data:', {
+      clarityResponses,
+      clarityResponsesKeys: Object.keys(clarityResponses),
+      clarityResponsesValues: Object.values(clarityResponses),
+      hasAnyResponses: Object.keys(clarityResponses).length > 0
+    });
 
     dispatch({ type: 'ADD_WEEKLY_REVIEW', payload: reviewData });
 

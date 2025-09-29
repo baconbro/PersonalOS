@@ -5,6 +5,8 @@ import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
 import { notificationService } from '../services/notificationService';
+import { toastService } from '../services/toastService';
+import { taskRolloverService } from '../services/taskRolloverService';
 import { updateLifeGoalFromAnnualProgress, updateAnnualGoalFromQuarterlyProgress } from '../utils/progressCalculation';
 
 // Initial state
@@ -413,6 +415,57 @@ export function AppProvider({ children }: AppProviderProps) {
     }
   }, [user]);
 
+  // Initialize task rollover service
+  useEffect(() => {
+    // Initialize rollover service
+    taskRolloverService.initialize();
+    
+    // Register rollover callback to handle task rollover
+    const handleRollover = (rolloverData: { tasksToAdd: WeeklyTask[]; tasksToRemove: WeeklyTask[] }) => {
+      const { tasksToAdd, tasksToRemove } = rolloverData;
+      
+      console.log(`🔄 Rolling over ${tasksToAdd.length} tasks: removing ${tasksToRemove.length} original tasks and adding ${tasksToAdd.length} rolled over tasks`);
+      
+      // First, remove the original incomplete tasks from previous week
+      tasksToRemove.forEach(originalTask => {
+        console.log(`🗑️ Removing original task: "${originalTask.title}" (ID: ${originalTask.id})`);
+        originalDispatch({ type: 'DELETE_WEEKLY_TASK', payload: originalTask.id });
+      });
+      
+      // Then add each rolled over task to current week
+      tasksToAdd.forEach(task => {
+        console.log(`📝 Adding rolled over task: "${task.title}" (ID: ${task.id})`);
+        originalDispatch({ type: 'ADD_WEEKLY_TASK', payload: task });
+      });
+      
+      // Log activity for rollover
+      const activityLog = createActivityLog(
+        'SYSTEM_ROLLOVER',
+        `Rolled over ${tasksToAdd.length} task${tasksToAdd.length === 1 ? '' : 's'}`,
+        `Automatically moved incomplete tasks from previous week to current week`,
+        undefined,
+        'system',
+        { taskCount: tasksToAdd.length, rolloverDate: new Date() }
+      );
+      originalDispatch({ type: 'ADD_ACTIVITY_LOG', payload: activityLog });
+    };
+    
+    taskRolloverService.onRollover(handleRollover);
+    
+    // Cleanup on unmount
+    return () => {
+      taskRolloverService.offRollover(handleRollover);
+    };
+  }, []);
+
+  // Trigger rollover check when tasks are loaded or updated
+  useEffect(() => {
+    if (state.weeklyTasks.length > 0 && !state.loading) {
+      // Check for rollover with current tasks
+      taskRolloverService.checkAndPerformRollover(state.weeklyTasks);
+    }
+  }, [state.weeklyTasks, state.loading]);
+
   // Enhanced dispatch that automatically saves to Firebase with localStorage fallback
   const enhancedDispatch = async (action: Action) => {
     // Calculate the new state using the reducer logic BEFORE dispatching
@@ -497,31 +550,39 @@ export function AppProvider({ children }: AppProviderProps) {
         case 'ADD_LIFE_GOAL':
           const lifeGoalId = await firebaseService.addLifeGoal(action.payload);
           originalDispatch({ type: 'UPDATE_LIFE_GOAL', payload: { ...action.payload, id: lifeGoalId } });
+          toastService.showFirebaseSuccess('created', 'Life Goal', action.payload.title);
           break;
         case 'UPDATE_LIFE_GOAL':
           await firebaseService.updateLifeGoal(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Life Goal', action.payload.title);
           break;
         case 'DELETE_LIFE_GOAL':
           console.log('🔄 AppContext: Starting Firebase life goal deletion for ID:', action.payload);
           await firebaseService.deleteLifeGoal(action.payload);
           console.log('✅ Firebase life goal deletion completed');
+          toastService.showFirebaseSuccess('deleted', 'Life Goal');
           break;
         case 'ADD_ANNUAL_GOAL':
           const annualId = await firebaseService.addAnnualGoal(action.payload);
           originalDispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: { ...action.payload, id: annualId } });
+          toastService.showFirebaseSuccess('created', 'Annual Goal', action.payload.title);
           break;
         case 'UPDATE_ANNUAL_GOAL':
           await firebaseService.updateAnnualGoal(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Annual Goal', action.payload.title);
           break;
         case 'DELETE_ANNUAL_GOAL':
           await firebaseService.deleteAnnualGoal(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Annual Goal');
           break;
         case 'ADD_QUARTERLY_GOAL':
           const quarterlyId = await firebaseService.addQuarterlyGoal(action.payload);
           originalDispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: { ...action.payload, id: quarterlyId } });
+          toastService.showFirebaseSuccess('created', 'Quarterly Goal', action.payload.title);
           break;
         case 'UPDATE_QUARTERLY_GOAL':
           await firebaseService.updateQuarterlyGoal(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Quarterly Goal', action.payload.title);
           
           // Also sync any annual goals that were automatically updated
           const currentState = state;
@@ -541,31 +602,92 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'DELETE_QUARTERLY_GOAL':
           await firebaseService.deleteQuarterlyGoal(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Quarterly Goal');
           break;
         case 'ADD_WEEKLY_TASK':
           const taskId = await firebaseService.addWeeklyTask(action.payload);
           originalDispatch({ type: 'UPDATE_WEEKLY_TASK', payload: { ...action.payload, id: taskId } });
+          toastService.showFirebaseSuccess('created', 'Weekly Task', action.payload.title);
           break;
         case 'UPDATE_WEEKLY_TASK':
           await firebaseService.updateWeeklyTask(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Weekly Task', action.payload.title);
           break;
         case 'DELETE_WEEKLY_TASK':
           await firebaseService.deleteWeeklyTask(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Weekly Task');
           break;
         case 'ADD_WEEKLY_REVIEW':
           const reviewId = await firebaseService.addWeeklyReview(action.payload);
           originalDispatch({ type: 'UPDATE_WEEKLY_REVIEW', payload: { ...action.payload, id: reviewId } });
+          toastService.showFirebaseSuccess('saved', 'Weekly Review');
           break;
         case 'UPDATE_WEEKLY_REVIEW':
           await firebaseService.updateWeeklyReview(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Weekly Review');
           break;
         case 'ADD_CHECK_IN':
           await firebaseService.addCheckIn(action.payload);
+          toastService.showFirebaseSuccess('saved', 'Check-in');
           break;
       }
       console.log('✅ Firebase sync completed');
     } catch (error) {
       console.warn('⚠️ Firebase sync failed:', error);
+      
+      // Show error toast based on the action type
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      switch (action.type) {
+        case 'ADD_LIFE_GOAL':
+          toastService.showFirebaseError('create', 'Life Goal', errorMessage);
+          break;
+        case 'UPDATE_LIFE_GOAL':
+          toastService.showFirebaseError('update', 'Life Goal', errorMessage);
+          break;
+        case 'DELETE_LIFE_GOAL':
+          toastService.showFirebaseError('delete', 'Life Goal', errorMessage);
+          break;
+        case 'ADD_ANNUAL_GOAL':
+          toastService.showFirebaseError('create', 'Annual Goal', errorMessage);
+          break;
+        case 'UPDATE_ANNUAL_GOAL':
+          toastService.showFirebaseError('update', 'Annual Goal', errorMessage);
+          break;
+        case 'DELETE_ANNUAL_GOAL':
+          toastService.showFirebaseError('delete', 'Annual Goal', errorMessage);
+          break;
+        case 'ADD_QUARTERLY_GOAL':
+          toastService.showFirebaseError('create', 'Quarterly Goal', errorMessage);
+          break;
+        case 'UPDATE_QUARTERLY_GOAL':
+          toastService.showFirebaseError('update', 'Quarterly Goal', errorMessage);
+          break;
+        case 'DELETE_QUARTERLY_GOAL':
+          toastService.showFirebaseError('delete', 'Quarterly Goal', errorMessage);
+          break;
+        case 'ADD_WEEKLY_TASK':
+          toastService.showFirebaseError('create', 'Weekly Task', errorMessage);
+          break;
+        case 'UPDATE_WEEKLY_TASK':
+          toastService.showFirebaseError('update', 'Weekly Task', errorMessage);
+          break;
+        case 'DELETE_WEEKLY_TASK':
+          toastService.showFirebaseError('delete', 'Weekly Task', errorMessage);
+          break;
+        case 'ADD_WEEKLY_REVIEW':
+          toastService.showFirebaseError('save', 'Weekly Review', errorMessage);
+          break;
+        case 'UPDATE_WEEKLY_REVIEW':
+          toastService.showFirebaseError('update', 'Weekly Review', errorMessage);
+          break;
+        case 'ADD_CHECK_IN':
+          toastService.showFirebaseError('save', 'Check-in', errorMessage);
+          break;
+        default:
+          toastService.error('Sync Failed', `Failed to sync data: ${errorMessage}`);
+      }
+      
       throw error; // Re-throw so the catch in enhancedDispatch logs it
     }
   };

@@ -489,100 +489,279 @@ function QuarterlySprint() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-1" style={{ gap: '1.5rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '1.5rem',
+          marginBottom: '2rem'
+        }}>
           {currentQuarterGoals.map((goal) => (
-            <div key={goal.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0, color: '#2d3748' }}>{goal.title}</h3>
-                    {goal.annualGoalId && (
+            <div key={goal.id} style={{
+              background: 'linear-gradient(135deg, #fff 0%, #f1f5f9 100%)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              transition: 'all 0.2s ease-in-out',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+            }}
+            >
+              {/* Header Section */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ 
+                      margin: 0, 
+                      fontSize: '1.3rem',
+                      fontWeight: '700',
+                      color: '#1a202c',
+                      lineHeight: '1.3',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {goal.title}
+                    </h3>
+                    
+                    {/* Badges */}
+                    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      {goal.annualGoalId && (
+                        <span style={{ 
+                          padding: '0.375rem 0.875rem',
+                          borderRadius: '20px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          backgroundColor: '#667eea15',
+                          color: '#667eea',
+                          border: '1px solid #667eea30',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem'
+                        }}>
+                          <Target size={14} />
+                          LINKED TO ANNUAL GOAL
+                        </span>
+                      )}
                       <span style={{ 
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '12px',
+                        padding: '0.375rem 0.875rem',
+                        borderRadius: '20px',
                         fontSize: '0.75rem',
                         fontWeight: '600',
-                        backgroundColor: '#667eea20',
-                        color: '#667eea',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
+                        backgroundColor: goal.status === 'completed' ? '#c6f6d515' : 
+                                       goal.status === 'in-progress' ? '#bee3f815' : '#e2e8f015',
+                        color: goal.status === 'completed' ? '#2f855a' : 
+                               goal.status === 'in-progress' ? '#2b6cb0' : '#4a5568',
+                        border: `1px solid ${goal.status === 'completed' ? '#c6f6d530' : 
+                                             goal.status === 'in-progress' ? '#bee3f830' : '#e2e8f030'}`
                       }}>
-                        <Target size={12} />
-                        LINKED
+                        {goal.status.replace('-', ' ').toUpperCase()}
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <p style={{ color: '#4a5568', margin: '0 0 1rem 0', lineHeight: 1.6 }}>
-                    {goal.description}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => handleEdit(goal)}
-                    style={{ padding: '0.5rem' }}
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => handleDelete(goal.id)}
-                    style={{ padding: '0.5rem', color: '#f56565' }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleEdit(goal)}
+                      style={{ 
+                        padding: '0.5rem',
+                        border: 'none',
+                        borderRadius: '8px',
+                        backgroundColor: '#e2e8f0',
+                        color: '#4a5568',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleDelete(goal.id)}
+                      style={{ 
+                        padding: '0.5rem', 
+                        color: '#f56565',
+                        border: 'none',
+                        borderRadius: '8px',
+                        backgroundColor: '#fed7d7',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
+              {/* Description */}
+              <p style={{ 
+                color: '#4a5568', 
+                margin: '0 0 1.25rem 0', 
+                lineHeight: '1.6',
+                fontSize: '0.95rem'
+              }}>
+                {goal.description}
+              </p>
+
+              {/* Linked Annual Goal Details */}
+              {goal.annualGoalId && (() => {
+                const linkedAnnualGoal = state.annualGoals.find(ag => ag.id === goal.annualGoalId);
+                if (linkedAnnualGoal) {
+                  return (
+                    <div style={{
+                      padding: '1rem',
+                      background: 'linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%)',
+                      borderRadius: '8px',
+                      border: '1px solid #bee3f8',
+                      marginBottom: '1.25rem'
+                    }}>
+                      <div style={{ 
+                        fontSize: '0.9rem', 
+                        fontWeight: '600', 
+                        color: '#2b6cb0', 
+                        marginBottom: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <Target size={16} />
+                        Connected Annual Goal
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.95rem', 
+                        color: '#1a202c',
+                        fontWeight: '600',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {linkedAnnualGoal.title}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#4a5568' }}>
+                        This quarterly objective contributes to your annual strategic goal.
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Progress Section */}
+              <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748' }}>
-                    Overall Progress: {goal.progress}%
+                    Overall Progress
                   </span>
                   <span style={{ 
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '12px',
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backgroundColor: goal.status === 'completed' ? '#c6f6d5' : 
-                                   goal.status === 'in-progress' ? '#bee3f8' : '#e2e8f0',
-                    color: goal.status === 'completed' ? '#2f855a' : 
-                           goal.status === 'in-progress' ? '#2b6cb0' : '#4a5568'
+                    fontSize: '1.1rem', 
+                    fontWeight: '700', 
+                    color: goal.progress >= 75 ? '#38a169' : goal.progress >= 50 ? '#ed8936' : '#e53e3e'
                   }}>
-                    {goal.status.replace('-', ' ').toUpperCase()}
+                    {goal.progress}%
                   </span>
                 </div>
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${goal.progress}%` }}
-                  ></div>
+                <div style={{
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: '#e2e8f0',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${goal.progress}%`,
+                    height: '100%',
+                    background: goal.progress >= 75 
+                      ? 'linear-gradient(90deg, #38a169 0%, #48bb78 100%)'
+                      : goal.progress >= 50
+                      ? 'linear-gradient(90deg, #ed8936 0%, #f6ad55 100%)'
+                      : 'linear-gradient(90deg, #e53e3e 0%, #fc8181 100%)',
+                    transition: 'width 0.3s ease'
+                  }}></div>
                 </div>
               </div>
 
               {/* Key Results */}
               {goal.keyResults.length > 0 && (
-                <div>
-                  <h4 style={{ marginBottom: '1rem', color: '#2d3748', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <TrendingUp size={20} />
-                    Key Results ({goal.keyResults.filter(kr => kr.completed).length}/{goal.keyResults.length} completed)
+                <div style={{
+                  padding: '1.25rem',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <h4 style={{ 
+                    marginBottom: '1.25rem', 
+                    color: '#1a202c', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem',
+                    fontSize: '1.1rem',
+                    fontWeight: '700'
+                  }}>
+                    <TrendingUp size={20} style={{ color: '#667eea' }} />
+                    Key Results
+                    <span style={{
+                      marginLeft: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '20px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      backgroundColor: '#667eea15',
+                      color: '#667eea',
+                      border: '1px solid #667eea30'
+                    }}>
+                      {goal.keyResults.filter(kr => kr.completed).length}/{goal.keyResults.length} COMPLETED
+                    </span>
                   </h4>
-                  <div className="grid grid-1" style={{ gap: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {goal.keyResults.map((kr, index) => {
                       const progress = kr.targetValue > 0 ? Math.min((kr.currentValue / kr.targetValue) * 100, 100) : 0;
                       return (
                         <div key={kr.id} style={{ 
-                          background: '#f7fafc', 
-                          padding: '1rem', 
-                          borderRadius: '8px',
-                          border: kr.completed ? '2px solid #48bb78' : '1px solid #e2e8f0'
+                          background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)', 
+                          padding: '1.25rem', 
+                          borderRadius: '10px',
+                          border: kr.completed ? '2px solid #48bb78' : '1px solid #cbd5e0',
+                          boxShadow: kr.completed 
+                            ? '0 4px 6px -1px rgba(72, 187, 120, 0.1)' 
+                            : '0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                          transition: 'all 0.2s ease'
                         }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{kr.description}</div>
-                              <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                                {kr.currentValue} / {kr.targetValue} {kr.unit}
+                              <div style={{ 
+                                fontWeight: '600', 
+                                marginBottom: '0.5rem',
+                                color: '#1a202c',
+                                fontSize: '0.95rem'
+                              }}>
+                                {kr.description}
+                              </div>
+                              <div style={{ 
+                                fontSize: '0.9rem', 
+                                color: '#718096',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                <span style={{ fontWeight: '600', color: '#4a5568' }}>
+                                  {kr.currentValue}
+                                </span>
+                                <span>/</span>
+                                <span>{kr.targetValue}</span>
+                                <span style={{ 
+                                  padding: '0.25rem 0.5rem',
+                                  backgroundColor: '#e2e8f0',
+                                  borderRadius: '4px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '500'
+                                }}>
+                                  {kr.unit}
+                                </span>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -590,23 +769,73 @@ function QuarterlySprint() {
                                 type="number"
                                 value={kr.currentValue}
                                 onChange={(e) => updateGoalKeyResult(goal.id, index, 'currentValue', parseFloat(e.target.value) || 0)}
-                                style={{ width: '80px', padding: '0.25rem', border: '1px solid #cbd5e0', borderRadius: '4px' }}
+                                style={{ 
+                                  width: '80px', 
+                                  padding: '0.5rem', 
+                                  border: '1px solid #cbd5e0', 
+                                  borderRadius: '6px',
+                                  fontSize: '0.9rem',
+                                  fontWeight: '500'
+                                }}
                               />
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.9rem' }}>
+                              <label style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.5rem', 
+                                fontSize: '0.9rem',
+                                fontWeight: '500',
+                                color: kr.completed ? '#38a169' : '#4a5568',
+                                cursor: 'pointer'
+                              }}>
                                 <input
                                   type="checkbox"
                                   checked={kr.completed}
                                   onChange={(e) => updateGoalKeyResult(goal.id, index, 'completed', e.target.checked)}
+                                  style={{ 
+                                    width: '16px', 
+                                    height: '16px',
+                                    accentColor: '#38a169'
+                                  }}
                                 />
-                                Done
+                                {kr.completed ? '✅ Done' : 'Mark Done'}
                               </label>
                             </div>
                           </div>
-                          <div className="progress-bar" style={{ height: '6px' }}>
-                            <div 
-                              className="progress-fill" 
-                              style={{ width: `${progress}%` }}
-                            ></div>
+                          
+                          {/* Progress Bar */}
+                          <div style={{ marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#4a5568' }}>
+                                Progress
+                              </span>
+                              <span style={{ 
+                                fontSize: '0.9rem', 
+                                fontWeight: '700', 
+                                color: progress >= 100 ? '#38a169' : progress >= 75 ? '#38a169' : progress >= 50 ? '#ed8936' : '#e53e3e'
+                              }}>
+                                {Math.round(progress)}%
+                              </span>
+                            </div>
+                            <div style={{
+                              width: '100%',
+                              height: '6px',
+                              backgroundColor: '#e2e8f0',
+                              borderRadius: '3px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{
+                                width: `${progress}%`,
+                                height: '100%',
+                                background: progress >= 100 
+                                  ? 'linear-gradient(90deg, #38a169 0%, #48bb78 100%)'
+                                  : progress >= 75 
+                                  ? 'linear-gradient(90deg, #38a169 0%, #48bb78 100%)'
+                                  : progress >= 50
+                                  ? 'linear-gradient(90deg, #ed8936 0%, #f6ad55 100%)'
+                                  : 'linear-gradient(90deg, #e53e3e 0%, #fc8181 100%)',
+                                transition: 'width 0.3s ease'
+                              }}></div>
+                            </div>
                           </div>
                         </div>
                       );

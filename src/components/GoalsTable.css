@@ -466,35 +466,50 @@
   color: #64748b;
 }
 
-.status-badge {
+/* Timeline badges with consistent colors for goal types */
+.timeline-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
-.status-on-track {
+/* Life Goal - Purple theme */
+.timeline-life-goal {
+  background: #f3e8ff;
+  color: #7c3aed;
+  border: 1px solid #e9d5ff;
+}
+
+/* Annual Goal - Blue theme */
+.timeline-annual-goal {
+  background: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+/* Quarterly Goal - Green theme */
+.timeline-quarterly-goal {
   background: #dcfce7;
-  color: #166534;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
 }
 
-.status-at-risk {
-  background: #fef3c7;
-  color: #92400e;
+/* Weekly Task - Orange theme */
+.timeline-weekly-task {
+  background: #fed7aa;
+  color: #ea580c;
+  border: 1px solid #fdba74;
 }
 
-.status-pending {
+/* Default fallback */
+.timeline-default {
   background: #f3f4f6;
   color: #374151;
-}
-
-.status-completed {
-  background: #dcfce7;
-  color: #166534;
+  border: 1px solid #d1d5db;
 }
 
 .progress-cell {

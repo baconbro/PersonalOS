@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { CheckSquare, Plus, Edit3, Clock, Trash2, Network } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks } from 'date-fns';
@@ -30,6 +30,21 @@ function WeeklyReview() {
   const weekReview = state.weeklyReviews.find(review =>
     isWithinInterval(review.weekOf, { start: weekStart, end: weekEnd })
   );
+
+  // Debug: Log weekly review data when it changes
+  useEffect(() => {
+    if (weekReview) {
+      console.log('📋 Weekly Review Data:', {
+        weekOf: weekReview.weekOf,
+        hasClarityResponses: !!weekReview.clarityResponses,
+        clarityResponsesKeys: weekReview.clarityResponses ? Object.keys(weekReview.clarityResponses) : [],
+        clarityResponsesData: weekReview.clarityResponses,
+        hasWinsReflection: !!weekReview.winsReflection,
+        hasGapsAnalysis: !!weekReview.gapsAnalysis,
+        hasKeyLesson: !!weekReview.keyLesson
+      });
+    }
+  }, [weekReview]);
 
   const currentQuarterGoals = state.quarterlyGoals.filter(
     goal => goal.quarter === state.currentQuarter && 
@@ -164,6 +179,7 @@ function WeeklyReview() {
           color: 'white',
           border: 'none'
         }}>
+
           <h3 style={{ 
             margin: '0 0 1.5rem 0', 
             display: 'flex', 
@@ -174,7 +190,7 @@ function WeeklyReview() {
             🔍 Weekly Review Summary
           </h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '1.5rem' }}>
             <div>
               <h4 style={{ 
                 margin: '0 0 0.5rem 0', 
@@ -185,7 +201,11 @@ function WeeklyReview() {
               }}>
                 ⭐ Biggest Wins
               </h4>
-              {weekReview.learnings.length > 0 ? (
+              {weekReview.winsReflection ? (
+                <p style={{ margin: '0', opacity: 0.9, lineHeight: '1.4' }}>
+                  {weekReview.winsReflection}
+                </p>
+              ) : weekReview.learnings.length > 0 ? (
                 <ul style={{ margin: '0', paddingLeft: '1.2rem' }}>
                   {weekReview.learnings.map((learning, index) => (
                     <li key={index} style={{ marginBottom: '0.3rem' }}>{learning}</li>
@@ -204,16 +224,70 @@ function WeeklyReview() {
                 gap: '0.5rem',
                 color: 'white'
               }}>
-                🚧 Roadblocks
+                🚧 Gaps & Roadblocks
               </h4>
-              {weekReview.roadblocks.length > 0 ? (
+              {weekReview.gapsAnalysis ? (
+                <p style={{ margin: '0', opacity: 0.9, lineHeight: '1.4' }}>
+                  {weekReview.gapsAnalysis}
+                </p>
+              ) : weekReview.roadblocks.length > 0 ? (
                 <ul style={{ margin: '0', paddingLeft: '1.2rem' }}>
                   {weekReview.roadblocks.map((roadblock, index) => (
                     <li key={index} style={{ marginBottom: '0.3rem' }}>{roadblock}</li>
                   ))}
                 </ul>
               ) : (
-                <p style={{ margin: '0', opacity: 0.8 }}>No roadblocks recorded</p>
+                <p style={{ margin: '0', opacity: 0.8 }}>No gaps or roadblocks recorded</p>
+              )}
+            </div>
+          </div>
+
+          {/* Key Lessons and Mindset/Clarity */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div>
+              <h4 style={{ 
+                margin: '0 0 0.5rem 0', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                color: 'white'
+              }}>
+                💡 Key Lesson
+              </h4>
+              {weekReview.keyLesson ? (
+                <p style={{ margin: '0', opacity: 0.9, lineHeight: '1.4' }}>
+                  {weekReview.keyLesson}
+                </p>
+              ) : (
+                <p style={{ margin: '0', opacity: 0.8 }}>No key lesson recorded</p>
+              )}
+            </div>
+            
+            <div>
+              <h4 style={{ 
+                margin: '0 0 0.5rem 0', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                color: 'white'
+              }}>
+                🧠 Mindset & Clarity
+              </h4>
+              {weekReview.clarityResponses && Object.keys(weekReview.clarityResponses).length > 0 ? (
+                <div style={{ opacity: 0.9 }}>
+                  {Object.entries(weekReview.clarityResponses).map(([question, answer], index) => (
+                    <div key={index} style={{ marginBottom: '0.5rem' }}>
+                      <div style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: '0.2rem' }}>
+                        {question}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
+                        {answer}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ margin: '0', opacity: 0.8 }}>No mindset reflections recorded</p>
               )}
             </div>
           </div>

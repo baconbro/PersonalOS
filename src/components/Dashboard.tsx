@@ -49,7 +49,23 @@ function Dashboard() {
     const totalAnnualGoals = state.annualGoals.length;
     const activeQuarterlyGoals = state.quarterlyGoals.filter(g => g.status === 'in-progress').length;
 
-    const overallProgress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+    // Calculate overall progress based on actual progress values, not just completion status
+    const allGoals = [...state.lifeGoals, ...state.annualGoals, ...state.quarterlyGoals];
+    const totalProgressSum = allGoals.reduce((sum, goal) => sum + goal.progress, 0);
+    const overallProgress = totalGoals > 0 ? Math.round(totalProgressSum / totalGoals) : 0;
+    
+    // Debug logging to understand progress calculation
+    console.log('Progress Debug:', {
+      totalGoals,
+      lifeGoalsCount: state.lifeGoals.length,
+      annualGoalsCount: state.annualGoals.length,
+      quarterlyGoalsCount: state.quarterlyGoals.length,
+      lifeGoalsProgress: state.lifeGoals.map(g => ({ title: g.title, progress: g.progress })),
+      annualGoalsProgress: state.annualGoals.map(g => ({ title: g.title, progress: g.progress })),
+      quarterlyGoalsProgress: state.quarterlyGoals.map(g => ({ title: g.title, progress: g.progress })),
+      totalProgressSum,
+      overallProgress
+    });
 
     // Calculate streak
     const reviews = state.weeklyReviews || [];

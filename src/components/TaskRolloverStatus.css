@@ -1,0 +1,250 @@
+/* Task Rollover Status Component Styles */
+
+.task-rollover-status {
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.task-rollover-status.dashboard-style {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.task-rollover-status.standalone-style {
+  padding: 1.5rem;
+  max-width: 500px;
+  margin: 0 auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Rollover Success Notification */
+.rollover-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+.rollover-success .success-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rollover-success .success-header h4 {
+  margin: 0;
+  color: #065f46;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.rollover-success .success-icon {
+  color: #10b981;
+}
+
+.rollover-success p {
+  color: #065f46;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Rollover Prompt Styles */
+.rollover-prompt {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prompt-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-header h4 {
+  margin: 0;
+  color: #92400e;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.prompt-icon {
+  color: #f59e0b;
+}
+
+.rollover-prompt p {
+  color: #92400e;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+}
+
+.rollover-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rollover-button:hover:not(:disabled) {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+
+.rollover-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Rollover Statistics Styles */
+.rollover-stats {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.stat-value.success {
+  color: #38a169;
+}
+
+.stat-value.warning {
+  color: #f56565;
+}
+
+.last-check {
+  text-align: center;
+  color: #a0aec0;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Manual Controls */
+.manual-controls {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.manual-rollover-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.manual-rollover-button:hover:not(:disabled) {
+  background: #3730a3;
+  transform: translateY(-1px);
+}
+
+.manual-rollover-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.manual-rollover-button.dashboard-style {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Spinning animation for loading states */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .task-rollover-status.standalone-style {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .rollover-button,
+  .manual-rollover-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
