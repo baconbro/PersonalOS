@@ -14,7 +14,7 @@ import AIChatbot from './components/AIChatbot.tsx'
 import DevToastContainer from './components/DevToastContainer.tsx'
 import ToastContainer from './components/ToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
-import LandingPage from './components/LandingPage.tsx'
+import { LandingPage } from './components/LandingPage.tsx'
 import DevRLModal from './components/DevRLModal.tsx'
 import GoalsTable from './components/GoalsTable.tsx'
 import { Button } from './components/ui/button'
@@ -81,9 +81,7 @@ function App() {
   if (currentPath === '/welcome') {
     return (
       <LandingPage
-        isAuthenticated={!!user}
         onGetStarted={() => navigateTo('dashboard')}
-        onEnterApp={() => navigateTo('dashboard')}
       />
     );
   }
@@ -178,13 +176,11 @@ function App() {
     }
     return (
       <LandingPage
-        isAuthenticated={false}
         onGetStarted={() => {
           // Set URL to /login to show auth component
           window.history.pushState({}, '', '/login');
           window.dispatchEvent(new PopStateEvent('popstate'));
         }}
-        onEnterApp={() => {}}
       />
     );
   }
