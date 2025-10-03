@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Calendar,
@@ -15,6 +15,8 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
+import { analyticsService } from '../services/analyticsService';
 import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask, LifeGoalCategory } from '../types';
 import { sampleData } from '../utils/sampleData';
 import GoalDetails from './GoalDetails';
@@ -22,6 +24,8 @@ import './GoalsTable.css';
 
 interface GoalsTableProps {
   onNavigate?: (view: 'life-goals' | 'annual' | 'quarterly' | 'weekly') => void;
+  initialGoalId?: string;
+  initialGoalType?: 'life' | 'annual' | 'quarterly' | 'weekly';
 }
 
 // Types
@@ -37,6 +41,7 @@ type GoalItem = {
   priority: 'high' | 'medium' | 'low';
   targetDate: Date;
   createdAt: Date;
+  updatedAt: Date;
   category?: string;
   type?: string;
   annualGoals?: string[];
@@ -235,14 +240,23 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
   );
 };
 
-const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
+const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate, initialGoalId, initialGoalType }) => {
   const { state, dispatch } = useApp();
+  const { navigateTo } = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedGoalType, setSelectedGoalType] = useState<string | null>(null);
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [selectedGoalType2, setSelectedGoalType2] = useState<'life' | 'annual' | 'quarterly' | 'weekly' | null>(null);
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(initialGoalId || null);
+  const [selectedGoalType2, setSelectedGoalType2] = useState<'life' | 'annual' | 'quarterly' | 'weekly' | null>(initialGoalType || null);
+
+  // Initialize from URL parameters
+  useEffect(() => {
+    if (initialGoalId && initialGoalType) {
+      setSelectedGoalId(initialGoalId);
+      setSelectedGoalType2(initialGoalType);
+    }
+  }, [initialGoalId, initialGoalType]);
 
   const handleGoalTypeSelect = (type: string) => {
     setSelectedGoalType(type);
@@ -255,6 +269,15 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
   const handleGoalClick = (goalId: string, goalType: 'life' | 'annual' | 'quarterly' | 'weekly') => {
     setSelectedGoalId(goalId);
     setSelectedGoalType2(goalType);
+    
+    // Track goal detail view
+    analyticsService.trackGoalDetailView(goalId, goalType, {
+      timestamp: Date.now(),
+      navigation_method: 'table_click'
+    });
+    
+    // Update URL to include goal details
+    navigateTo('goals-table', false, { goalType, goalId });
   };
 
   const loadSampleData = () => {
@@ -323,6 +346,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
         status: lifeGoal.status,
         progress: lifeGoal.progress || 0,
         createdAt: lifeGoal.createdAt,
+        updatedAt: lifeGoal.updatedAt || lifeGoal.createdAt, // Fallback to createdAt if updatedAt doesn't exist
         targetDate: lifeGoal.targetDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         level: 0,
         hasChildren: lifeGoal.children && lifeGoal.children.length > 0,
@@ -338,6 +362,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
             status: annualGoal.status,
             progress: annualGoal.progress || 0,
             createdAt: annualGoal.createdAt,
+            updatedAt: annualGoal.updatedAt || annualGoal.createdAt, // Fallback to createdAt if updatedAt doesn't exist
             targetDate: annualGoal.targetDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             level: 1,
             hasChildren: annualGoal.children && annualGoal.children.length > 0,
@@ -353,6 +378,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
                 status: quarterlyGoal.status,
                 progress: quarterlyGoal.progress || 0,
                 createdAt: quarterlyGoal.createdAt,
+                updatedAt: quarterlyGoal.updatedAt || quarterlyGoal.createdAt, // Fallback to createdAt if updatedAt doesn't exist
                 targetDate: quarterlyGoal.targetDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
                 level: 2,
                 hasChildren: false,
@@ -394,6 +420,8 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
         onBack={() => {
           setSelectedGoalId(null);
           setSelectedGoalType2(null);
+          // Navigate back to goals table without parameters
+          navigateTo('goals-table');
         }}
       />
     );
@@ -480,13 +508,24 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate }) => {
 
   const getLastUpdated = (goal: GoalItem) => {
     const now = new Date();
-    const created = new Date(goal.createdAt);
-    const diffTime = now.getTime() - created.getTime();
+    const updated = new Date(goal.updatedAt || goal.createdAt); // Fallback to createdAt for backward compatibility
+    const diffTime = now.getTime() - updated.getTime();
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
     
-    if (diffWeeks === 0) return 'This week';
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
     if (diffWeeks === 1) return '1 week ago';
-    return `${diffWeeks} weeks ago`;
+    if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
+    
+    return updated.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: updated.getFullYear() !== now.getFullYear() ? 'numeric' : undefined 
+    });
   };
 
   return (

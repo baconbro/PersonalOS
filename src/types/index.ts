@@ -44,6 +44,17 @@ export interface CheckIn {
   linkedGoalId?: string; // Optional reference to any goal having the biggest impact
 }
 
+export interface GoalUpdate {
+  id: string;
+  goalId: string;
+  goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
+  content: string;
+  status: string;
+  targetDate: string;
+  createdAt: Date;
+  author: string;
+}
+
 export type LifeGoalCategory = 
   | 'Creativity & Passion'
   | 'Mind'
@@ -65,6 +76,7 @@ export interface Goal {
   priority: 'high' | 'medium' | 'low';
   status: 'not-started' | 'in-progress' | 'completed' | 'on-hold';
   createdAt: Date;
+  updatedAt: Date;
   targetDate: Date;
   progress: number; // 0-100
 }
@@ -118,6 +130,8 @@ export interface WeeklyTask {
   weekOf: Date;
   roadblocks: string[];
   notes: string;
+  createdAt: Date;
+  updatedAt: Date;
   customId?: string; // Optional custom ID from document data
 }
 
@@ -181,6 +195,7 @@ export interface AppState {
   weeklyReviews: WeeklyReviewData[];
   activityLogs: ActivityLog[];
   checkIns: CheckIn[];
+  goalUpdates: GoalUpdate[];
   currentYear: number;
   currentQuarter: 1 | 2 | 3 | 4;
   loading?: boolean;

@@ -12,6 +12,7 @@ export const sampleData = {
       priority: 'high' as const,
       status: 'in-progress' as const,
       createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-09-28'), // Updated last week
       targetDate: new Date('2025-12-31'),
       progress: 35,
       year: 2025,
@@ -27,6 +28,7 @@ export const sampleData = {
       priority: 'high' as const,
       status: 'in-progress' as const,
       createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-10-01'), // Updated 2 days ago  
       targetDate: new Date('2025-11-30'),
       progress: 25,
       year: 2025,
@@ -42,6 +44,7 @@ export const sampleData = {
       priority: 'medium' as const,
       status: 'in-progress' as const,
       createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-09-25'), // Updated 1 week ago
       targetDate: new Date('2025-12-31'),
       progress: 20,
       year: 2025,

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn } from '../types';
+import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn, GoalUpdate } from '../types';
 import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
@@ -8,6 +8,7 @@ import { notificationService } from '../services/notificationService';
 import { toastService } from '../services/toastService';
 import { taskRolloverService } from '../services/taskRolloverService';
 import { updateLifeGoalFromAnnualProgress, updateAnnualGoalFromQuarterlyProgress } from '../utils/progressCalculation';
+import { updateGoalTimestamp, ensureTimestamps } from '../utils/goalTimestamps';
 
 // Initial state
 const initialState: AppState & { loading: boolean } = {
@@ -18,6 +19,7 @@ const initialState: AppState & { loading: boolean } = {
   weeklyReviews: [],
   activityLogs: [],
   checkIns: [],
+  goalUpdates: [],
   currentYear: new Date().getFullYear(),
   currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
   loading: false,
@@ -41,6 +43,7 @@ type Action =
   | { type: 'UPDATE_WEEKLY_REVIEW'; payload: WeeklyReviewData }
   | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLog }
   | { type: 'ADD_CHECK_IN'; payload: CheckIn }
+  | { type: 'ADD_GOAL_UPDATE'; payload: GoalUpdate }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_CURRENT_YEAR'; payload: number }
@@ -77,7 +80,7 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         lifeGoals: state.lifeGoals.map(goal =>
-          goal.id === action.payload.id ? action.payload : goal
+          goal.id === action.payload.id ? updateGoalTimestamp(action.payload) : goal
         ),
       };
     case 'DELETE_LIFE_GOAL':
@@ -105,7 +108,7 @@ function appReducer(state: AppState, action: Action): AppState {
       }
       
       const updatedAnnualGoals = state.annualGoals.map(goal =>
-        goal.id === action.payload.id ? action.payload : goal
+        goal.id === action.payload.id ? updateGoalTimestamp(action.payload) : goal
       );
       
       // Update life goal progress based on annual goal changes
@@ -148,7 +151,7 @@ function appReducer(state: AppState, action: Action): AppState {
       }
       
       const updatedQuarterlyGoals = state.quarterlyGoals.map(goal =>
-        goal.id === action.payload.id ? action.payload : goal
+        goal.id === action.payload.id ? updateGoalTimestamp(action.payload) : goal
       );
       const updatedAnnualGoals = updateAnnualGoalProgress(state, updatedQuarterlyGoals);
       const updatedLifeGoals = updateLifeGoalProgress(state, updatedAnnualGoals);
@@ -181,7 +184,7 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         weeklyTasks: state.weeklyTasks.map(task =>
-          task.id === action.payload.id ? action.payload : task
+          task.id === action.payload.id ? updateGoalTimestamp(action.payload) : task
         ),
       };
     case 'DELETE_WEEKLY_TASK':
@@ -239,11 +242,24 @@ function appReducer(state: AppState, action: Action): AppState {
         checkIns: [action.payload, ...state.checkIns],
       };
     }
+    case 'ADD_GOAL_UPDATE': {
+      return {
+        ...state,
+        goalUpdates: [action.payload, ...state.goalUpdates],
+      };
+    }
     case 'LOAD_STATE':
+      // Ensure all goals have proper timestamps for backward compatibility
+      const payload = action.payload;
       return { 
-        ...action.payload, 
-        activityLogs: action.payload.activityLogs || [], 
-        checkIns: action.payload.checkIns || [],
+        ...payload, 
+        lifeGoals: payload.lifeGoals?.map(goal => ensureTimestamps(goal)) || [],
+        annualGoals: payload.annualGoals?.map(goal => ensureTimestamps(goal)) || [],
+        quarterlyGoals: payload.quarterlyGoals?.map(goal => ensureTimestamps(goal)) || [],
+        weeklyTasks: payload.weeklyTasks?.map(task => ensureTimestamps(task)) || [],
+        activityLogs: payload.activityLogs || [], 
+        checkIns: payload.checkIns || [],
+        goalUpdates: payload.goalUpdates || [],
         loading: false 
       };
     case 'SET_LOADING':
@@ -340,9 +356,14 @@ export function AppProvider({ children }: AppProviderProps) {
           console.log('🔄 Loading data from Firebase...');
           const userData = await service.loadAllData();
           
+          // Get existing localStorage data to preserve local-only data like goalUpdates
+          const existingLocalData = LocalStorageService.load();
+          
           // Migrate weekly tasks that don't have status field
           const migratedUserData = {
             ...userData,
+            // Preserve goalUpdates from localStorage since Firebase doesn't store them yet
+            goalUpdates: existingLocalData?.goalUpdates || [],
             weeklyTasks: userData.weeklyTasks.map(task => {
               const hasStatus = task.status !== undefined && task.status !== null;
               const normalizedStatus = task.status || (task.completed ? 'done' : 'todo');
@@ -498,6 +519,7 @@ export function AppProvider({ children }: AppProviderProps) {
         weeklyReviews: newState.weeklyReviews,
         activityLogs: newState.activityLogs,
         checkIns: newState.checkIns,
+        goalUpdates: newState.goalUpdates,
         currentYear: newState.currentYear,
         currentQuarter: newState.currentQuarter,
       };

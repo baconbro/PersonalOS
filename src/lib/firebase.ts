@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -41,12 +42,34 @@ export const auth = getAuth(app);
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
 
+// Initialize Analytics (conditionally, as it may not be supported in all environments)
+let analytics = null;
+if (isFirebaseConfigured && firebaseConfig.measurementId) {
+  isSupported().then((supported) => {
+    if (supported) {
+      try {
+        analytics = getAnalytics(app);
+        console.log('📊 Firebase Analytics initialized successfully');
+      } catch (error) {
+        console.warn('⚠️ Firebase Analytics initialization failed:', error);
+      }
+    } else {
+      console.warn('⚠️ Firebase Analytics is not supported in this environment');
+    }
+  });
+}
+
+export { analytics };
+
 // Test Firestore connection
 const testFirestoreConnection = async () => {
   try {
     console.log('🔥 Firebase initialized successfully');
     console.log('📦 Project ID:', firebaseConfig.projectId);
     console.log('🔐 Auth Domain:', firebaseConfig.authDomain);
+    if (firebaseConfig.measurementId) {
+      console.log('📊 Analytics ID:', firebaseConfig.measurementId);
+    }
   } catch (error) {
     console.error('❌ Firebase connection error:', error);
   }

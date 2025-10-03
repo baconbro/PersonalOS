@@ -20,26 +20,26 @@ import GoalsTable from './components/GoalsTable.tsx'
 import { Button } from './components/ui/button'
 import { rlEngine } from './services/rlEngine'
 import { appSettingsService } from './services/appSettingsService'
+import { analyticsService } from './services/analyticsService'
 import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table, Menu, X } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
+import { useRouter } from './hooks/useRouter'
 import { notificationService } from './services/notificationService'
 import { updatePageTitle, resetPageTitle } from './utils/pageTitle'
 import { cn } from './lib/utils'
+import type { ViewType } from './services/routerService'
 // Import Firebase connection test
 import './utils/firebaseTest'
-
-type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table'
 
 function App() {
   const { user, loading, logout } = useAuth();
   const { state } = useApp();
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const { currentView, currentPath, currentParams, navigateTo } = useRouter();
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
-  const [path, setPath] = useState<string>(window.location.pathname);
   const [showRLDrawer, setShowRLDrawer] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -48,11 +48,17 @@ function App() {
                    state.annualGoals.length === 0 && 
                    state.quarterlyGoals.length === 0;
 
+  // Initialize analytics for logged in users
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
+    if (user) {
+      analyticsService.setUserProperties(user.uid, {
+        user_type: isNewUser ? 'new' : 'returning',
+        has_life_goals: state.lifeGoals.length > 0,
+        has_annual_goals: state.annualGoals.length > 0,
+        has_quarterly_goals: state.quarterlyGoals.length > 0
+      });
+    }
+  }, [user, isNewUser, state.lifeGoals.length, state.annualGoals.length, state.quarterlyGoals.length]);
 
   // Dev-only: initialize RL engine and tick periodically when feature toggle is enabled
   useEffect(() => {
@@ -72,12 +78,12 @@ function App() {
   }, [state]);
 
   // Welcome route should be available to anyone (even when logged in) via URL
-  if (path === '/welcome') {
+  if (currentPath === '/welcome') {
     return (
       <LandingPage
         isAuthenticated={!!user}
-        onGetStarted={() => { window.history.pushState({}, '', '/'); setPath('/'); }}
-        onEnterApp={() => { window.history.pushState({}, '', '/'); setPath('/'); }}
+        onGetStarted={() => navigateTo('dashboard')}
+        onEnterApp={() => navigateTo('dashboard')}
       />
     );
   }
@@ -100,29 +106,27 @@ function App() {
       notificationService.scheduleAnnualReview();
 
       // Listen for notification actions
-      const handleNotificationAction = (event: CustomEvent) => {
+        const handleNotificationAction = (event: CustomEvent) => {
         const action = event.detail;
         switch (action) {
           case 'navigate-this-week':
-            setCurrentView('this-week');
+            navigateTo('this-week');
             break;
           case 'navigate-quarterly':
-            setCurrentView('quarterly');
+            navigateTo('quarterly');
             break;
           case 'navigate-annual':
-            setCurrentView('annual');
+            navigateTo('annual');
             break;
           case 'navigate-dashboard':
-            setCurrentView('dashboard');
+            navigateTo('dashboard');
             break;
           case 'prepare-huddle':
             // Could show a preparation modal or tips
-            setCurrentView('this-week');
+            navigateTo('this-week');
             break;
         }
-      };
-
-      window.addEventListener('notification-action', handleNotificationAction as EventListener);
+      };      window.addEventListener('notification-action', handleNotificationAction as EventListener);
 
       return () => {
         window.removeEventListener('notification-action', handleNotificationAction as EventListener);
@@ -169,13 +173,17 @@ function App() {
 
   if (!user) {
     // Simple path-based router for auth vs landing
-    if (path === '/login') {
+    if (currentPath === '/login') {
       return <AuthComponent />;
     }
     return (
       <LandingPage
         isAuthenticated={false}
-        onGetStarted={() => { window.history.pushState({}, '', '/login'); setPath('/login'); }}
+        onGetStarted={() => {
+          // Set URL to /login to show auth component
+          window.history.pushState({}, '', '/login');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }}
         onEnterApp={() => {}}
       />
     );
@@ -215,7 +223,11 @@ function App() {
       case 'guide':
         return <UserGuide />
       case 'goals-table':
-        return <GoalsTable onNavigate={(view) => setCurrentView(view)} />
+        return <GoalsTable 
+          onNavigate={(view) => navigateTo(view)}
+          initialGoalId={currentParams.goalId}
+          initialGoalType={currentParams.goalType as 'life' | 'annual' | 'quarterly' | 'weekly'}
+        />
       default:
         return <Dashboard />
     }
@@ -311,7 +323,7 @@ function App() {
                   isActive && "bg-secondary text-secondary-foreground font-medium"
                 )}
                 onClick={() => {
-                  setCurrentView(item.id as ViewType);
+                  navigateTo(item.id as ViewType);
                   setMobileMenuOpen(false);
                 }}
               >
@@ -376,16 +388,16 @@ function App() {
           onAction={(action) => {
             switch (action) {
               case 'navigate-this-week':
-                setCurrentView('this-week');
+                navigateTo('this-week');
                 break;
               case 'navigate-quarterly':
-                setCurrentView('quarterly');
+                navigateTo('quarterly');
                 break;
               case 'navigate-annual':
-                setCurrentView('annual');
+                navigateTo('annual');
                 break;
               case 'navigate-dashboard':
-                setCurrentView('dashboard');
+                navigateTo('dashboard');
                 break;
             }
           }}
@@ -417,7 +429,7 @@ function App() {
         onClose={() => setShowWizard(false)}
         onComplete={() => {
           notificationService.celebrateGoalCompletion('PersonalOS Setup', 'Life Architecture');
-          setCurrentView('dashboard');
+          navigateTo('dashboard');
         }}
       />
 

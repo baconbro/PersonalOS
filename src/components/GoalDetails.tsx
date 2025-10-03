@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   ArrowLeft, 
   MoreHorizontal, 
@@ -11,9 +11,13 @@ import {
   Circle,
   Clock,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Save,
+  X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { analyticsService } from '../services/analyticsService';
+import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask } from '../types';
 import './GoalDetails.css';
 
 interface GoalDetailsProps {
@@ -23,7 +27,7 @@ interface GoalDetailsProps {
 }
 
 const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) => {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const [activeTab, setActiveTab] = useState<'about' | 'updates' | 'learnings' | 'roadblocks' | 'decisions' | 'wins' | 'check-ins'>('updates');
   const [newUpdate, setNewUpdate] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('on-track');
@@ -34,6 +38,24 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
   const [selectedYear, setSelectedYear] = useState(2025);
   const [selectedMonth, setSelectedMonth] = useState(11); // December (0-indexed)
   const [selectedDay, setSelectedDay] = useState<number | null>(31);
+
+  // Individual field edit states
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedProgress, setEditedProgress] = useState(0);
+  const [editedPriority, setEditedPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed' | 'on-hold'>('not-started');
+  
+  // Rich text editor state
+  const [richTextFocused, setRichTextFocused] = useState(false);
+  const richTextEditorRef = useRef<HTMLDivElement>(null);
+
+  // Decisions state (kept for future use)
+  const goalDecisions: any[] = [];
+  
+  // Get goal updates from context, filtered by current goal
+  const goalUpdates = state.goalUpdates.filter(update => update.goalId === goalId);
 
   // Annual goal specific fields
   const [whyImportant, setWhyImportant] = useState('');
@@ -163,6 +185,222 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
   };
 
   const goal = getGoal();
+
+  // Initialize edit form when entering edit mode
+  // Start editing a specific field
+  const startEditingField = (fieldName: string) => {
+    if (goal) {
+      setEditingField(fieldName);
+      
+      // Initialize the edited value based on field
+      switch (fieldName) {
+        case 'title':
+          setEditedTitle(goal.title);
+          break;
+        case 'description':
+          setEditedDescription(goal.description || '');
+          // Set initial content for rich text editor
+          setTimeout(() => {
+            if (richTextEditorRef.current) {
+              richTextEditorRef.current.innerHTML = goal.description || '';
+            }
+          }, 0);
+          break;
+        case 'progress':
+          if ('progress' in goal) {
+            setEditedProgress(goal.progress || 0);
+          }
+          break;
+        case 'priority':
+          setEditedPriority(goal.priority);
+          break;
+        case 'status':
+          if (goalType === 'weekly') {
+            const weeklyTask = goal as any;
+            const mappedStatus = weeklyTask.status === 'todo' ? 'not-started' : 
+                               weeklyTask.status === 'in-progress' ? 'in-progress' : 
+                               weeklyTask.status === 'done' ? 'completed' : 'not-started';
+            setEditedStatus(mappedStatus);
+          } else {
+            setEditedStatus(goal.status as 'not-started' | 'in-progress' | 'completed' | 'on-hold');
+          }
+          break;
+      }
+      
+      // Track field edit started
+      analyticsService.trackEvent('goal_field_edit_started', {
+        goal_id: goalId,
+        goal_type: goalType,
+        field: fieldName
+      });
+    }
+  };
+
+  const cancelEditingField = () => {
+    setEditingField(null);
+    setEditedTitle('');
+    setEditedDescription('');
+    setEditedProgress(0);
+    setEditedPriority('medium');
+    setEditedStatus('not-started');
+    
+    analyticsService.trackEvent('goal_field_edit_cancelled', {
+      goal_id: goalId,
+      goal_type: goalType,
+      field: editingField
+    });
+  };
+
+  const saveChanges = () => {
+    if (!goal || !editingField) return;
+
+    // Create base update with only the field being edited
+    const baseUpdate = {
+      ...goal,
+      updatedAt: new Date()
+    };
+
+    // Update only the specific field being edited
+    switch (editingField) {
+      case 'title':
+        baseUpdate.title = editedTitle.trim();
+        break;
+      case 'description':
+        baseUpdate.description = editedDescription.trim();
+        break;
+      case 'progress':
+        if ('progress' in goal) {
+          (baseUpdate as any).progress = editedProgress;
+        }
+        break;
+      case 'priority':
+        baseUpdate.priority = editedPriority;
+        break;
+      case 'status':
+        if (goalType === 'weekly') {
+          const weeklyStatus = editedStatus === 'not-started' ? 'todo' : 
+                             editedStatus === 'in-progress' ? 'in-progress' : 
+                             editedStatus === 'completed' ? 'done' : 'todo';
+          baseUpdate.status = weeklyStatus as 'todo' | 'in-progress' | 'done';
+        } else {
+          baseUpdate.status = editedStatus;
+        }
+        break;
+    }
+
+    // Dispatch the appropriate update action based on goal type
+    switch (goalType) {
+      case 'life': {
+        dispatch({ type: 'UPDATE_LIFE_GOAL', payload: baseUpdate as LifeGoal });
+        break;
+      }
+      case 'annual': {
+        dispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: baseUpdate as AnnualGoal });
+        break;
+      }
+      case 'quarterly': {
+        dispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: baseUpdate as QuarterlyGoal });
+        break;
+      }
+      case 'weekly': {
+        dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: baseUpdate as WeeklyTask });
+        break;
+      }
+    }
+
+    // Track successful save
+    analyticsService.trackEvent('goal_field_updated', {
+      goal_id: goalId,
+      goal_type: goalType,
+      field: editingField,
+      new_value: editingField === 'title' ? editedTitle :
+                editingField === 'description' ? editedDescription :
+                editingField === 'progress' ? editedProgress :
+                editingField === 'priority' ? editedPriority :
+                editingField === 'status' ? editedStatus : 'unknown'
+    });
+
+    setEditingField(null);
+  };
+
+  // Rich text editor functions
+  const applyFormatting = (command: string) => {
+    switch (command) {
+      case 'bold':
+        document.execCommand('bold', false, undefined);
+        break;
+      case 'italic':
+        document.execCommand('italic', false, undefined);
+        break;
+      case 'underline':
+        document.execCommand('underline', false, undefined);
+        break;
+      case 'unorderedList':
+        document.execCommand('insertUnorderedList', false, undefined);
+        break;
+      case 'orderedList':
+        document.execCommand('insertOrderedList', false, undefined);
+        break;
+      case 'heading':
+        // Toggle between H3 and normal text
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
+            ? range.commonAncestorContainer.parentElement 
+            : range.commonAncestorContainer as Element;
+          
+          if (parentElement?.tagName === 'H3') {
+            document.execCommand('formatBlock', false, '<p>');
+          } else {
+            document.execCommand('formatBlock', false, '<h3>');
+          }
+        }
+        break;
+      case 'link':
+        const url = prompt('Enter URL:');
+        if (url) {
+          document.execCommand('createLink', false, url);
+        }
+        break;
+    }
+    richTextEditorRef.current?.focus();
+    handleRichTextChange();
+  };
+
+  const handleRichTextChange = () => {
+    if (richTextEditorRef.current) {
+      setEditedDescription(richTextEditorRef.current.innerHTML);
+    }
+  };
+
+  // Function to handle creating new updates
+  const handleCreateUpdate = () => {
+    if (newUpdate.trim()) {
+      const update = {
+        id: Date.now().toString(),
+        goalId,
+        goalType,
+        content: newUpdate.trim(),
+        status: selectedStatus,
+        targetDate: selectedDate,
+        createdAt: new Date(),
+        author: 'Current User' // This would come from auth context in a real app
+      };
+      
+      // Add update to list through context
+      dispatch({ type: 'ADD_GOAL_UPDATE', payload: update });
+      setNewUpdate('');
+      
+      // Track update creation
+      analyticsService.trackEvent('goal_update_created', {
+        goal_id: goalId,
+        goal_type: goalType,
+        status: selectedStatus,
+        content_length: newUpdate.trim().length
+      });
+    }
+  };
 
   // Get weekly review learnings linked to this goal AND its children
   const getLinkedLearnings = () => {
@@ -721,7 +959,32 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
             <Target size={24} />
           </div>
           <div className="goal-title-content">
-            <h1 className="goal-title">{goal.title}</h1>
+            {editingField === 'title' ? (
+              <div className="title-edit-container">
+                <input 
+                  type="text" 
+                  className="goal-title-edit" 
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  placeholder="Goal title"
+                  autoFocus
+                />
+                <div className="field-edit-actions">
+                  <button className="save-btn" onClick={saveChanges} title="Save changes">
+                    <Save size={16} />
+                  </button>
+                  <button className="cancel-btn" onClick={cancelEditingField} title="Cancel editing">
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="title-display-container">
+                <h1 className="goal-title" onClick={() => startEditingField('title')} title="Click to edit">
+                  {goal.title}
+                </h1>
+              </div>
+            )}
             <div className="goal-meta">
               <span className="goal-due-date">
                 <Calendar size={14} />
@@ -741,11 +1004,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
             onClick={() => setActiveTab(tab as any)}
           >
             {tab === 'check-ins' ? 'Check-ins' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            {tab === 'updates' && <span className="tab-count">2</span>}
+            {tab === 'updates' && <span className="tab-count">{goalUpdates.length}</span>}
             {tab === 'learnings' && <span className="tab-count">{linkedLearnings.length}</span>}
             {tab === 'roadblocks' && <span className="tab-count">{linkedRoadblocks.length}</span>}
             {tab === 'wins' && <span className="tab-count">{linkedWins.length}</span>}
-            {tab === 'decisions' && <span className="tab-count">1</span>}
+            {tab === 'decisions' && <span className="tab-count">{goalDecisions.length}</span>}
             {tab === 'check-ins' && <span className="tab-count">{linkedCheckIns.length}</span>}
           </button>
         ))}
@@ -975,38 +1238,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                   </div>
                 </div>
 
-                {/* Progress Section */}
-                <div className="progress-form-section">
-                  <h4>Progress</h4>
-                  <div className="progress-input-row">
-                    <span className="currency-symbol">$</span>
-                    <label>CAPEX Spend target</label>
-                    <input 
-                      type="text" 
-                      value="738"
-                      className="progress-input"
-                    />
-                    <span className="currency-label">CAD</span>
-                    <span className="separator">/</span>
-                    <span className="target-amount">6,392 CAD</span>
-                  </div>
-                  <div className="progress-indicator">
-                    <span className="progress-percentage">11.5%</span>
-                  </div>
-                </div>
-
                 <div className="form-toolbar">
-                  <div className="toolbar-icons">
-                    <button className="toolbar-btn" title="Add attachment">📎</button>
-                    <button className="toolbar-btn" title="Add image">🖼️</button>
-                    <button className="toolbar-btn" title="Add emoji">😊</button>
-                    <button className="toolbar-btn" title="Add table">📊</button>
-                  </div>
                   <div className="form-actions">
-                    <span className="help-text">
-                      💡 Who will see this? <button className="help-link">ℹ️</button>
-                    </span>
-                    <button className="btn-primary-large">Post</button>
+                    <button className="btn-primary-large" onClick={handleCreateUpdate}>Post</button>
                   </div>
                 </div>
 
@@ -1058,59 +1292,44 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
               {/* Previous Updates */}
               <div className="previous-updates-section">
                 <h3>Previous updates</h3>
-                <div className="update-item-enhanced">
-                  <div className="update-header">
-                    <div className="update-author">
-                      <div className="author-avatar">FG</div>
-                      <div className="author-info">
-                        <span className="author-name">Frederic Gouverneur</span>
-                        <span className="update-time">
-                          about 2 months ago • 2 people viewed
-                        </span>
-                      </div>
-                    </div>
-                    <div className="update-status">
-                      <div className="status-indicator on-track">
-                        <span className="status-badge-small on-track">ON TRACK</span>
-                        <span className="date-badge">📅 Oct-Dec</span>
-                      </div>
-                    </div>
-                  </div>
+                {goalUpdates.length > 0 ? (
+                  <div className="updates-list">
+                    {goalUpdates.map((update) => (
+                      <div key={update.id} className="update-item-enhanced">
+                        <div className="update-header">
+                          <div className="update-author">
+                            <div className="author-avatar">
+                              {update.author.split(' ').map((n: string) => n[0]).join('')}
+                            </div>
+                            <div className="author-info">
+                              <span className="author-name">{update.author}</span>
+                              <span className="update-time">
+                                {formatDate(update.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="update-status">
+                            <div className="status-indicator">
+                              <span className={`status-badge-small ${update.status.toLowerCase().replace(' ', '-')}`}>
+                                {update.status.toUpperCase()}
+                              </span>
+                              <span className="date-badge">📅 {update.targetDate}</span>
+                            </div>
+                          </div>
+                        </div>
 
-                  <div className="update-content-enhanced">
-                    <p>New numbers in:</p>
-                    
-                    <div className="progress-change">
-                      <span className="change-label">Progress changed</span>
-                      <div className="change-flow">
-                        <span className="old-value">435 CAD</span>
-                        <span className="arrow">→</span>
-                        <span className="new-value">738 CAD</span>
+                        <div className="update-content-enhanced">
+                          <p>{update.content}</p>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="update-actions-footer">
-                      <button className="action-btn">Share</button>
-                      <button className="action-btn">Edit</button>
-                      <button className="action-btn">🔗</button>
-                      <button className="action-btn">💙</button>
-                      <button className="action-btn">👀</button>
-                      <button className="action-btn">💬</button>
-                      <button className="action-btn">⋯</button>
-                    </div>
+                    ))}
                   </div>
-
-                  <div className="comment-section-inline">
-                    <div className="comment-composer-inline">
-                      <div className="author-avatar">FG</div>
-                      <input 
-                        type="text" 
-                        placeholder="Add a comment... encourage them to keep going"
-                        className="comment-input-inline"
-                      />
-                    </div>
+                ) : (
+                  <div className="no-updates">
+                    <p className="no-updates-text">No previous updates yet.</p>
+                    <p className="no-updates-hint">Updates you create will appear here to track your progress over time.</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -1121,12 +1340,108 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
               <div className="goal-description">
                 <h3>Description</h3>
                 <div className="description-content">
-                  {goal.description ? (
-                    <p>{goal.description}</p>
+                  {editingField === 'description' ? (
+                    <div className="description-edit-container">
+                      <div className="rich-text-toolbar">
+                        <div className="toolbar-group">
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('bold')}
+                            title="Bold"
+                          >
+                            <strong>B</strong>
+                          </button>
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('italic')}
+                            title="Italic"
+                          >
+                            <em>I</em>
+                          </button>
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('underline')}
+                            title="Underline"
+                          >
+                            <span style={{ textDecoration: 'underline' }}>U</span>
+                          </button>
+                        </div>
+                        <div className="toolbar-group">
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('unorderedList')}
+                            title="Bullet List"
+                          >
+                            •
+                          </button>
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('orderedList')}
+                            title="Numbered List"
+                          >
+                            1.
+                          </button>
+                        </div>
+                        <div className="toolbar-group">
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('heading')}
+                            title="Heading"
+                          >
+                            H
+                          </button>
+                          <button 
+                            className="toolbar-btn" 
+                            onClick={() => applyFormatting('link')}
+                            title="Link"
+                          >
+                            🔗
+                          </button>
+                        </div>
+                      </div>
+                      <div 
+                        className="rich-text-editor"
+                        contentEditable
+                        ref={richTextEditorRef}
+                        onInput={handleRichTextChange}
+                        onFocus={() => setRichTextFocused(true)}
+                        onBlur={() => setRichTextFocused(false)}
+                        dangerouslySetInnerHTML={{ __html: editedDescription }}
+                        style={{
+                          minHeight: '120px',
+                          padding: '12px',
+                          border: richTextFocused ? '2px solid #3b82f6' : '2px solid #e2e8f0',
+                          borderRadius: '6px',
+                          outline: 'none',
+                          fontSize: '14px',
+                          lineHeight: '1.5',
+                          color: '#374151',
+                          background: 'white'
+                        }}
+                        suppressContentEditableWarning={true}
+                      />
+                      <div className="field-edit-actions">
+                        <button className="save-btn" onClick={saveChanges} title="Save changes">
+                          <Save size={16} />
+                        </button>
+                        <button className="cancel-btn" onClick={cancelEditingField} title="Cancel editing">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
                   ) : (
-                    <p className="description-placeholder">
-                      Briefly describe why this goal is important and how success is measured, so you can provide followers a common understanding.
-                    </p>
+                    <div className="description-display" onClick={() => startEditingField('description')} title="Click to edit">
+                      {goal.description ? (
+                        <div 
+                          className="description-content-html"
+                          dangerouslySetInnerHTML={{ __html: goal.description }}
+                        />
+                      ) : (
+                        <p className="description-placeholder">
+                          Briefly describe why this goal is important and how success is measured, so you can provide followers a common understanding.
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1653,7 +1968,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
             </h4>
             <div className="progress-section">
               <div className="progress-visual">
-                <div className="progress-circle">
+                <div 
+                  className="progress-circle"
+                  onClick={() => goalType !== 'weekly' && startEditingField('progress')}
+                  title={goalType !== 'weekly' ? "Click to edit progress" : undefined}
+                  style={{ cursor: goalType !== 'weekly' ? 'pointer' : 'default' }}
+                >
                   <span className="progress-percentage">
                     {Math.round(
                       'progress' in goal ? goal.progress || 0 : 
@@ -1662,6 +1982,105 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                   </span>
                 </div>
               </div>
+              {editingField === 'progress' && goalType !== 'weekly' && (
+                <div className="progress-edit-container">
+                  <div className="progress-edit">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={editedProgress}
+                      onChange={(e) => setEditedProgress(Number(e.target.value))}
+                      className="progress-slider"
+                    />
+                    <span className="progress-value">{editedProgress}%</span>
+                  </div>
+                  <div className="field-edit-actions">
+                    <button className="save-btn" onClick={saveChanges} title="Save changes">
+                      <Save size={16} />
+                    </button>
+                    <button className="cancel-btn" onClick={cancelEditingField} title="Cancel editing">
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="sidebar-section">
+            <h4>Status</h4>
+            <div className="status-section">
+              {editingField === 'status' ? (
+                <div className="status-edit-container">
+                  <select 
+                    value={editedStatus} 
+                    onChange={(e) => setEditedStatus(e.target.value as any)}
+                    className="status-select"
+                    autoFocus
+                  >
+                    <option value="not-started">Not Started</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="on-hold">On Hold</option>
+                  </select>
+                  <div className="field-edit-actions">
+                    <button className="save-btn" onClick={saveChanges} title="Save changes">
+                      <Save size={16} />
+                    </button>
+                    <button className="cancel-btn" onClick={cancelEditingField} title="Cancel editing">
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className={`status-badge status-${goal.status}`}
+                  onClick={() => startEditingField('status')}
+                  title="Click to edit"
+                >
+                  {getStatusIcon(goal.status)}
+                  <span>{goal.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Priority */}
+          <div className="sidebar-section">
+            <h4>Priority</h4>
+            <div className="priority-section">
+              {editingField === 'priority' ? (
+                <div className="priority-edit-container">
+                  <select 
+                    value={editedPriority} 
+                    onChange={(e) => setEditedPriority(e.target.value as any)}
+                    className="priority-select"
+                    autoFocus
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                  <div className="field-edit-actions">
+                    <button className="save-btn" onClick={saveChanges} title="Save changes">
+                      <Save size={16} />
+                    </button>
+                    <button className="cancel-btn" onClick={cancelEditingField} title="Cancel editing">
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className={`priority-badge priority-${goal.priority}`}
+                  onClick={() => startEditingField('priority')}
+                  title="Click to edit"
+                >
+                  <span>{goal.priority.charAt(0).toUpperCase() + goal.priority.slice(1)}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1733,7 +2152,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
             <div className="start-date">
               {formatDate(
                 'createdAt' in goal ? goal.createdAt : 
-                'weekOf' in goal ? goal.weekOf : 
+                (goal as any).weekOf ? (goal as any).weekOf : 
                 new Date()
               )}
             </div>
