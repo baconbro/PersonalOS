@@ -150,6 +150,7 @@ export interface WeeklyReviewData {
   customId?: string; // Optional custom ID from document data
   satisfaction: 1 | 2 | 3 | 4 | 5;
   notes: string;
+  completedAt?: Date; // When the hurdle was actually completed/saved
   // New After-Action Review fields
   winsReflection?: string; // Celebrate step reflection
   gapsAnalysis?: string; // Analyze step reflection  

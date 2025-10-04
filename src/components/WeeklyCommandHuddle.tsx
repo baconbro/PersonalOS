@@ -18,6 +18,7 @@ interface WeeklyCommandHuddleProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+  selectedWeek?: Date; // Optional prop to set initial week
 }
 
 interface LastWeekPriority {
@@ -282,7 +283,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ value, onChange, pl
   );
 };
 
-const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClose, onComplete }) => {
+const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClose, onComplete, selectedWeek: initialSelectedWeek }) => {
   const { state, dispatch } = useApp();
 
   // Get all available goals and tasks for linking, sorted by most recent modification
@@ -345,12 +346,23 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
     });
 
     // Sort by last modified (most recent first)
-    return items.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+    return items.sort((a, b) => {
+      const dateA = new Date(a.lastModified);
+      const dateB = new Date(b.lastModified);
+      return dateB.getTime() - dateA.getTime();
+    });
   }, [state.lifeGoals, state.annualGoals, state.quarterlyGoals, state.weeklyTasks]);
   const [currentPhase, setCurrentPhase] = useState<Phase>('review');
   const [reviewStep, setReviewStep] = useState<ReviewStep>('celebrate');
   const [selectedOKRs, setSelectedOKRs] = useState<QuarterlyGoal[]>([]);
-  const [selectedWeek, setSelectedWeek] = useState(new Date()); // Add week selection
+  const [selectedWeek, setSelectedWeek] = useState(initialSelectedWeek || new Date()); // Add week selection
+  
+  // Update selectedWeek when prop changes
+  useEffect(() => {
+    if (initialSelectedWeek) {
+      setSelectedWeek(initialSelectedWeek);
+    }
+  }, [initialSelectedWeek]);
   
   // Phase 1: Review data - After Action Review
   const [lastWeekPriorities, setLastWeekPriorities] = useState<LastWeekPriority[]>([]);
@@ -380,6 +392,9 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   
   // Validation states
   const [showValidationError, setShowValidationError] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingPhase, setPendingPhase] = useState<Phase | null>(null);
+  const [pendingCompletion, setPendingCompletion] = useState(false);
 
   const currentWeek = useMemo(() => selectedWeek, [selectedWeek]);
   const lastWeek = useMemo(() => subWeeks(currentWeek, 1), [currentWeek]);
@@ -622,6 +637,26 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
     ));
   };
 
+  const confirmProceed = () => {
+    if (pendingCompletion) {
+      // User confirmed to complete without all requirements
+      performCompletion();
+      setPendingCompletion(false);
+    } else if (pendingPhase) {
+      // User confirmed to proceed to next phase
+      setCurrentPhase(pendingPhase);
+      setPendingPhase(null);
+    }
+    setShowConfirmDialog(false);
+    setShowValidationError(false);
+  };
+
+  const cancelProceed = () => {
+    setShowConfirmDialog(false);
+    setPendingPhase(null);
+    setPendingCompletion(false);
+  };
+
   const nextPhase = () => {
     if (currentPhase === 'review') {
       // Handle review substeps
@@ -656,8 +691,10 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       setCurrentPhase('realign');
     } else if (currentPhase === 'realign') {
       if (!canProceedFromRealign) {
-        setShowValidationError(true);
-        return; // Don't proceed if validation fails
+        // Show confirmation dialog instead of blocking
+        setPendingPhase('plan');
+        setShowConfirmDialog(true);
+        return;
       }
       setShowValidationError(false);
       setCurrentPhase('plan');
@@ -684,13 +721,18 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   };
 
   const completeHuddle = () => {
-    // Validate before completing
+    // Check if validation fails - show confirmation instead of blocking
     if (!canCompleteHuddle) {
-      setShowValidationError(true);
-      return; // Don't complete if validation fails
+      setPendingCompletion(true);
+      setShowConfirmDialog(true);
+      return;
     }
     
     setShowValidationError(false);
+    performCompletion();
+  };
+
+  const performCompletion = () => {
 
     // Save the review data
     const reviewData: WeeklyReviewData = {
@@ -712,6 +754,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       energyLevel: 3,
       satisfaction: lastWeekPriorities.filter(p => p.completed).length >= lastWeekPriorities.length * 0.7 ? 4 : 3,
       notes: '',
+      completedAt: new Date(), // Add completion timestamp
       // Add the new After-Action Review fields
       winsReflection: wins.map(win => win.text).join('\n'), // Convert individual wins to string for storage
       gapsAnalysis: gaps.map(gap => gap.text).join('\n'), // Convert individual gaps to string for storage
@@ -763,7 +806,9 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         status: 'todo', // Set default status for Kanban board
         weekOf: weekStart,
         roadblocks: [],
-        notes: ''
+        notes: '',
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       dispatch({ type: 'ADD_WEEKLY_TASK', payload: taskData });
     });
@@ -1596,6 +1641,39 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {pendingCompletion ? 'Complete Without All Requirements?' : 'Continue Without Requirements?'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {pendingCompletion 
+                ? 'You haven\'t defined any weekly priorities yet. You can still complete your huddle and add priorities later, or go back to add them now.'
+                : pendingPhase === 'plan' 
+                  ? 'You haven\'t selected any quarterly objectives to focus on. You can still proceed to planning or go back to select objectives.'
+                  : 'Some requirements are missing. Would you like to continue anyway?'
+              }
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelProceed}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={confirmProceed}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {pendingCompletion ? 'Complete Anyway' : 'Continue Anyway'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

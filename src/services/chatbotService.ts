@@ -116,7 +116,7 @@ export class ChatbotService {
     const totalGoals = state.lifeGoals.length;
     const completedGoals = state.lifeGoals.filter(g => g.progress >= 100).length;
     const stagnantGoals = state.lifeGoals.filter(g => g.progress < 10 && 
-      new Date().getTime() - g.createdAt.getTime() > 90 * 24 * 60 * 60 * 1000).length;
+      new Date().getTime() - new Date(g.createdAt).getTime() > 90 * 24 * 60 * 60 * 1000).length;
 
     if (totalGoals === 0) {
       insights.push({
@@ -222,10 +222,11 @@ export class ChatbotService {
     const insights: ContextualInsight[] = [];
     const currentWeek = new Date();
     const weekStart = new Date(currentWeek.setDate(currentWeek.getDate() - currentWeek.getDay() + 1));
-    const thisWeekTasks = state.weeklyTasks.filter(task => 
-      task.weekOf.getTime() >= weekStart.getTime() && 
-      task.weekOf.getTime() < weekStart.getTime() + 7 * 24 * 60 * 60 * 1000
-    );
+    const thisWeekTasks = state.weeklyTasks.filter(task => {
+      const taskWeekOf = new Date(task.weekOf);
+      return taskWeekOf.getTime() >= weekStart.getTime() && 
+             taskWeekOf.getTime() < weekStart.getTime() + 7 * 24 * 60 * 60 * 1000;
+    });
 
     const completedTasks = thisWeekTasks.filter(t => t.completed).length;
     const totalTasks = thisWeekTasks.length;

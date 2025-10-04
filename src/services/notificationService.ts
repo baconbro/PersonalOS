@@ -59,7 +59,7 @@ class NotificationService {
   constructor() {
     this.settings = this.loadSettings();
     this.loadNotifications();
-    this.requestPermission();
+    // Don't automatically request permission - must be done with user gesture
     this.startNotificationChecker();
   }
 
@@ -117,7 +117,7 @@ class NotificationService {
     localStorage.setItem('personal-os-notifications', JSON.stringify(this.notifications));
   }
 
-  private async requestPermission(): Promise<void> {
+  async requestPermission(): Promise<void> {
     if ('Notification' in window && this.settings.browserNotifications) {
       if (Notification.permission === 'default') {
         await Notification.requestPermission();
