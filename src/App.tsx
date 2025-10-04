@@ -15,11 +15,9 @@ import DevToastContainer from './components/DevToastContainer.tsx'
 import ToastContainer from './components/ToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
 import { LandingPage } from './components/LandingPage.tsx'
-import DevRLModal from './components/DevRLModal.tsx'
 import GoalsTable from './components/GoalsTable.tsx'
 import { Button } from './components/ui/button'
-import { rlEngine } from './services/rlEngine'
-import { appSettingsService } from './services/appSettingsService'
+
 import { analyticsService } from './services/analyticsService'
 import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table, Menu, X } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
@@ -40,7 +38,7 @@ function App() {
   const [showWizard, setShowWizard] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
-  const [showRLDrawer, setShowRLDrawer] = useState(false);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user has any data - if not, show wizard
@@ -60,22 +58,7 @@ function App() {
     }
   }, [user, isNewUser, state.lifeGoals.length, state.annualGoals.length, state.quarterlyGoals.length]);
 
-  // Dev-only: initialize RL engine and tick periodically when feature toggle is enabled
-  useEffect(() => {
-    if (import.meta.env.MODE === 'production') return;
-    rlEngine.init(() => state);
-    const settings = appSettingsService.getSettings();
-    let id: number | undefined;
-    const start = () => { if (!id) id = window.setInterval(() => rlEngine.step(), 4000); };
-    const stop = () => { if (id) { clearInterval(id); id = undefined; } };
-    if (settings.rlEngineEnabled) start(); else stop();
-    const onChange = (e: Event) => {
-      const s = (e as CustomEvent).detail;
-      if (s.rlEngineEnabled) start(); else stop();
-    };
-    window.addEventListener('app-settings-changed', onChange as EventListener);
-    return () => { stop(); window.removeEventListener('app-settings-changed', onChange as EventListener); };
-  }, [state]);
+
 
   // Welcome route should be available to anyone (even when logged in) via URL
   if (currentPath === '/welcome') {
@@ -348,16 +331,7 @@ function App() {
             <Clock size={18} />
             <span>Activity Log</span>
           </Button>
-          {import.meta.env.MODE !== 'production' && (
-            <Button
-              variant="ghost"
-              className="w-full justify-start space-x-3"
-              onClick={() => setShowRLDrawer(true)}
-            >
-              <TrendingUp size={18} />
-              <span>RL Debug</span>
-            </Button>
-          )}
+
           <Button
             variant="outline"
             className="w-full justify-start space-x-3 mt-4"
@@ -440,9 +414,7 @@ function App() {
         onClose={() => setShowActivityLog(false)}
       />
 
-      {import.meta.env.MODE !== 'production' && (
-        <DevRLModal isOpen={showRLDrawer} onClose={() => setShowRLDrawer(false)} />
-      )}
+
 
       <DevToastContainer />
       <ToastContainer />

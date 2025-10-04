@@ -8,14 +8,13 @@ import {
   Star, 
   Volume2, 
   VolumeX,
-  Smartphone,
-  Sparkles
+  Smartphone
 } from 'lucide-react';
 import { notificationService, type NotificationSettings as NotificationSettingsType } from '../services/notificationService';
 import { useApp } from '../context/AppContext';
 import { LocalStorageService } from '../lib/localStorageService';
 import { createExportBundle, downloadJson, validateExportBundle, toNormalizedState, mergeStates } from '../utils/exportImport';
-import { appSettingsService } from '../services/appSettingsService';
+
 import './NotificationSettings.css';
 
 interface NotificationSettingsProps {
@@ -29,15 +28,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
   const [hasChanges, setHasChanges] = useState(false);
   const [importInfo, setImportInfo] = useState<{ preview: string; counts?: Record<string, number>; error?: string } | null>(null);
   const [mergeStrategy, setMergeStrategy] = useState<'merge' | 'replace'>('merge');
-  const [appSettings, setAppSettings] = useState(appSettingsService.getSettings());
-  const [activeSection, setActiveSection] = useState<'general'|'weekly'|'quarterly'|'annual'|'celebrations'|'data'|'experiments'>('general');
+
+  const [activeSection, setActiveSection] = useState<'general'|'weekly'|'quarterly'|'annual'|'celebrations'|'data'>('general');
 
   useEffect(() => {
     if (isOpen) {
       setSettings(notificationService.getSettings());
       setHasChanges(false);
-  setAppSettings(appSettingsService.getSettings());
-  setActiveSection('general');
+      setActiveSection('general');
     }
   }, [isOpen]);
 
@@ -90,6 +88,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
       weeklyReviews: state.weeklyReviews,
       activityLogs: state.activityLogs,
       checkIns: state.checkIns,
+      goalUpdates: state.goalUpdates,
       currentYear: state.currentYear,
       currentQuarter: state.currentQuarter,
     });
@@ -137,6 +136,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
       weeklyReviews: state.weeklyReviews,
       activityLogs: state.activityLogs,
       checkIns: state.checkIns,
+      goalUpdates: state.goalUpdates,
       currentYear: state.currentYear,
       currentQuarter: state.currentQuarter,
     }, incoming, mergeStrategy);
@@ -185,7 +185,6 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                 {key:'annual', label:'Annual Review', icon:<Clock size={16}/>},
                 {key:'celebrations', label:'Celebrations', icon:<Star size={16}/>},
                 {key:'data', label:'Export / Import', icon:<Settings size={16}/>},
-                {key:'experiments', label:'Experiments', icon:<Sparkles size={16}/>},
               ].map((item:any) => (
                 <button key={item.key} className="nav-item" style={{
                   textAlign:'left', padding:'12px 16px', background: activeSection===item.key ? '#eef2ff':'transparent',
@@ -555,39 +554,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
               </section>
             )}
 
-            {activeSection==='experiments' && (
-              <section className="settings-section">
-                <div className="section-header">
-                  <Sparkles size={20} />
-                  <h3>Experiments</h3>
-                </div>
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <label>Reinforcement Learning Engine</label>
-                    <span>Enable the RL engine (dev-only). When off, it won’t step or log.</span>
-                  </div>
-                  <label className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={appSettings.rlEngineEnabled}
-                      onChange={(e) => {
-                        const val = e.target.checked;
-                        setAppSettings(prev => ({...prev, rlEngineEnabled: val}));
-                        appSettingsService.updateSettings({ rlEngineEnabled: val });
-                      }}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-                {import.meta.env.MODE === 'production' && (
-                  <div className="setting-item">
-                    <div className="setting-info">
-                      <span style={{color:'#b91c1c'}}>Available only in development builds.</span>
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
+            
           </div>
         </div>
 

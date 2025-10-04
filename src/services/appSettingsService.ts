@@ -1,5 +1,5 @@
 export interface AppSettings {
-  rlEngineEnabled: boolean;
+  // Placeholder for future app settings
 }
 
 const STORAGE_KEY = 'personal-os-app-settings';
@@ -17,7 +17,7 @@ class AppSettingsService {
       if (raw) return JSON.parse(raw);
     } catch {}
     // defaults
-    return { rlEngineEnabled: false };
+    return {};
   }
 
   private save() {
