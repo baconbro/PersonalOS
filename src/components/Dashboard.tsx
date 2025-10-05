@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Calendar, Target, CheckCircle, Heart, Star, TrendingUp, Clock, GitBranch } from 'lucide-react';
 import { format } from 'date-fns';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import GoalTree from './GoalTree';
 import CheckInModal from './CheckInModal';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
@@ -13,6 +14,7 @@ import { cn } from '../lib/utils';
 
 function Dashboard() {
   const { state } = useApp();
+  const { navigateTo } = useRouter();
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showGoalTree, setShowGoalTree] = useState(false);
 
@@ -140,6 +142,10 @@ function Dashboard() {
   const currentQuarterGoals = state.quarterlyGoals.filter(goal => 
     goal.quarter === state.currentQuarter && goal.year === state.currentYear
   );
+
+  const handleQuarterlyGoalClick = (goalId: string) => {
+    navigateTo('goals-table', false, { goalType: 'quarterly', goalId });
+  };
 
   const recentTasks = state.weeklyTasks
     .filter(task => {
@@ -290,7 +296,11 @@ function Dashboard() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {currentQuarterGoals.map(goal => (
-              <Card key={goal.id}>
+              <Card 
+                key={goal.id}
+                className="cursor-pointer hover:shadow-md transition-shadow duration-200"
+                onClick={() => handleQuarterlyGoalClick(goal.id)}
+              >
                 <CardHeader>
                   <CardTitle className="text-base">{goal.title}</CardTitle>
                 </CardHeader>
