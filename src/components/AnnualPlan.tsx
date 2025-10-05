@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import { Target, Plus, Edit3, Trash2, Calendar, Heart, Brain, Briefcase, DollarSign, Activity, Users, Compass, Building, Plane, Gift, GitBranch } from 'lucide-react';
 import { format } from 'date-fns';
 import type { AnnualGoal, LifeGoalCategory } from '../types';
@@ -36,6 +37,7 @@ const categoryColors: Record<LifeGoalCategory, string> = {
 
 function AnnualPlan() {
   const { state, dispatch } = useApp();
+  const { navigateTo } = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<AnnualGoal | null>(null);
   const [showGoldenThread, setShowGoldenThread] = useState(false);
@@ -128,7 +130,9 @@ function AnnualPlan() {
     setShowGoldenThread(true);
   };
 
-
+  const handleGoalClick = (goalId: string) => {
+    navigateTo('goals-table', false, { goalType: 'annual', goalId });
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -315,16 +319,20 @@ function AnnualPlan() {
           marginBottom: '2rem'
         }}>
           {currentYearGoals.map((goal) => (
-            <div key={goal.id} style={{
-              background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              transition: 'all 0.2s ease-in-out',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+            <div 
+              key={goal.id} 
+              style={{
+                background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                transition: 'all 0.2s ease-in-out',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer'
+              }}
+              onClick={() => handleGoalClick(goal.id)}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
@@ -349,7 +357,10 @@ function AnnualPlan() {
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                       className="btn btn-secondary"
-                      onClick={() => handleShowGoldenThread(goal)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowGoldenThread(goal);
+                      }}
                       style={{ 
                         padding: '0.5rem', 
                         backgroundColor: '#ffd700', 
@@ -364,7 +375,10 @@ function AnnualPlan() {
                     </button>
                     <button
                       className="btn btn-secondary"
-                      onClick={() => handleEdit(goal)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(goal);
+                      }}
                       style={{ 
                         padding: '0.5rem',
                         border: 'none',
@@ -378,7 +392,10 @@ function AnnualPlan() {
                     </button>
                     <button
                       className="btn btn-secondary"
-                      onClick={() => handleDelete(goal.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(goal.id);
+                      }}
                       style={{ 
                         padding: '0.5rem', 
                         color: '#f56565',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import { Target, Plus, Edit, Trash2, Heart, Brain, Briefcase, DollarSign, Activity, Users, Compass, Building, Plane, Gift, List, Grid, Share2 } from 'lucide-react';
 import type { LifeGoal, LifeGoalCategory } from '../types';
 import AIRefiner from './AIRefiner';
@@ -52,6 +53,7 @@ const categoryDescriptions: Record<LifeGoalCategory, string> = {
 
 const LifeGoals: React.FC = () => {
   const { state, dispatch } = useApp();
+  const { navigateTo } = useRouter();
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<LifeGoal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<LifeGoalCategory | 'All'>('All');
@@ -259,6 +261,10 @@ const LifeGoals: React.FC = () => {
     }
   };
 
+  const handleGoalClick = (goalId: string) => {
+    navigateTo('goals-table', false, { goalType: 'life', goalId });
+  };
+
   const getLifeGoalsByCategory = (category: LifeGoalCategory | 'All') => {
     if (category === 'All') {
       return state.lifeGoals;
@@ -399,7 +405,7 @@ const LifeGoals: React.FC = () => {
             key={goal.id} 
             className="gallery-card"
             style={{ borderColor: categoryColors[goal.category] }}
-            onClick={() => setSelectedGoalId(goal.id)}
+            onClick={() => handleGoalClick(goal.id)}
           >
             <div className="gallery-card-header">
               <Icon 
@@ -485,7 +491,7 @@ const LifeGoals: React.FC = () => {
                   stroke={categoryColors[goal.category]}
                   strokeWidth="3"
                   className="mindmap-goal-circle"
-                  onClick={() => setSelectedGoalId(goal.id)}
+                  onClick={() => handleGoalClick(goal.id)}
                   style={{ cursor: 'pointer' }}
                 />
                 
@@ -498,7 +504,7 @@ const LifeGoals: React.FC = () => {
                   fill={categoryColors[goal.category]}
                   fontSize="11"
                   fontWeight="600"
-                  onClick={() => setSelectedGoalId(goal.id)}
+                  onClick={() => handleGoalClick(goal.id)}
                   style={{ cursor: 'pointer' }}
                 >
                   {goal.title.length > 20 ? goal.title.substring(0, 20) + '...' : goal.title}
@@ -514,7 +520,7 @@ const LifeGoals: React.FC = () => {
                       alignItems: 'center',
                       cursor: 'pointer'
                     }}
-                    onClick={() => setSelectedGoalId(goal.id)}
+                    onClick={() => handleGoalClick(goal.id)}
                   >
                     <Icon size={16} />
                   </div>
@@ -534,7 +540,12 @@ const LifeGoals: React.FC = () => {
         const relatedAnnualGoals = getRelatedAnnualGoals(goal.id);
         
         return (
-          <div key={goal.id} className="life-goal-card">
+          <div 
+            key={goal.id} 
+            className="life-goal-card"
+            onClick={() => handleGoalClick(goal.id)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="goal-header">
               <div className="goal-info">
                 <h3>{goal.title}</h3>
@@ -550,14 +561,20 @@ const LifeGoals: React.FC = () => {
               <div className="goal-actions">
                 <button 
                   className="action-btn edit"
-                  onClick={() => handleEdit(goal)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(goal);
+                  }}
                   title="Edit goal"
                 >
                   <Edit size={16} />
                 </button>
                 <button 
                   className="action-btn delete"
-                  onClick={() => handleDelete(goal.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(goal.id);
+                  }}
                   title="Delete goal"
                 >
                   <Trash2 size={16} />
