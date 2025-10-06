@@ -22,17 +22,17 @@ const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
 };
 
 const categoryColors: Record<LifeGoalCategory, string> = {
-  'Creativity & Passion': '#e74c3c',
-  'Mind': '#9b59b6',
-  'Career': '#3498db',
-  'Finance': '#f39c12',
-  'Health': '#2ecc71',
-  'Relationships': '#e91e63',
-  'Spirit': '#795548',
-  'Community': '#607d8b',
-  'Travel': '#00bcd4',
-  'Giving Back': '#4caf50',
-  'Other': '#6c757d'
+  'Creativity & Passion': 'var(--mood-inspired)',
+  'Mind': 'var(--chart-2)',
+  'Career': 'var(--ocean-deep-blue)',
+  'Finance': 'var(--warning)',
+  'Health': 'var(--success)',
+  'Relationships': 'var(--mood-confident)',
+  'Spirit': 'var(--mood-calm)',
+  'Community': 'var(--chart-4)',
+  'Travel': 'var(--chart-3)',
+  'Giving Back': 'var(--mood-determined)',
+  'Other': 'var(--ocean-surface-blue)'
 };
 
 function AnnualPlan() {

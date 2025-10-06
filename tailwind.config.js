@@ -18,38 +18,83 @@ export default {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // Ocean Palette Colors
+        ocean: {
+          'deep-blue': 'var(--ocean-deep-blue)',
+          'surface-blue': 'var(--ocean-surface-blue)', 
+          'light-blue': 'var(--ocean-light-blue)',
+          'foam': 'var(--ocean-foam)',
+          'mist': 'var(--ocean-mist)',
+        },
+        // Chart Colors
+        chart: {
+          1: 'var(--chart-1)',
+          2: 'var(--chart-2)',
+          3: 'var(--chart-3)',
+          4: 'var(--chart-4)',
+          5: 'var(--chart-5)',
+        },
+        // Mood Colors
+        mood: {
+          focused: 'var(--mood-focused)',
+          calm: 'var(--mood-calm)',
+          confident: 'var(--mood-confident)',
+          inspired: 'var(--mood-inspired)',
+          determined: 'var(--mood-determined)',
+        },
+        // Life Goal Category Colors
+        category: {
+          creativity: 'var(--category-creativity)',
+          mind: 'var(--category-mind)',
+          career: 'var(--category-career)',
+          finance: 'var(--category-finance)',
+          health: 'var(--category-health)',
+          relationships: 'var(--category-relationships)',
+          spirit: 'var(--category-spirit)',
+          community: 'var(--category-community)',
+          travel: 'var(--category-travel)',
+          giving: 'var(--category-giving)',
+          other: 'var(--category-other)',
+        },
+        // Semantic Colors
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        error: 'var(--error)',
+        info: 'var(--info)',
+        
+        // UI Component Colors
+        border: "var(--border)",
+        input: "var(--input)", 
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
         },
       },
       borderRadius: {

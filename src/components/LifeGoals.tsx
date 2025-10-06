@@ -24,17 +24,28 @@ const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
 };
 
 const categoryColors: Record<LifeGoalCategory, string> = {
-  'Creativity & Passion': '#e74c3c',
-  'Mind': '#9b59b6',
-  'Career': '#3498db',
-  'Finance': '#f39c12',
-  'Health': '#2ecc71',
-  'Relationships': '#e91e63',
-  'Spirit': '#9c27b0',
-  'Community': '#ff9800',
-  'Travel': '#00bcd4',
-  'Giving Back': '#4caf50',
-  'Other': '#6c757d'
+  // Warm coral for creative expression
+  'Creativity & Passion': 'oklch(0.65 0.18 25)',
+  // Deep purple for intellectual pursuits  
+  'Mind': 'oklch(0.55 0.15 280)',
+  // Professional navy blue for career
+  'Career': 'var(--ocean-deep-blue)',
+  // Rich gold for financial goals
+  'Finance': 'oklch(0.70 0.15 70)',
+  // Vibrant green for health & vitality
+  'Health': 'oklch(0.65 0.16 140)',
+  // Warm pink for relationships & love
+  'Relationships': 'oklch(0.65 0.15 350)',
+  // Serene lavender for spiritual growth
+  'Spirit': 'oklch(0.70 0.12 300)',
+  // Warm orange for community connection
+  'Community': 'oklch(0.68 0.16 45)',
+  // Bright teal for travel & adventure
+  'Travel': 'oklch(0.65 0.14 180)',
+  // Deep forest green for giving back
+  'Giving Back': 'oklch(0.55 0.14 160)',
+  // Classic ocean blue for other goals
+  'Other': 'var(--ocean-surface-blue)'
 };
 
 const categoryDescriptions: Record<LifeGoalCategory, string> = {
@@ -57,7 +68,7 @@ const LifeGoals: React.FC = () => {
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<LifeGoal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<LifeGoalCategory | 'All'>('All');
-  const [viewMode, setViewMode] = useState<'list' | 'mindmap' | 'gallery'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'mindmap' | 'gallery'>('gallery');
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -395,6 +406,26 @@ const LifeGoals: React.FC = () => {
     );
   };
 
+  // Helper function to get timeframe display text
+  const getTimeframeLabel = (timeframe: 'five-year' | 'ten-year' | 'lifetime'): string => {
+    switch (timeframe) {
+      case 'five-year': return '5Y';
+      case 'ten-year': return '10Y';
+      case 'lifetime': return 'Life';
+      default: return '5Y';
+    }
+  };
+
+  // Helper function to get timeframe tag color
+  const getTimeframeColor = (timeframe: 'five-year' | 'ten-year' | 'lifetime'): string => {
+    switch (timeframe) {
+      case 'five-year': return '#10b981'; // Green
+      case 'ten-year': return '#f59e0b'; // Amber
+      case 'lifetime': return '#8b5cf6'; // Purple
+      default: return '#10b981';
+    }
+  };
+
   // Gallery View Component
   const GalleryView = ({ goals }: { goals: LifeGoal[] }) => (
     <div className="goals-gallery">
@@ -408,11 +439,26 @@ const LifeGoals: React.FC = () => {
             onClick={() => handleGoalClick(goal.id)}
           >
             <div className="gallery-card-header">
-              <Icon 
-                size={20} 
-                style={{ color: categoryColors[goal.category] }} 
-              />
-              <span className="gallery-category">{goal.category}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Icon 
+                  size={20} 
+                  style={{ color: categoryColors[goal.category] }} 
+                />
+                <span className="gallery-category">{goal.category}</span>
+              </div>
+              <div 
+                className="timeframe-tag"
+                style={{ 
+                  backgroundColor: getTimeframeColor(goal.timeframe),
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}
+              >
+                {getTimeframeLabel(goal.timeframe)}
+              </div>
             </div>
             <h3 className="gallery-title">{goal.title}</h3>
             <div className="gallery-progress">

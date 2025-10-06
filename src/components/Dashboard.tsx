@@ -170,13 +170,16 @@ function Dashboard() {
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
+          onClick={() => navigateTo('annual')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Annual Goals</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{state.annualGoals.length}</div>
+            <div className="text-2xl font-bold text-ocean-deep-blue">{state.annualGoals.length}</div>
             <p className="text-xs text-muted-foreground">
               {stats.totalAnnualGoals > 0 
                 ? `${Math.round((stats.completedAnnualGoals / stats.totalAnnualGoals) * 100)}% Complete`
@@ -186,13 +189,16 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
+          onClick={() => navigateTo('quarterly')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Q{state.currentQuarter} Sprint</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-600">{stats.activeQuarterlyGoals}</div>
+            <div className="text-2xl font-bold text-ocean-surface-blue">{stats.activeQuarterlyGoals}</div>
             <p className="text-xs text-muted-foreground">
               Active OKRs
             </p>
@@ -200,34 +206,34 @@ function Dashboard() {
         </Card>
 
         <Card 
-          className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-lg hover:scale-105 border border-green-400 shadow-sm rounded-lg"
+          className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
           onClick={() => {
             alert('Weekly Command Huddle feature! Navigate to "This Week" tab to experience the full Weekly Huddle.');
           }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
-            <CardTitle className="text-sm font-medium text-white">This Week</CardTitle>
-            <CheckCircle className="h-4 w-4 text-white" />
+            <CardTitle className="text-sm font-medium">This Week</CardTitle>
+            <CheckCircle className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <div className="text-2xl font-bold text-white">{stats.weekProgress}%</div>
-            <p className="text-xs text-green-100">
+            <div className="text-2xl font-bold text-success">{stats.weekProgress}%</div>
+            <p className="text-xs text-muted-foreground">
               Click for Weekly Command Huddle
             </p>
           </CardContent>
         </Card>
 
         <Card 
-          className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-red-500 to-red-600 text-white hover:shadow-lg hover:scale-105 border border-red-400 shadow-sm rounded-lg"
+          className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
           onClick={() => setShowCheckInModal(true)}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
-            <CardTitle className="text-sm font-medium text-white">Check-In</CardTitle>
-            <Heart className="h-4 w-4 text-white" />
+            <CardTitle className="text-sm font-medium">Check-In</CardTitle>
+            <Heart className="h-4 w-4 text-mood-confident" />
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <div className="text-2xl font-bold text-white">{state.checkIns.length}</div>
-            <p className="text-xs text-red-100">
+            <div className="text-2xl font-bold text-mood-confident">{state.checkIns.length}</div>
+            <p className="text-xs text-muted-foreground">
               Today's Check-ins • Log your energy & focus
             </p>
           </CardContent>
@@ -236,17 +242,17 @@ function Dashboard() {
 
       {/* Goal Tree Overview Card */}
       <Card 
-        className="cursor-pointer transition-all duration-200 bg-gradient-to-br from-yellow-400 to-yellow-500 hover:shadow-lg hover:scale-[1.02] border border-yellow-300 shadow-sm rounded-lg"
+        className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
         onClick={() => setShowGoalTree(true)}
       >
         <CardHeader className="p-6">
-          <CardTitle className="flex items-center justify-center gap-4 text-lg font-bold text-yellow-900">
+          <CardTitle className="flex items-center justify-center gap-4 text-lg font-bold text-warning">
             <GitBranch className="h-8 w-8" />
             <span>🌟 Open Goal Tree Overview</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center p-6 pt-0">
-          <p className="mb-4 text-yellow-800 leading-relaxed">
+          <p className="mb-4 text-muted-foreground leading-relaxed">
             See the complete hierarchy of your goals and tasks. Explore how every action connects 
             to your life vision in an interactive tree view.
           </p>
@@ -271,7 +277,10 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
+          onClick={() => navigateTo('weekly')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-base font-medium">Review Streak</CardTitle>
             <Star className="h-5 w-5 text-yellow-500" />
@@ -298,7 +307,7 @@ function Dashboard() {
             {currentQuarterGoals.map(goal => (
               <Card 
                 key={goal.id}
-                className="cursor-pointer hover:shadow-md transition-shadow duration-200"
+                className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
                 onClick={() => handleQuarterlyGoalClick(goal.id)}
               >
                 <CardHeader>
