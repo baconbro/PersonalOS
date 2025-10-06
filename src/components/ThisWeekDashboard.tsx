@@ -11,9 +11,11 @@ import {
   Play,
   Edit,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 import type { WeeklyTask, ActivityType } from '../types';
 import WeeklyCommandHuddle from './WeeklyCommandHuddle';
 import GoldenThread from './GoldenThread';
@@ -53,10 +55,11 @@ const ThisWeekDashboard: React.FC = () => {
   });
   const [isRolloverLoading, setIsRolloverLoading] = useState(false);
   const [rolloverMessage, setRolloverMessage] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
 
-  const currentWeek = new Date();
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+  const isCurrentWeek = isSameWeek(selectedWeek, new Date(), { weekStartsOn: 1 });
 
   // Handle clicking outside to close dropdown menu
   useEffect(() => {
@@ -446,28 +449,57 @@ const ThisWeekDashboard: React.FC = () => {
         <div className="week-info">
           <h1>
             <Calendar size={28} />
-            This Week
+            {isCurrentWeek ? 'This Week' : 'Week View'}
           </h1>
           <p className="week-range">
             Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}
           </p>
         </div>
-      </div>
 
-      <div className="week-stats">
+        {/* Week Navigation */}
+        <div className="week-navigation">
+          <button 
+            className="nav-btn"
+            onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+            title="Previous Week"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          <button 
+            className="nav-btn this-week-btn"
+            onClick={() => setSelectedWeek(new Date())}
+            disabled={isCurrentWeek}
+            title="Go to This Week"
+          >
+            This Week
+          </button>
+          
+          <button 
+            className="nav-btn"
+            onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+            title="Next Week"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+
+        {/* Week Stats */}
+        <div className="week-stats">
           <div className="stat-card">
             <div className="stat-value">{thisWeekTasks.length}</div>
-            <div className="stat-label">Total Priorities</div>
+            <div className="stat-label">Total</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">{doneTasks.length}</div>
-            <div className="stat-label">Completed</div>
+            <div className="stat-label">Done</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">{completionRate}%</div>
             <div className="stat-label">Progress</div>
           </div>
         </div>
+      </div>
 
         <div className="week-actions">
           <button 
@@ -540,7 +572,7 @@ const ThisWeekDashboard: React.FC = () => {
           <div className="priority-focus-area">
             <h2>Your Weekly Priorities</h2>
             <div className="priorities-grid">
-              {weeklyPriorities.slice(0, 5).map((priority, index) => {
+              {weeklyPriorities.slice(0, 25).map((priority, index) => {
                 const linkedOKR = getLinkedOKR(priority.linkedOKRId);
                 return (
                   <div key={priority.id} className={`priority-card ${priority.status}`}>
@@ -614,7 +646,7 @@ const ThisWeekDashboard: React.FC = () => {
                 );
               })}
               
-              {weeklyPriorities.length < 5 && (
+              {weeklyPriorities.length < 25 && (
                 <div className="add-priority-card" onClick={() => setShowAddTaskForm(true)}>
                   <Plus size={24} />
                   <span>Add Priority</span>

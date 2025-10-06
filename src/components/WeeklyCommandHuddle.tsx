@@ -399,8 +399,10 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
 
   const currentWeek = useMemo(() => selectedWeek, [selectedWeek]);
   const lastWeek = useMemo(() => subWeeks(currentWeek, 1), [currentWeek]);
+  const nextWeek = useMemo(() => addWeeks(currentWeek, 1), [currentWeek]);
   const weekStart = useMemo(() => startOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
   const weekEnd = useMemo(() => endOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
+  const nextWeekStart = useMemo(() => startOfWeek(nextWeek, { weekStartsOn: 1 }), [nextWeek]);
   const lastWeekStart = useMemo(() => startOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
   const lastWeekEnd = useMemo(() => endOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
 
@@ -751,8 +753,8 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         ? `Focused on ${selectedOKRs.length === 1 
             ? selectedOKRs[0].title 
             : `${selectedOKRs.length} strategic objectives: ${selectedOKRs.map(okr => okr.title).join(', ')}`
-          } this week. ${weeklyPriorities.length} ${weeklyPriorities.length === 1 ? 'priority' : 'priorities'} defined across focus areas.`
-        : 'Focused on strategic objectives this week.',
+          } next week. ${weeklyPriorities.length} ${weeklyPriorities.length === 1 ? 'priority' : 'priorities'} defined across focus areas.`
+        : 'Focused on strategic objectives next week.',
       overallProgress: Math.round((lastWeekPriorities.filter(p => p.completed).length / Math.max(lastWeekPriorities.length, 1)) * 100),
       energyLevel: 3,
       satisfaction: lastWeekPriorities.filter(p => p.completed).length >= lastWeekPriorities.length * 0.7 ? 4 : 3,
@@ -795,7 +797,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
 
     dispatch({ type: 'ADD_WEEKLY_REVIEW', payload: reviewData });
 
-    // Convert weekly priorities to tasks
+    // Convert weekly priorities to tasks for NEXT week
     weeklyPriorities.forEach(priority => {
       const taskData: WeeklyTask = {
         id: priority.id,
@@ -806,7 +808,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         actualHours: 0,
         completed: false,
         status: 'todo', // Set default status for Kanban board
-        weekOf: weekStart,
+        weekOf: nextWeekStart, // Tasks are for the NEXT week
         roadblocks: [],
         notes: '',
         createdAt: new Date(),
@@ -1485,7 +1487,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
             <div className="huddle-phase">
               <div className="phase-header">
                 <h2>📋 Weekly Planning</h2>
-                <p>Define priorities for each of your focus areas this week</p>
+                <p>Define priorities for each of your focus areas for next week</p>
               </div>
 
               {selectedOKRs.length === 0 ? (
