@@ -400,6 +400,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
   const currentWeek = useMemo(() => selectedWeek, [selectedWeek]);
   const lastWeek = useMemo(() => subWeeks(currentWeek, 1), [currentWeek]);
   const weekStart = useMemo(() => startOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
+  const weekEnd = useMemo(() => endOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
   const lastWeekStart = useMemo(() => startOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
   const lastWeekEnd = useMemo(() => endOfWeek(lastWeek, { weekStartsOn: 1 }), [lastWeek]);
 
@@ -417,16 +418,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         console.warn('Weekly Huddle rollover check failed:', error);
       });
 
-      const lastWeekTasks = state.weeklyTasks.filter(task =>
-        isWithinInterval(task.weekOf, { start: lastWeekStart, end: lastWeekEnd })
+      // Load tasks for the CURRENT selected week (week in focus)
+      const currentWeekTasks = state.weeklyTasks.filter(task =>
+        isWithinInterval(task.weekOf, { start: weekStart, end: weekEnd })
       );
       
       const lastWeekReview = state.weeklyReviews.find(review =>
         isWithinInterval(review.weekOf, { start: lastWeekStart, end: lastWeekEnd })
       );
 
-      // Convert last week's tasks to priorities format
-      const priorities: LastWeekPriority[] = lastWeekTasks.map(task => ({
+      // Convert current week's tasks to priorities format
+      const priorities: LastWeekPriority[] = currentWeekTasks.map(task => ({
         id: task.id,
         title: task.title,
         completed: task.completed
@@ -443,7 +445,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       // Reset validation error when modal opens
       setShowValidationError(false);
     }
-  }, [isOpen, lastWeekStart, lastWeekEnd, state.weeklyTasks, state.weeklyReviews]);
+  }, [isOpen, weekStart, weekEnd, lastWeekStart, lastWeekEnd, state.weeklyTasks, state.weeklyReviews]);
 
   const togglePriorityComplete = (priorityId: string) => {
     setLastWeekPriorities(prev => 
@@ -935,13 +937,13 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   </div>
 
                   <div className="last-week-priorities">
-                    <h3>Last Week's Priorities</h3>
-                    <p className="week-range">Week of {format(lastWeekStart, 'MMM dd')} - {format(lastWeekEnd, 'MMM dd, yyyy')}</p>
+                    <h3>This Week's Priorities</h3>
+                    <p className="week-range">Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}</p>
                     
                     {lastWeekPriorities.length === 0 ? (
                       <div className="no-priorities">
                         <Target size={48} style={{ color: '#cbd5e0' }} />
-                        <p>No priorities were set for last week.</p>
+                        <p>No priorities were set for this week.</p>
                       </div>
                     ) : (
                       <div className="priorities-checklist">
@@ -1051,13 +1053,13 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   </div>
 
                   <div className="last-week-priorities">
-                    <h3>Last Week's Priorities</h3>
-                    <p className="week-range">Week of {format(lastWeekStart, 'MMM dd')} - {format(lastWeekEnd, 'MMM dd, yyyy')}</p>
+                    <h3>This Week's Priorities</h3>
+                    <p className="week-range">Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}</p>
                     
                     {lastWeekPriorities.length === 0 ? (
                       <div className="no-priorities">
                         <Target size={48} style={{ color: '#cbd5e0' }} />
-                        <p>No priorities were set for last week.</p>
+                        <p>No priorities were set for this week.</p>
                       </div>
                     ) : (
                       <div className="priorities-checklist">
@@ -1167,13 +1169,13 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                   </div>
 
                   <div className="last-week-priorities">
-                    <h3>Last Week's Priorities</h3>
-                    <p className="week-range">Week of {format(lastWeekStart, 'MMM dd')} - {format(lastWeekEnd, 'MMM dd, yyyy')}</p>
+                    <h3>This Week's Priorities</h3>
+                    <p className="week-range">Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}</p>
                     
                     {lastWeekPriorities.length === 0 ? (
                       <div className="no-priorities">
                         <Target size={48} style={{ color: '#cbd5e0' }} />
-                        <p>No priorities were set for last week.</p>
+                        <p>No priorities were set for this week.</p>
                       </div>
                     ) : (
                       <div className="priorities-checklist">

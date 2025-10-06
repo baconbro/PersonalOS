@@ -49,7 +49,6 @@ const ThisWeekDashboard: React.FC = () => {
     title: '',
     description: '',
     quarterlyGoalId: '',
-    priority: 'medium' as 'high' | 'medium' | 'low',
     estimatedHours: 2
   });
   const [isRolloverLoading, setIsRolloverLoading] = useState(false);
@@ -307,7 +306,6 @@ const ThisWeekDashboard: React.FC = () => {
       title: '',
       description: '',
       quarterlyGoalId: '',
-      priority: 'medium',
       estimatedHours: 2
     });
     setShowAddTaskForm(false);
@@ -397,7 +395,6 @@ const ThisWeekDashboard: React.FC = () => {
         title: addTaskForm.title.trim(),
         description: addTaskForm.description.trim(),
         quarterlyGoalId: addTaskForm.quarterlyGoalId,
-        priority: addTaskForm.priority,
         estimatedHours: addTaskForm.estimatedHours,
         actualHours: 0,
         completed: false,
@@ -405,6 +402,8 @@ const ThisWeekDashboard: React.FC = () => {
         weekOf: weekStart,
         roadblocks: [],
         notes: '',
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
       dispatch({ type: 'ADD_WEEKLY_TASK', payload: newTask });
@@ -418,8 +417,7 @@ const ThisWeekDashboard: React.FC = () => {
         'weekly_task',
         {
           taskTitle: newTask.title,
-          estimatedHours: newTask.estimatedHours,
-          priority: newTask.priority
+          estimatedHours: newTask.estimatedHours
         }
       );
       logActivity(activityLog);
@@ -547,7 +545,10 @@ const ThisWeekDashboard: React.FC = () => {
                 return (
                   <div key={priority.id} className={`priority-card ${priority.status}`}>
                     <div className="priority-header">
-                      <div className="priority-number">{index + 1}</div>
+                      <div className="priority-title-row">
+                        <div className="priority-number">{index + 1}</div>
+                        <h3>{priority.title}</h3>
+                      </div>
                       <div className="priority-actions">
                         <button 
                           className="golden-thread-btn"
@@ -586,11 +587,6 @@ const ThisWeekDashboard: React.FC = () => {
                     </div>
                     
                     <div className="priority-content">
-                      <h3>{priority.title}</h3>
-                      {priority.description && (
-                        <p className="priority-description">{priority.description}</p>
-                      )}
-                      
                       {linkedOKR && (
                         <div className="linked-okr">
                           <Target size={14} />
@@ -598,15 +594,19 @@ const ThisWeekDashboard: React.FC = () => {
                         </div>
                       )}
                       
-                      <div className="priority-meta">
-                        <div className="time-estimate">
-                          <Clock size={14} />
-                          <span>{priority.estimatedHours}h estimated</span>
-                        </div>
+                      {priority.description && (
+                        <p className="priority-description">{priority.description}</p>
+                      )}
+                      
+                      <div className="priority-footer">
                         <div className={`status-badge ${priority.status}`}>
                           {priority.status === 'todo' && 'To Do'}
                           {priority.status === 'in-progress' && 'In Progress'}
                           {priority.status === 'done' && 'Done'}
+                        </div>
+                        <div className="time-estimate">
+                          <Clock size={14} />
+                          <span>{priority.estimatedHours}h</span>
                         </div>
                       </div>
                     </div>
@@ -825,18 +825,6 @@ const ThisWeekDashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-2">
-                <div className="form-group">
-                  <label htmlFor="add-priority">Priority</label>
-                  <select
-                    id="add-priority"
-                    value={addTaskForm.priority}
-                    onChange={(e) => setAddTaskForm(prev => ({ ...prev, priority: e.target.value as 'high' | 'medium' | 'low' }))}
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
                 <div className="form-group">
                   <label htmlFor="add-hours">Estimated Hours</label>
                   <input

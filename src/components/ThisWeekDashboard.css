@@ -281,11 +281,13 @@
 .priority-card {
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  padding: 0;
   border: 2px solid #e2e8f0;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .priority-card::before {
@@ -320,26 +322,54 @@
 .priority-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 20px 12px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.priority-title-row {
+  display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.priority-title-row h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #1e293b;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .priority-number {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 .priority-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .golden-thread-btn {
@@ -379,6 +409,14 @@
   color: #475569;
 }
 
+.priority-content {
+  padding: 16px 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
 .priority-content h3 {
   font-size: 18px;
   font-weight: 600;
@@ -390,21 +428,36 @@
 .priority-description {
   color: #64748b;
   font-size: 14px;
-  margin: 0 0 12px 0;
-  line-height: 1.4;
+  margin: 0;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .linked-okr {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   color: #667eea;
   background: #667eea10;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
-  margin-bottom: 12px;
   width: fit-content;
+  order: -1;
+}
+
+.priority-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
 }
 
 .priority-meta {
@@ -416,16 +469,17 @@
 .time-estimate {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
   color: #64748b;
 }
 
 .status-badge {
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 12px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
