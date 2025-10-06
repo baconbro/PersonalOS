@@ -73,7 +73,6 @@ export interface Goal {
   title: string;
   description: string;
   category: string;
-  priority: 'high' | 'medium' | 'low';
   status: 'not-started' | 'in-progress' | 'completed' | 'on-hold';
   createdAt: Date;
   updatedAt: Date;
@@ -122,7 +121,6 @@ export interface WeeklyTask {
   title: string;
   description: string;
   quarterlyGoalId: string;
-  priority: 'high' | 'medium' | 'low';
   estimatedHours: number;
   actualHours?: number;
   completed: boolean;

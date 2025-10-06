@@ -104,6 +104,13 @@
   }
 }
 
+@layer utilities {
+  /* Ensure bg-primary always has white/readable text */
+  .bg-primary {
+    color: hsl(var(--primary-foreground)) !important;
+  }
+}
+
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
   width: 8px;

@@ -4,6 +4,7 @@ import { Calendar, Plus, Edit3, Trash2, Target, TrendingUp, ChevronLeft, Chevron
 import { format } from 'date-fns';
 import type { QuarterlyGoal, KeyResult } from '../types';
 import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
+import { RichTextEditor } from './ui/RichTextEditor';
 
 function QuarterlySprint() {
   const { state, dispatch } = useApp();
@@ -14,7 +15,6 @@ function QuarterlySprint() {
     description: '',
     annualGoalId: '',
     category: '',
-    priority: 'medium' as 'high' | 'medium' | 'low',
     keyResults: [] as KeyResult[],
   });
 
@@ -43,7 +43,6 @@ function QuarterlySprint() {
       description: '',
       annualGoalId: '',
       category: '',
-      priority: 'medium',
       keyResults: [],
     });
     setTitleError('');
@@ -132,7 +131,6 @@ function QuarterlySprint() {
         title: sanitizedData.title,
         description: sanitizedData.description,
         category: sanitizedData.category,
-        priority: formData.priority,
         status: editingGoal?.status || 'not-started',
         createdAt: editingGoal?.createdAt || new Date(),
         targetDate: currentQuarterDates.end,
@@ -142,6 +140,7 @@ function QuarterlySprint() {
         annualGoalId: formData.annualGoalId,
         keyResults: formData.keyResults,
         weeklyTasks: editingGoal?.weeklyTasks || [],
+        updatedAt: new Date(),
       };
 
       console.log('Saving quarterly goal:', goalData);
@@ -183,7 +182,6 @@ function QuarterlySprint() {
       description: goal.description,
       annualGoalId: goal.annualGoalId,
       category: goal.category,
-      priority: goal.priority,
       keyResults: goal.keyResults,
     });
     setShowForm(true);
@@ -352,12 +350,11 @@ function QuarterlySprint() {
 
             <div className="form-group">
               <label className="form-label">Description *</label>
-              <textarea
-                className="form-input form-textarea"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              <RichTextEditor
+                content={formData.description}
+                onChange={(html) => setFormData({ ...formData, description: html })}
                 placeholder="What will you accomplish this quarter?"
-                required
+                minHeight="150px"
               />
               {descriptionError && <div className="error-message">{descriptionError}</div>}
             </div>
@@ -374,18 +371,7 @@ function QuarterlySprint() {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select
-                  className="form-input"
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'high' | 'medium' | 'low' })}
-                >
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
+
 
               <div className="form-group">
                 <label className="form-label">Key Results</label>

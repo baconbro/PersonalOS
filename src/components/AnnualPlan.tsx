@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import type { AnnualGoal, LifeGoalCategory } from '../types';
 import AISuggestions from './AISuggestions';
 import GoldenThread from './GoldenThread';
+import { RichTextEditor } from './ui/RichTextEditor';
 
 const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
   'Creativity & Passion': Heart,
@@ -46,7 +47,6 @@ function AnnualPlan() {
     title: '',
     description: '',
     lifeGoalId: '',
-    priority: 'medium' as 'high' | 'medium' | 'low',
     targetDate: '',
   });
 
@@ -57,7 +57,6 @@ function AnnualPlan() {
       title: '',
       description: '',
       lifeGoalId: '',
-      priority: 'medium',
       targetDate: '',
     });
     setEditingGoal(null);
@@ -79,7 +78,6 @@ function AnnualPlan() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: 'Annual Goal', // Set a default category for Annual Goals
-        priority: formData.priority,
         status: editingGoal?.status || 'not-started',
         createdAt: editingGoal?.createdAt || new Date(),
         targetDate: new Date(formData.targetDate),
@@ -87,6 +85,7 @@ function AnnualPlan() {
         year: state.currentYear,
         lifeGoalId: formData.lifeGoalId || undefined,
         quarterlyGoals: editingGoal?.quarterlyGoals || [],
+        updatedAt: new Date(),
       };
 
       console.log('Saving annual goal:', goalData);
@@ -113,7 +112,6 @@ function AnnualPlan() {
       title: goal.title,
       description: goal.description,
       lifeGoalId: goal.lifeGoalId || '',
-      priority: goal.priority,
       targetDate: format(goal.targetDate, 'yyyy-MM-dd'),
     });
     setShowForm(true);
@@ -134,14 +132,7 @@ function AnnualPlan() {
     navigateTo('goals-table', false, { goalType: 'annual', goalId });
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return '#f56565';
-      case 'medium': return '#ed8936';
-      case 'low': return '#48bb78';
-      default: return '#4a5568';
-    }
-  };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -199,12 +190,11 @@ function AnnualPlan() {
 
             <div className="form-group">
               <label className="form-label">Description *</label>
-              <textarea
-                className="form-input form-textarea"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              <RichTextEditor
+                content={formData.description}
+                onChange={(html) => setFormData({ ...formData, description: html })}
                 placeholder="Describe what success looks like and why this goal matters..."
-                required
+                minHeight="150px"
               />
             </div>
 
@@ -257,18 +247,7 @@ function AnnualPlan() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select
-                  className="form-input"
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'high' | 'medium' | 'low' })}
-                >
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
+
 
               <div className="form-group">
                 <label className="form-label">Target Date *</label>
@@ -412,17 +391,6 @@ function AnnualPlan() {
                 
                 {/* Status and Priority Badges */}
                 <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <span style={{ 
-                    padding: '0.375rem 0.875rem',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backgroundColor: getPriorityColor(goal.priority) + '15',
-                    color: getPriorityColor(goal.priority),
-                    border: `1px solid ${getPriorityColor(goal.priority)}30`
-                  }}>
-                    {goal.priority.toUpperCase()} PRIORITY
-                  </span>
                   <span style={{ 
                     padding: '0.375rem 0.875rem',
                     borderRadius: '20px',

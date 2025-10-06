@@ -20,6 +20,7 @@ import { analyticsService } from '../services/analyticsService';
 import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask, LifeGoalCategory } from '../types';
 import { sampleData } from '../utils/sampleData';
 import GoalDetails from './GoalDetails';
+import { RichTextEditor } from './ui/RichTextEditor';
 import './GoalsTable.css';
 
 interface GoalsTableProps {
@@ -38,7 +39,6 @@ type GoalItem = {
   goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
   status: 'not-started' | 'in-progress' | 'completed' | 'on-hold';
   progress: number;
-  priority: 'high' | 'medium' | 'low';
   targetDate: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -59,7 +59,6 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    priority: 'medium' as LifeGoal['priority'],
     targetDate: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,7 +92,6 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
           const lifeGoal: LifeGoal = {
             ...baseGoal,
             type: 'life',
-            priority: formData.priority,
             status: 'not-started',
             progress: 0,
             category: 'Other' as LifeGoalCategory,
@@ -112,7 +110,6 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
             year: new Date().getFullYear(),
             lifeGoalId: '', // Could be enhanced to link to a life goal
             category: 'Other',
-            priority: formData.priority,
             status: 'not-started',
             progress: 0,
             quarterlyGoals: [],
@@ -129,7 +126,6 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
             quarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
             annualGoalId: '', // Could be enhanced to link to an annual goal
             category: 'Other',
-            priority: formData.priority,
             status: 'not-started',
             progress: 0,
             keyResults: [],
@@ -143,7 +139,6 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
           const weeklyTask: WeeklyTask = {
             ...baseGoal,
             quarterlyGoalId: '', // Could be enhanced to link to a quarterly goal
-            priority: formData.priority,
             estimatedHours: 1,
             completed: false,
             status: 'todo',
@@ -189,29 +184,15 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
 
         <div className="form-group">
           <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
+          <RichTextEditor
+            content={formData.description}
+            onChange={(html) => handleInputChange('description', html)}
             placeholder="Describe your goal..."
-            rows={3}
+            minHeight="120px"
           />
         </div>
 
         <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="priority">Priority</label>
-            <select
-              id="priority"
-              value={formData.priority}
-              onChange={(e) => handleInputChange('priority', e.target.value)}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
           <div className="form-group">
             <label htmlFor="targetDate">Target Date</label>
             <input

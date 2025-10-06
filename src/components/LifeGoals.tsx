@@ -4,6 +4,7 @@ import { useRouter } from '../hooks/useRouter';
 import { Target, Plus, Edit, Trash2, Heart, Brain, Briefcase, DollarSign, Activity, Users, Compass, Building, Plane, Gift, List, Grid, Share2 } from 'lucide-react';
 import type { LifeGoal, LifeGoalCategory } from '../types';
 import AIRefiner from './AIRefiner';
+import { RichTextEditor } from './ui/RichTextEditor';
 import { validateGoalTitle, validateGoalDescription, sanitizeText, logSecurityEvent } from '../utils/security';
 import { usePageTitleSuffix } from '../utils/usePageTitle';
 import { updateLifeGoalFromAnnualProgress, getRelatedAnnualGoals as getRelatedGoals } from '../utils/progressCalculation';
@@ -76,8 +77,7 @@ const LifeGoals: React.FC = () => {
     description: '',
     vision: '',
     category: 'Career' as LifeGoalCategory,
-    timeframe: 'five-year' as 'five-year' | 'ten-year' | 'lifetime',
-    priority: 'high' as 'high' | 'medium' | 'low'
+    timeframe: 'five-year' as 'five-year' | 'ten-year' | 'lifetime'
   });
 
   // Security validation states
@@ -91,8 +91,7 @@ const LifeGoals: React.FC = () => {
       description: '',
       vision: '',
       category: 'Career',
-      timeframe: 'five-year',
-      priority: 'high'
+      timeframe: 'five-year'
     });
     setIsAddingGoal(false);
     setEditingGoal(null);
@@ -190,6 +189,7 @@ const LifeGoals: React.FC = () => {
           type: 'life',
           ...sanitizedData,
           createdAt: new Date(),
+          updatedAt: new Date(),
           targetDate: new Date(new Date().getFullYear() + (sanitizedData.timeframe === 'five-year' ? 5 : sanitizedData.timeframe === 'ten-year' ? 10 : 50), 11, 31),
           progress: 0,
           status: 'not-started' as const,
@@ -205,8 +205,7 @@ const LifeGoals: React.FC = () => {
         description: '',
         vision: '',
         category: 'Career' as LifeGoalCategory,
-        timeframe: 'five-year' as 'five-year' | 'ten-year' | 'lifetime',
-        priority: 'high' as 'high' | 'medium' | 'low'
+        timeframe: 'five-year' as 'five-year' | 'ten-year' | 'lifetime'
       });
       setIsAddingGoal(false);
     } catch (error) {
@@ -222,8 +221,7 @@ const LifeGoals: React.FC = () => {
       description: goal.description,
       vision: goal.vision,
       category: goal.category,
-      timeframe: goal.timeframe,
-      priority: goal.priority
+      timeframe: goal.timeframe
     });
     setIsAddingGoal(true);
   };
@@ -310,9 +308,6 @@ const LifeGoals: React.FC = () => {
               <div className="goal-meta">
                 <span className={`timeframe ${goal.timeframe}`}>
                   {goal.timeframe.replace('-', ' ').replace(/(\w+)-/g, '$1 ')}
-                </span>
-                <span className={`priority ${goal.priority}`}>
-                  {goal.priority} priority
                 </span>
               </div>
             </div>
@@ -599,9 +594,6 @@ const LifeGoals: React.FC = () => {
                   <span className={`timeframe ${goal.timeframe}`}>
                     {goal.timeframe.replace('-', ' ').replace(/(\w+)-/g, '$1 ')}
                   </span>
-                  <span className={`priority ${goal.priority}`}>
-                    {goal.priority} priority
-                  </span>
                 </div>
               </div>
               <div className="goal-actions">
@@ -804,26 +796,22 @@ const LifeGoals: React.FC = () => {
 
               <div className="form-group">
                 <label htmlFor="vision">Vision Statement</label>
-                <textarea
-                  id="vision"
-                  value={formData.vision}
-                  onChange={(e) => setFormData({...formData, vision: e.target.value})}
+                <RichTextEditor
+                  content={formData.vision}
+                  onChange={(html) => setFormData({...formData, vision: html})}
                   placeholder="Describe your long-term vision for this area of life..."
-                  rows={3}
-                  required
+                  minHeight="120px"
                 />
                 {visionError && <div className="error-message">{visionError}</div>}
               </div>
 
               <div className="form-group">
                 <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                <RichTextEditor
+                  content={formData.description}
+                  onChange={(html) => setFormData({...formData, description: html})}
                   placeholder="What does success look like? What impact do you want to make?"
-                  rows={3}
-                  required
+                  minHeight="120px"
                 />
                 {descriptionError && <div className="error-message">{descriptionError}</div>}
               </div>
@@ -870,21 +858,7 @@ const LifeGoals: React.FC = () => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="priority">Priority</label>
-                  <select
-                    id="priority"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({...formData, priority: e.target.value as any})}
-                    required
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-              </div>
+
 
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={resetForm}>

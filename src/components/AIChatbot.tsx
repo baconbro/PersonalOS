@@ -81,13 +81,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
         title: taskSuggestion.title,
         description: taskSuggestion.description,
         quarterlyGoalId: taskSuggestion.quarterlyGoalId || '',
-        priority: taskSuggestion.priority,
         estimatedHours: taskSuggestion.estimatedHours,
         completed: false,
         status: 'todo' as const,
         weekOf: new Date(),
         roadblocks: [],
-        notes: `Suggested by AI: ${taskSuggestion.reasoning}`
+        notes: `Suggested by AI: ${taskSuggestion.reasoning}`,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
       // Add the task to state
@@ -279,9 +280,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
                   <div className="task-suggestion-header">
                     <Target size={16} />
                     <span className="task-suggestion-title">Suggested Task</span>
-                    <span className={`priority-badge ${msg.taskSuggestion.priority}`}>
-                      {msg.taskSuggestion.priority}
-                    </span>
                   </div>
                   
                   <h4 className="suggested-task-title">{msg.taskSuggestion.title}</h4>

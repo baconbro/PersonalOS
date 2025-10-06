@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   MoreHorizontal, 
@@ -18,6 +18,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { analyticsService } from '../services/analyticsService';
 import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask } from '../types';
+import { RichTextEditor } from './ui/RichTextEditor';
 import './GoalDetails.css';
 
 interface GoalDetailsProps {
@@ -44,12 +45,8 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
   const [editedProgress, setEditedProgress] = useState(0);
-  const [editedPriority, setEditedPriority] = useState<'high' | 'medium' | 'low'>('medium');
+
   const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed' | 'on-hold'>('not-started');
-  
-  // Rich text editor state
-  const [richTextFocused, setRichTextFocused] = useState(false);
-  const richTextEditorRef = useRef<HTMLDivElement>(null);
 
   // Decisions state (kept for future use)
   const goalDecisions: any[] = [];
@@ -199,21 +196,13 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
           break;
         case 'description':
           setEditedDescription(goal.description || '');
-          // Set initial content for rich text editor
-          setTimeout(() => {
-            if (richTextEditorRef.current) {
-              richTextEditorRef.current.innerHTML = goal.description || '';
-            }
-          }, 0);
           break;
         case 'progress':
           if ('progress' in goal) {
             setEditedProgress(goal.progress || 0);
           }
           break;
-        case 'priority':
-          setEditedPriority(goal.priority);
-          break;
+
         case 'status':
           if (goalType === 'weekly') {
             const weeklyTask = goal as any;
@@ -241,7 +230,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
     setEditedTitle('');
     setEditedDescription('');
     setEditedProgress(0);
-    setEditedPriority('medium');
     setEditedStatus('not-started');
     
     analyticsService.trackEvent('goal_field_edit_cancelled', {
@@ -273,9 +261,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
           (baseUpdate as any).progress = editedProgress;
         }
         break;
-      case 'priority':
-        baseUpdate.priority = editedPriority;
-        break;
+
       case 'status':
         if (goalType === 'weekly') {
           const weeklyStatus = editedStatus === 'not-started' ? 'todo' : 
@@ -316,62 +302,10 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
       new_value: editingField === 'title' ? editedTitle :
                 editingField === 'description' ? editedDescription :
                 editingField === 'progress' ? editedProgress :
-                editingField === 'priority' ? editedPriority :
                 editingField === 'status' ? editedStatus : 'unknown'
     });
 
     setEditingField(null);
-  };
-
-  // Rich text editor functions
-  const applyFormatting = (command: string) => {
-    switch (command) {
-      case 'bold':
-        document.execCommand('bold', false, undefined);
-        break;
-      case 'italic':
-        document.execCommand('italic', false, undefined);
-        break;
-      case 'underline':
-        document.execCommand('underline', false, undefined);
-        break;
-      case 'unorderedList':
-        document.execCommand('insertUnorderedList', false, undefined);
-        break;
-      case 'orderedList':
-        document.execCommand('insertOrderedList', false, undefined);
-        break;
-      case 'heading':
-        // Toggle between H3 and normal text
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
-            ? range.commonAncestorContainer.parentElement 
-            : range.commonAncestorContainer as Element;
-          
-          if (parentElement?.tagName === 'H3') {
-            document.execCommand('formatBlock', false, '<p>');
-          } else {
-            document.execCommand('formatBlock', false, '<h3>');
-          }
-        }
-        break;
-      case 'link':
-        const url = prompt('Enter URL:');
-        if (url) {
-          document.execCommand('createLink', false, url);
-        }
-        break;
-    }
-    richTextEditorRef.current?.focus();
-    handleRichTextChange();
-  };
-
-  const handleRichTextChange = () => {
-    if (richTextEditorRef.current) {
-      setEditedDescription(richTextEditorRef.current.innerHTML);
-    }
   };
 
   // Function to handle creating new updates
@@ -1342,83 +1276,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                 <div className="description-content">
                   {editingField === 'description' ? (
                     <div className="description-edit-container">
-                      <div className="rich-text-toolbar">
-                        <div className="toolbar-group">
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('bold')}
-                            title="Bold"
-                          >
-                            <strong>B</strong>
-                          </button>
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('italic')}
-                            title="Italic"
-                          >
-                            <em>I</em>
-                          </button>
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('underline')}
-                            title="Underline"
-                          >
-                            <span style={{ textDecoration: 'underline' }}>U</span>
-                          </button>
-                        </div>
-                        <div className="toolbar-group">
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('unorderedList')}
-                            title="Bullet List"
-                          >
-                            •
-                          </button>
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('orderedList')}
-                            title="Numbered List"
-                          >
-                            1.
-                          </button>
-                        </div>
-                        <div className="toolbar-group">
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('heading')}
-                            title="Heading"
-                          >
-                            H
-                          </button>
-                          <button 
-                            className="toolbar-btn" 
-                            onClick={() => applyFormatting('link')}
-                            title="Link"
-                          >
-                            🔗
-                          </button>
-                        </div>
-                      </div>
-                      <div 
-                        className="rich-text-editor"
-                        contentEditable
-                        ref={richTextEditorRef}
-                        onInput={handleRichTextChange}
-                        onFocus={() => setRichTextFocused(true)}
-                        onBlur={() => setRichTextFocused(false)}
-                        dangerouslySetInnerHTML={{ __html: editedDescription }}
-                        style={{
-                          minHeight: '120px',
-                          padding: '12px',
-                          border: richTextFocused ? '2px solid #3b82f6' : '2px solid #e2e8f0',
-                          borderRadius: '6px',
-                          outline: 'none',
-                          fontSize: '14px',
-                          lineHeight: '1.5',
-                          color: '#374151',
-                          background: 'white'
-                        }}
-                        suppressContentEditableWarning={true}
+                      <RichTextEditor
+                        content={editedDescription}
+                        onChange={(html) => setEditedDescription(html)}
+                        placeholder="Describe why this goal is important and how success is measured..."
+                        minHeight="200px"
                       />
                       <div className="field-edit-actions">
                         <button className="save-btn" onClick={saveChanges} title="Save changes">
@@ -1433,7 +1295,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
                     <div className="description-display" onClick={() => startEditingField('description')} title="Click to edit">
                       {goal.description ? (
                         <div 
-                          className="description-content-html"
+                          className="description-content-html prose prose-sm max-w-none"
                           dangerouslySetInnerHTML={{ __html: goal.description }}
                         />
                       ) : (
@@ -2047,42 +1909,8 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) =
             </div>
           </div>
 
-          {/* Priority */}
-          <div className="sidebar-section">
-            <h4>Priority</h4>
-            <div className="priority-section">
-              {editingField === 'priority' ? (
-                <div className="priority-edit-container">
-                  <select 
-                    value={editedPriority} 
-                    onChange={(e) => setEditedPriority(e.target.value as any)}
-                    className="priority-select"
-                    autoFocus
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                  <div className="field-edit-actions">
-                    <button className="save-btn" onClick={saveChanges} title="Save changes">
-                      <Save size={16} />
-                    </button>
-                    <button className="cancel-btn" onClick={cancelEditingField} title="Cancel editing">
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div 
-                  className={`priority-badge priority-${goal.priority}`}
-                  onClick={() => startEditingField('priority')}
-                  title="Click to edit"
-                >
-                  <span>{goal.priority.charAt(0).toUpperCase() + goal.priority.slice(1)}</span>
-                </div>
-              )}
-            </div>
-          </div>
+
+
 
           {/* Parent Goal */}
           {goalType !== 'life' && parentGoal && (

@@ -12,6 +12,7 @@ import {
 import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval, addWeeks } from 'date-fns';
 import type { WeeklyReviewData, QuarterlyGoal, WeeklyTask } from '../types';
 import { taskRolloverService } from '../services/taskRolloverService';
+import { RichTextEditor } from './ui/RichTextEditor';
 import './WeeklyCommandHuddle.css';
 
 interface WeeklyCommandHuddleProps {
@@ -799,7 +800,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         title: priority.title,
         description: priority.description,
         quarterlyGoalId: priority.linkedOKRId, // Back to single OKR
-        priority: 'high',
         estimatedHours: 2,
         actualHours: 0,
         completed: false,
@@ -1288,18 +1288,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     <label className="question-label">
                       What creative pursuits or passions am I nurturing right now? How do they fuel my sense of purpose?
                     </label>
-                    <textarea
-                      className="reflection-input"
-                      value={clarityResponses['creativity-passion'] || ''}
-                      onChange={(e) => {
+                    <RichTextEditor
+                      content={clarityResponses['creativity-passion'] || ''}
+                      onChange={(html) => {
                         setClarityResponses(prev => ({
                           ...prev,
-                          'creativity-passion': e.target.value
+                          'creativity-passion': html
                         }));
                         if (showValidationError) setShowValidationError(false);
                       }}
                       placeholder="Reflect on your creative outlets and what brings you joy..."
-                      rows={3}
+                      minHeight="100px"
                     />
                   </div>
                 </div>
@@ -1310,18 +1309,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     <label className="question-label">
                       How connected do I feel to my inner self and values? What practices help me stay centered?
                     </label>
-                    <textarea
-                      className="reflection-input"
-                      value={clarityResponses['mind-spirit'] || ''}
-                      onChange={(e) => {
+                    <RichTextEditor
+                      content={clarityResponses['mind-spirit'] || ''}
+                      onChange={(html) => {
                         setClarityResponses(prev => ({
                           ...prev,
-                          'mind-spirit': e.target.value
+                          'mind-spirit': html
                         }));
                         if (showValidationError) setShowValidationError(false);
                       }}
                       placeholder="Consider your spiritual practices, meditation, mindfulness..."
-                      rows={3}
+                      minHeight="100px"
                     />
                   </div>
                 </div>
@@ -1332,18 +1330,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     <label className="question-label">
                       How am I showing up in my relationships? What connections need more attention or boundaries?
                     </label>
-                    <textarea
-                      className="reflection-input"
-                      value={clarityResponses['relationships'] || ''}
-                      onChange={(e) => {
+                    <RichTextEditor
+                      content={clarityResponses['relationships'] || ''}
+                      onChange={(html) => {
                         setClarityResponses(prev => ({
                           ...prev,
-                          'relationships': e.target.value
+                          'relationships': html
                         }));
                         if (showValidationError) setShowValidationError(false);
                       }}
                       placeholder="Think about family, friends, romantic relationships, professional connections..."
-                      rows={3}
+                      minHeight="100px"
                     />
                   </div>
                 </div>
@@ -1354,18 +1351,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     <label className="question-label">
                       How am I contributing to something bigger than myself? What impact do I want to make?
                     </label>
-                    <textarea
-                      className="reflection-input"
-                      value={clarityResponses['community-giving'] || ''}
-                      onChange={(e) => {
+                    <RichTextEditor
+                      content={clarityResponses['community-giving'] || ''}
+                      onChange={(html) => {
                         setClarityResponses(prev => ({
                           ...prev,
-                          'community-giving': e.target.value
+                          'community-giving': html
                         }));
                         if (showValidationError) setShowValidationError(false);
                       }}
                       placeholder="Consider volunteer work, mentoring, community involvement, social impact..."
-                      rows={3}
+                      minHeight="100px"
                     />
                   </div>
                 </div>
@@ -1376,18 +1372,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     <label className="question-label">
                       Is my work aligned with my values and long-term vision? How am I building financial security and freedom?
                     </label>
-                    <textarea
-                      className="reflection-input"
-                      value={clarityResponses['career-finance'] || ''}
-                      onChange={(e) => {
+                    <RichTextEditor
+                      content={clarityResponses['career-finance'] || ''}
+                      onChange={(html) => {
                         setClarityResponses(prev => ({
                           ...prev,
-                          'career-finance': e.target.value
+                          'career-finance': html
                         }));
                         if (showValidationError) setShowValidationError(false);
                       }}
                       placeholder="Reflect on career satisfaction, financial goals, professional growth..."
-                      rows={3}
+                      minHeight="100px"
                     />
                   </div>
                 </div>
@@ -1398,18 +1393,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
                     <label className="question-label">
                       How am I caring for my physical and mental health? What experiences am I creating for myself?
                     </label>
-                    <textarea
-                      className="reflection-input"
-                      value={clarityResponses['health-wellbeing'] || ''}
-                      onChange={(e) => {
+                    <RichTextEditor
+                      content={clarityResponses['health-wellbeing'] || ''}
+                      onChange={(html) => {
                         setClarityResponses(prev => ({
                           ...prev,
-                          'health-wellbeing': e.target.value
+                          'health-wellbeing': html
                         }));
                         if (showValidationError) setShowValidationError(false);
                       }}
                       placeholder="Consider physical fitness, mental health, travel plans, life experiences..."
-                      rows={3}
+                      minHeight="100px"
                     />
                   </div>
                 </div>
