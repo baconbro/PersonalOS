@@ -1,0 +1,571 @@
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Progress } from './ui/progress';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Separator } from './ui/separator';
+import { Textarea } from './ui/textarea';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ScrollArea } from './ui/scroll-area';
+import { Slider } from './ui/slider';
+import {
+  ArrowLeft,
+  TrendingUp,
+  CheckCircle2,
+  Plus,
+  Link2,
+  AlertCircle,
+  Clock,
+  Edit3,
+  X,
+  Check,
+  ChevronRight,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { useApp } from '../context/AppContext';
+import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask, GoalUpdate } from '../types';
+
+interface GoalDetailsProps {
+  goalId: string;
+  goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
+  onBack: () => void;
+}
+
+const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack }) => {
+  const { state, dispatch } = useApp();
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<string>('on-track');
+  const [updateContent, setUpdateContent] = useState('');
+
+  // Get the goal based on type
+  const goal = (() => {
+    switch (goalType) {
+      case 'life':
+        return state.lifeGoals.find(g => g.id === goalId);
+      case 'annual':
+        return state.annualGoals.find(g => g.id === goalId);
+      case 'quarterly':
+        return state.quarterlyGoals.find(g => g.id === goalId);
+      case 'weekly':
+        return state.weeklyTasks.find(t => t.id === goalId);
+      default:
+        return null;
+    }
+  })();
+
+  if (!goal) {
+    return (
+      <div className="p-8">
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        <div className="mt-8 text-center">
+          <h2 className="text-xl font-semibold">Goal not found</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // Get related data
+  const parentGoal = (() => {
+    if (goalType === 'annual' && 'lifeGoalId' in goal) {
+      return state.lifeGoals.find(g => g.id === goal.lifeGoalId);
+    }
+    if (goalType === 'quarterly' && 'annualGoalId' in goal) {
+      return state.annualGoals.find(g => g.id === goal.annualGoalId);
+    }
+    if (goalType === 'weekly' && 'quarterlyGoalId' in goal) {
+      return state.quarterlyGoals.find(g => g.id === goal.quarterlyGoalId);
+    }
+    return null;
+  })();
+
+  const childGoals = (() => {
+    if (goalType === 'life') {
+      return state.annualGoals.filter(g => g.lifeGoalId === goalId);
+    }
+    if (goalType === 'annual') {
+      return state.quarterlyGoals.filter(g => g.annualGoalId === goalId);
+    }
+    if (goalType === 'quarterly') {
+      return state.weeklyTasks.filter(t => t.quarterlyGoalId === goalId);
+    }
+    return [];
+  })();
+
+  const updates = state.goalUpdates?.filter((u: GoalUpdate) => u.goalId === goal.id).sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  ) || [];
+
+  const getStatusColor = (status: string): "default" | "destructive" | "outline" | "secondary" => {
+    switch (status) {
+      case 'completed':
+      case 'on-track':
+      case 'in-progress':
+        return 'default';
+      case 'at-risk':
+        return 'outline';
+      case 'off-track':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle2 className="w-3 h-3" />;
+      case 'on-track':
+      case 'in-progress':
+        return <TrendingUp className="w-3 h-3" />;
+      case 'at-risk':
+      case 'off-track':
+        return <AlertCircle className="w-3 h-3" />;
+      default:
+        return null;
+    }
+  };
+
+  const handleEditField = (field: string, currentValue: string) => {
+    setEditingField(field);
+    setEditValue(currentValue);
+  };
+
+  const handleSaveField = (field: string) => {
+    const updatedGoal = { ...goal, [field]: editValue, updatedAt: new Date() };
+    
+    switch (goalType) {
+      case 'life':
+        dispatch({ type: 'UPDATE_LIFE_GOAL', payload: updatedGoal as LifeGoal });
+        break;
+      case 'annual':
+        dispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: updatedGoal as AnnualGoal });
+        break;
+      case 'quarterly':
+        dispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: updatedGoal as QuarterlyGoal });
+        break;
+      case 'weekly':
+        dispatch({ type: 'UPDATE_WEEKLY_TASK', payload: updatedGoal as WeeklyTask });
+        break;
+    }
+    
+    setEditingField(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const handleSubmitUpdate = () => {
+    if (!updateContent.trim()) return;
+    
+    const update: GoalUpdate = {
+      id: Date.now().toString(),
+      goalId: goal.id,
+      goalType,
+      content: updateContent.trim(),
+      status: updateStatus,
+      targetDate: new Date().toISOString(),
+      createdAt: new Date(),
+      author: 'Current User'
+    };
+    
+    dispatch({ type: 'ADD_GOAL_UPDATE', payload: update });
+    setUpdateContent('');
+    setShowUpdateForm(false);
+  };
+
+  const handleProgressChange = (value: number[]) => {
+    if (goalType === 'weekly') return;
+    
+    const updatedGoal = { ...goal, progress: value[0], updatedAt: new Date() };
+    
+    switch (goalType) {
+      case 'life':
+        dispatch({ type: 'UPDATE_LIFE_GOAL', payload: updatedGoal as LifeGoal });
+        break;
+      case 'annual':
+        dispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: updatedGoal as AnnualGoal });
+        break;
+      case 'quarterly':
+        dispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: updatedGoal as QuarterlyGoal });
+        break;
+    }
+  };
+
+  const progress = 'progress' in goal ? goal.progress : 0;
+
+  return (
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-8 space-y-6 max-w-5xl">
+          {/* Header */}
+          <div>
+            <Button variant="ghost" onClick={onBack} className="mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Overview
+            </Button>
+
+            {/* Breadcrumb */}
+            {parentGoal && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <span className="hover:text-foreground cursor-pointer">{parentGoal.title}</span>
+                <ChevronRight className="w-4 h-4" />
+                <span className="text-foreground">{goal.title}</span>
+              </div>
+            )}
+
+            {/* Title */}
+            {editingField === 'title' ? (
+              <div className="space-y-2 mb-3">
+                <Input
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  className="text-2xl p-3 h-auto font-bold"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleSaveField('title')}>
+                    <Check className="w-4 h-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                    <X className="w-4 h-4 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <h1
+                className="text-3xl font-bold mb-3 cursor-pointer hover:text-primary/80 transition-colors group inline-flex items-center gap-2"
+                onClick={() => handleEditField('title', goal.title)}
+              >
+                {goal.title}
+                <Edit3 className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h1>
+            )}
+
+            {/* Description */}
+            {editingField === 'description' ? (
+              <div className="space-y-2 max-w-3xl">
+                <Textarea
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  rows={3}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleSaveField('description')}>
+                    <Check className="w-4 h-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                    <X className="w-4 h-4 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p
+                className="text-muted-foreground max-w-3xl cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => handleEditField('description', goal.description || '')}
+              >
+                {goal.description || 'Click to add description...'}
+              </p>
+            )}
+          </div>
+
+          {/* Tabs */}
+          <Tabs defaultValue="updates" className="space-y-4">
+            <TabsList className="grid grid-cols-2 w-full max-w-md">
+              <TabsTrigger value="updates">Updates</TabsTrigger>
+              <TabsTrigger value="about">About</TabsTrigger>
+            </TabsList>
+
+            {/* Updates Tab */}
+            <TabsContent value="updates" className="space-y-4">
+              {!showUpdateForm ? (
+                <Button onClick={() => setShowUpdateForm(true)} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Post Update
+                </Button>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Post Status Update</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select value={updateStatus} onValueChange={setUpdateStatus}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="on-track">On Track</SelectItem>
+                          <SelectItem value="at-risk">At Risk</SelectItem>
+                          <SelectItem value="off-track">Off Track</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Update</Label>
+                      <Textarea
+                        value={updateContent}
+                        onChange={(e) => setUpdateContent(e.target.value)}
+                        placeholder="Share progress, blockers, or insights..."
+                        rows={4}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button onClick={handleSubmitUpdate}>Post Update</Button>
+                      <Button variant="outline" onClick={() => setShowUpdateForm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Update History */}
+              <div className="space-y-3">
+                {updates.length > 0 ? (
+                  updates.map((update) => (
+                    <Card key={update.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Badge variant={getStatusColor(update.status)} className="gap-1 flex-shrink-0">
+                            {getStatusIcon(update.status)}
+                            {update.status.replace('-', ' ')}
+                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <p className="mb-2">{update.content}</p>
+                            <div className="text-xs text-muted-foreground">
+                              {format(new Date(update.createdAt), 'MMM d, yyyy • h:mm a')}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card className="p-12 text-center">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold mb-2">No updates yet</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Post your first status update to track progress
+                    </p>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* About Tab */}
+            <TabsContent value="about" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Description</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>{goal.description || 'No description provided.'}</p>
+                </CardContent>
+              </Card>
+
+              {/* Key Results */}
+              {goalType === 'quarterly' && 'keyResults' in goal && goal.keyResults && goal.keyResults.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Key Results</CardTitle>
+                    <CardDescription>Measurable outcomes</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {goal.keyResults.map((kr, index) => (
+                        <div key={kr.id} className="flex items-start gap-3 p-3 rounded-lg border">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="mb-2">{kr.description}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{kr.currentValue} / {kr.targetValue} {kr.unit}</span>
+                              <Badge variant={kr.completed ? "default" : "outline"} className="text-xs">
+                                {kr.completed ? "Completed" : "In Progress"}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div className="w-80 border-l bg-muted/20 overflow-auto">
+        <ScrollArea className="h-full">
+          <div className="p-6 space-y-6">
+            {/* Progress Circle */}
+            {goalType !== 'weekly' && (
+              <>
+                <div className="text-center">
+                  <div className="relative inline-flex items-center justify-center mb-3">
+                    <svg className="w-32 h-32 transform -rotate-90">
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="56"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="none"
+                        className="text-muted"
+                      />
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="56"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 56}`}
+                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - progress / 100)}`}
+                        className="text-primary transition-all duration-500"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute">
+                      <div className="text-3xl font-bold">{progress}%</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Update Progress</Label>
+                    <Slider
+                      value={[progress]}
+                      onValueChange={handleProgressChange}
+                      max={100}
+                      step={5}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+              </>
+            )}
+
+            {/* Status */}
+            <div>
+              <Label className="text-xs text-muted-foreground">Status</Label>
+              <div className="mt-1">
+                <Badge variant={getStatusColor(goal.status)} className="gap-1 w-full justify-center">
+                  {getStatusIcon(goal.status)}
+                  {goal.status.replace('-', ' ')}
+                </Badge>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Dates */}
+            <div className="space-y-3 text-sm">
+              {goal.createdAt && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Created</Label>
+                  <p className="mt-1">{format(new Date(goal.createdAt), 'MMM d, yyyy')}</p>
+                </div>
+              )}
+              {'targetDate' in goal && goal.targetDate && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Target Date</Label>
+                  <p className="mt-1">{format(new Date(goal.targetDate), 'MMM d, yyyy')}</p>
+                </div>
+              )}
+            </div>
+
+            {(parentGoal || childGoals.length > 0) && <Separator />}
+
+            {/* Parent Goal */}
+            {parentGoal && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Parent Goal</Label>
+                <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Link2 className="w-4 h-4 text-muted-foreground" />
+                      <h4 className="text-sm font-medium">{parentGoal.title}</h4>
+                    </div>
+                    {'progress' in parentGoal && (
+                      <>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span>{parentGoal.progress}%</span>
+                        </div>
+                        <Progress value={parentGoal.progress} className="h-1.5" />
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Child Goals */}
+            {childGoals.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  {goalType === 'quarterly' ? 'Tasks' : 'Sub-Goals'} ({childGoals.length})
+                </Label>
+                <div className="space-y-2">
+                  {childGoals.slice(0, 5).map((child: any) => (
+                    <Card key={child.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                      <CardContent className="p-3">
+                        <h4 className="text-sm mb-2">{child.title}</h4>
+                        {'progress' in child && (
+                          <>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Progress</span>
+                              <span>{child.progress}%</span>
+                            </div>
+                            <Progress value={child.progress} className="h-1.5" />
+                          </>
+                        )}
+                        {'status' in child && (
+                          <Badge variant="outline" className="text-xs h-5 mt-2">
+                            {child.status}
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {childGoals.length > 5 && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      +{childGoals.length - 5} more
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    </div>
+  );
+};
+
+export default GoalDetails;

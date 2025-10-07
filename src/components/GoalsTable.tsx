@@ -404,6 +404,10 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate, initialGoalId, init
           // Navigate back to goals table without parameters
           navigateTo('goals-table');
         }}
+        onNavigate={(newGoalId, newGoalType) => {
+          setSelectedGoalId(newGoalId);
+          setSelectedGoalType2(newGoalType);
+        }}
       />
     );
   }

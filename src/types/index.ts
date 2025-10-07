@@ -55,6 +55,41 @@ export interface GoalUpdate {
   author: string;
 }
 
+export interface Learning {
+  id: string;
+  goalId: string;
+  goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
+  content: string;
+  createdAt: Date;
+}
+
+export interface Roadblock {
+  id: string;
+  goalId: string;
+  goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
+  content: string;
+  status: 'active' | 'resolved';
+  createdAt: Date;
+  resolvedAt?: Date;
+}
+
+export interface Decision {
+  id: string;
+  goalId: string;
+  goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
+  content: string;
+  impact?: string;
+  createdAt: Date;
+}
+
+export interface Win {
+  id: string;
+  goalId: string;
+  goalType: 'life' | 'annual' | 'quarterly' | 'weekly';
+  content: string;
+  createdAt: Date;
+}
+
 export type LifeGoalCategory = 
   | 'Creativity & Passion'
   | 'Mind'
@@ -195,6 +230,10 @@ export interface AppState {
   activityLogs: ActivityLog[];
   checkIns: CheckIn[];
   goalUpdates: GoalUpdate[];
+  learnings: Learning[];
+  roadblocks: Roadblock[];
+  decisions: Decision[];
+  wins: Win[];
   currentYear: number;
   currentQuarter: 1 | 2 | 3 | 4;
   loading?: boolean;

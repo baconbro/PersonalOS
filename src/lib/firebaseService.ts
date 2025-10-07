@@ -445,16 +445,197 @@ export class FirebaseService {
     }
   }
 
+  // Goal Updates
+  async getGoalUpdates(): Promise<any[]> {
+    try {
+      const updatesRef = collection(db, 'users', this.userId, 'goalUpdates');
+      const snapshot = await getDocs(query(updatesRef, orderBy('createdAt', 'desc')));
+      return snapshot.docs.map(doc => convertTimestamps({ ...doc.data(), id: doc.id }));
+    } catch (error) {
+      console.error('Error fetching goal updates:', error);
+      throw error;
+    }
+  }
+
+  async addGoalUpdate(update: any): Promise<string> {
+    try {
+      const updatesRef = collection(db, 'users', this.userId, 'goalUpdates');
+      const docRef = await addDoc(updatesRef, convertDatesToTimestamps(update));
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding goal update:', error);
+      throw error;
+    }
+  }
+
+  async deleteGoalUpdate(updateId: string): Promise<void> {
+    try {
+      const updateRef = doc(db, 'users', this.userId, 'goalUpdates', updateId);
+      await deleteDoc(updateRef);
+    } catch (error) {
+      console.error('Error deleting goal update:', error);
+      throw error;
+    }
+  }
+
+  // Learnings
+  async getLearnings(): Promise<any[]> {
+    try {
+      const learningsRef = collection(db, 'users', this.userId, 'learnings');
+      const snapshot = await getDocs(query(learningsRef, orderBy('createdAt', 'desc')));
+      return snapshot.docs.map(doc => convertTimestamps({ ...doc.data(), id: doc.id }));
+    } catch (error) {
+      console.error('Error fetching learnings:', error);
+      throw error;
+    }
+  }
+
+  async addLearning(learning: any): Promise<string> {
+    try {
+      const learningsRef = collection(db, 'users', this.userId, 'learnings');
+      const docRef = await addDoc(learningsRef, convertDatesToTimestamps(learning));
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding learning:', error);
+      throw error;
+    }
+  }
+
+  async deleteLearning(learningId: string): Promise<void> {
+    try {
+      const learningRef = doc(db, 'users', this.userId, 'learnings', learningId);
+      await deleteDoc(learningRef);
+    } catch (error) {
+      console.error('Error deleting learning:', error);
+      throw error;
+    }
+  }
+
+  // Roadblocks
+  async getRoadblocks(): Promise<any[]> {
+    try {
+      const roadblocksRef = collection(db, 'users', this.userId, 'roadblocks');
+      const snapshot = await getDocs(query(roadblocksRef, orderBy('createdAt', 'desc')));
+      return snapshot.docs.map(doc => convertTimestamps({ ...doc.data(), id: doc.id }));
+    } catch (error) {
+      console.error('Error fetching roadblocks:', error);
+      throw error;
+    }
+  }
+
+  async addRoadblock(roadblock: any): Promise<string> {
+    try {
+      const roadblocksRef = collection(db, 'users', this.userId, 'roadblocks');
+      const docRef = await addDoc(roadblocksRef, convertDatesToTimestamps(roadblock));
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding roadblock:', error);
+      throw error;
+    }
+  }
+
+  async updateRoadblock(roadblock: any): Promise<void> {
+    try {
+      const roadblockRef = doc(db, 'users', this.userId, 'roadblocks', roadblock.id);
+      const { id, ...roadblockData } = roadblock;
+      await updateDoc(roadblockRef, convertDatesToTimestamps(roadblockData));
+    } catch (error) {
+      console.error('Error updating roadblock:', error);
+      throw error;
+    }
+  }
+
+  async deleteRoadblock(roadblockId: string): Promise<void> {
+    try {
+      const roadblockRef = doc(db, 'users', this.userId, 'roadblocks', roadblockId);
+      await deleteDoc(roadblockRef);
+    } catch (error) {
+      console.error('Error deleting roadblock:', error);
+      throw error;
+    }
+  }
+
+  // Decisions
+  async getDecisions(): Promise<any[]> {
+    try {
+      const decisionsRef = collection(db, 'users', this.userId, 'decisions');
+      const snapshot = await getDocs(query(decisionsRef, orderBy('createdAt', 'desc')));
+      return snapshot.docs.map(doc => convertTimestamps({ ...doc.data(), id: doc.id }));
+    } catch (error) {
+      console.error('Error fetching decisions:', error);
+      throw error;
+    }
+  }
+
+  async addDecision(decision: any): Promise<string> {
+    try {
+      const decisionsRef = collection(db, 'users', this.userId, 'decisions');
+      const docRef = await addDoc(decisionsRef, convertDatesToTimestamps(decision));
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding decision:', error);
+      throw error;
+    }
+  }
+
+  async deleteDecision(decisionId: string): Promise<void> {
+    try {
+      const decisionRef = doc(db, 'users', this.userId, 'decisions', decisionId);
+      await deleteDoc(decisionRef);
+    } catch (error) {
+      console.error('Error deleting decision:', error);
+      throw error;
+    }
+  }
+
+  // Wins
+  async getWins(): Promise<any[]> {
+    try {
+      const winsRef = collection(db, 'users', this.userId, 'wins');
+      const snapshot = await getDocs(query(winsRef, orderBy('createdAt', 'desc')));
+      return snapshot.docs.map(doc => convertTimestamps({ ...doc.data(), id: doc.id }));
+    } catch (error) {
+      console.error('Error fetching wins:', error);
+      throw error;
+    }
+  }
+
+  async addWin(win: any): Promise<string> {
+    try {
+      const winsRef = collection(db, 'users', this.userId, 'wins');
+      const docRef = await addDoc(winsRef, convertDatesToTimestamps(win));
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding win:', error);
+      throw error;
+    }
+  }
+
+  async deleteWin(winId: string): Promise<void> {
+    try {
+      const winRef = doc(db, 'users', this.userId, 'wins', winId);
+      await deleteDoc(winRef);
+    } catch (error) {
+      console.error('Error deleting win:', error);
+      throw error;
+    }
+  }
+
   // Load all user data
   async loadAllData(): Promise<AppState> {
     try {
-      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns] = await Promise.all([
+      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns, goalUpdates, learnings, roadblocks, decisions, wins] = await Promise.all([
         this.getAnnualGoals(),
         this.getQuarterlyGoals(),
         this.getWeeklyTasks(),
         this.getWeeklyReviews(),
         this.getLifeGoals(),
-        this.getCheckIns()
+        this.getCheckIns(),
+        this.getGoalUpdates(),
+        this.getLearnings(),
+        this.getRoadblocks(),
+        this.getDecisions(),
+        this.getWins()
       ]);
 
       return {
@@ -465,6 +646,11 @@ export class FirebaseService {
         lifeGoals,
         activityLogs: [], // Activity logs are handled locally, not stored in Firebase
         checkIns,
+        goalUpdates,
+        learnings,
+        roadblocks,
+        decisions,
+        wins,
         currentYear: new Date().getFullYear(),
         currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
       };

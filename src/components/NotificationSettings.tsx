@@ -89,6 +89,10 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
       activityLogs: state.activityLogs,
       checkIns: state.checkIns,
       goalUpdates: state.goalUpdates,
+      learnings: state.learnings,
+      roadblocks: state.roadblocks,
+      decisions: state.decisions,
+      wins: state.wins,
       currentYear: state.currentYear,
       currentQuarter: state.currentQuarter,
     });
@@ -137,6 +141,10 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
       activityLogs: state.activityLogs,
       checkIns: state.checkIns,
       goalUpdates: state.goalUpdates,
+      learnings: state.learnings,
+      roadblocks: state.roadblocks,
+      decisions: state.decisions,
+      wins: state.wins,
       currentYear: state.currentYear,
       currentQuarter: state.currentQuarter,
     }, incoming, mergeStrategy);

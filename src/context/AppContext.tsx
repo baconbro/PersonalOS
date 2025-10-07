@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn, GoalUpdate } from '../types';
+import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn, GoalUpdate, Learning, Roadblock, Decision, Win } from '../types';
 import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
@@ -20,6 +20,10 @@ const initialState: AppState & { loading: boolean } = {
   activityLogs: [],
   checkIns: [],
   goalUpdates: [],
+  learnings: [],
+  roadblocks: [],
+  decisions: [],
+  wins: [],
   currentYear: new Date().getFullYear(),
   currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
   loading: false,
@@ -43,7 +47,21 @@ type Action =
   | { type: 'UPDATE_WEEKLY_REVIEW'; payload: WeeklyReviewData }
   | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLog }
   | { type: 'ADD_CHECK_IN'; payload: CheckIn }
+  | { type: 'DELETE_CHECK_IN'; payload: string }
   | { type: 'ADD_GOAL_UPDATE'; payload: GoalUpdate }
+  | { type: 'DELETE_GOAL_UPDATE'; payload: string }
+  | { type: 'ADD_LEARNING'; payload: Learning }
+  | { type: 'DELETE_LEARNING'; payload: string }
+  | { type: 'ADD_ROADBLOCK'; payload: Roadblock }
+  | { type: 'UPDATE_ROADBLOCK'; payload: Roadblock }
+  | { type: 'DELETE_ROADBLOCK'; payload: string }
+  | { type: 'ADD_DECISION'; payload: Decision }
+  | { type: 'DELETE_DECISION'; payload: string }
+  | { type: 'ADD_WIN'; payload: Win }
+  | { type: 'DELETE_WIN'; payload: string }
+  | { type: 'ADD_KEY_RESULT'; payload: { goalId: string; keyResult: any } }
+  | { type: 'UPDATE_KEY_RESULT'; payload: { goalId: string; keyResult: any } }
+  | { type: 'DELETE_KEY_RESULT'; payload: { goalId: string; keyResultId: string } }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_CURRENT_YEAR'; payload: number }
@@ -248,6 +266,118 @@ function appReducer(state: AppState, action: Action): AppState {
         goalUpdates: [action.payload, ...state.goalUpdates],
       };
     }
+    case 'DELETE_GOAL_UPDATE': {
+      return {
+        ...state,
+        goalUpdates: state.goalUpdates.filter(update => update.id !== action.payload),
+      };
+    }
+    case 'DELETE_CHECK_IN': {
+      return {
+        ...state,
+        checkIns: state.checkIns.filter(checkIn => checkIn.id !== action.payload),
+      };
+    }
+    case 'ADD_LEARNING': {
+      return {
+        ...state,
+        learnings: [action.payload, ...state.learnings],
+      };
+    }
+    case 'DELETE_LEARNING': {
+      return {
+        ...state,
+        learnings: state.learnings.filter(learning => learning.id !== action.payload),
+      };
+    }
+    case 'ADD_ROADBLOCK': {
+      return {
+        ...state,
+        roadblocks: [action.payload, ...state.roadblocks],
+      };
+    }
+    case 'UPDATE_ROADBLOCK': {
+      return {
+        ...state,
+        roadblocks: state.roadblocks.map(roadblock =>
+          roadblock.id === action.payload.id ? action.payload : roadblock
+        ),
+      };
+    }
+    case 'DELETE_ROADBLOCK': {
+      return {
+        ...state,
+        roadblocks: state.roadblocks.filter(roadblock => roadblock.id !== action.payload),
+      };
+    }
+    case 'ADD_DECISION': {
+      return {
+        ...state,
+        decisions: [action.payload, ...state.decisions],
+      };
+    }
+    case 'DELETE_DECISION': {
+      return {
+        ...state,
+        decisions: state.decisions.filter(decision => decision.id !== action.payload),
+      };
+    }
+    case 'ADD_WIN': {
+      return {
+        ...state,
+        wins: [action.payload, ...state.wins],
+      };
+    }
+    case 'DELETE_WIN': {
+      return {
+        ...state,
+        wins: state.wins.filter(win => win.id !== action.payload),
+      };
+    }
+    case 'ADD_KEY_RESULT': {
+      const updatedQuarterlyGoals = state.quarterlyGoals.map(goal =>
+        goal.id === action.payload.goalId
+          ? { ...goal, keyResults: [...goal.keyResults, action.payload.keyResult] }
+          : goal
+      );
+      return {
+        ...state,
+        quarterlyGoals: updatedQuarterlyGoals,
+        annualGoals: updateAnnualGoalProgress(state, updatedQuarterlyGoals),
+      };
+    }
+    case 'UPDATE_KEY_RESULT': {
+      const updatedQuarterlyGoals = state.quarterlyGoals.map(goal =>
+        goal.id === action.payload.goalId
+          ? {
+              ...goal,
+              keyResults: goal.keyResults.map(kr =>
+                kr.id === action.payload.keyResult.id ? action.payload.keyResult : kr
+              ),
+            }
+          : goal
+      );
+      return {
+        ...state,
+        quarterlyGoals: updatedQuarterlyGoals,
+        annualGoals: updateAnnualGoalProgress(state, updatedQuarterlyGoals),
+      };
+    }
+    case 'DELETE_KEY_RESULT': {
+      const updatedQuarterlyGoals = state.quarterlyGoals.map(goal =>
+        goal.id === action.payload.goalId
+          ? {
+              ...goal,
+              keyResults: goal.keyResults.filter(kr => kr.id !== action.payload.keyResultId),
+            }
+          : goal
+      );
+      return {
+        ...state,
+        quarterlyGoals: updatedQuarterlyGoals,
+        annualGoals: updateAnnualGoalProgress(state, updatedQuarterlyGoals),
+      };
+    }
     case 'LOAD_STATE':
       // Ensure all goals have proper timestamps for backward compatibility
       const payload = action.payload;
@@ -260,6 +390,10 @@ function appReducer(state: AppState, action: Action): AppState {
         activityLogs: payload.activityLogs || [], 
         checkIns: payload.checkIns || [],
         goalUpdates: payload.goalUpdates || [],
+        learnings: payload.learnings || [],
+        roadblocks: payload.roadblocks || [],
+        decisions: payload.decisions || [],
+        wins: payload.wins || [],
         loading: false 
       };
     case 'SET_LOADING':
@@ -520,6 +654,10 @@ export function AppProvider({ children }: AppProviderProps) {
         activityLogs: newState.activityLogs,
         checkIns: newState.checkIns,
         goalUpdates: newState.goalUpdates,
+        learnings: newState.learnings,
+        roadblocks: newState.roadblocks,
+        decisions: newState.decisions,
+        wins: newState.wins,
         currentYear: newState.currentYear,
         currentQuarter: newState.currentQuarter,
       };
@@ -652,6 +790,66 @@ export function AppProvider({ children }: AppProviderProps) {
           await firebaseService.addCheckIn(action.payload);
           toastService.showFirebaseSuccess('saved', 'Check-in');
           break;
+        case 'DELETE_CHECK_IN':
+          await firebaseService.deleteCheckIn(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Check-in');
+          break;
+        case 'ADD_GOAL_UPDATE':
+          await firebaseService.addGoalUpdate(action.payload);
+          toastService.showFirebaseSuccess('added', 'Update');
+          break;
+        case 'DELETE_GOAL_UPDATE':
+          await firebaseService.deleteGoalUpdate(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Update');
+          break;
+        case 'ADD_LEARNING':
+          await firebaseService.addLearning(action.payload);
+          toastService.showFirebaseSuccess('added', 'Learning');
+          break;
+        case 'DELETE_LEARNING':
+          await firebaseService.deleteLearning(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Learning');
+          break;
+        case 'ADD_ROADBLOCK':
+          await firebaseService.addRoadblock(action.payload);
+          toastService.showFirebaseSuccess('added', 'Roadblock');
+          break;
+        case 'UPDATE_ROADBLOCK':
+          await firebaseService.updateRoadblock(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Roadblock');
+          break;
+        case 'DELETE_ROADBLOCK':
+          await firebaseService.deleteRoadblock(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Roadblock');
+          break;
+        case 'ADD_DECISION':
+          await firebaseService.addDecision(action.payload);
+          toastService.showFirebaseSuccess('recorded', 'Decision');
+          break;
+        case 'DELETE_DECISION':
+          await firebaseService.deleteDecision(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Decision');
+          break;
+        case 'ADD_WIN':
+          await firebaseService.addWin(action.payload);
+          toastService.showFirebaseSuccess('added', 'Win');
+          break;
+        case 'DELETE_WIN':
+          await firebaseService.deleteWin(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Win');
+          break;
+        case 'ADD_KEY_RESULT':
+        case 'UPDATE_KEY_RESULT':
+        case 'DELETE_KEY_RESULT': {
+          // The state has already been updated by the reducer, so we need to get it fresh
+          // We'll update the entire quarterly goal which includes the key results
+          toastService.showFirebaseSuccess(
+            action.type === 'ADD_KEY_RESULT' ? 'added' : action.type === 'UPDATE_KEY_RESULT' ? 'updated' : 'deleted',
+            'Key Result'
+          );
+          // The quarterly goal will be synced on the next UPDATE_QUARTERLY_GOAL action
+          break;
+        }
       }
       console.log('✅ Firebase sync completed');
     } catch (error) {
@@ -705,6 +903,42 @@ export function AppProvider({ children }: AppProviderProps) {
           break;
         case 'ADD_CHECK_IN':
           toastService.showFirebaseError('save', 'Check-in', errorMessage);
+          break;
+        case 'DELETE_CHECK_IN':
+          toastService.showFirebaseError('delete', 'Check-in', errorMessage);
+          break;
+        case 'ADD_GOAL_UPDATE':
+          toastService.showFirebaseError('add', 'Update', errorMessage);
+          break;
+        case 'DELETE_GOAL_UPDATE':
+          toastService.showFirebaseError('delete', 'Update', errorMessage);
+          break;
+        case 'ADD_LEARNING':
+          toastService.showFirebaseError('add', 'Learning', errorMessage);
+          break;
+        case 'DELETE_LEARNING':
+          toastService.showFirebaseError('delete', 'Learning', errorMessage);
+          break;
+        case 'ADD_ROADBLOCK':
+          toastService.showFirebaseError('add', 'Roadblock', errorMessage);
+          break;
+        case 'UPDATE_ROADBLOCK':
+          toastService.showFirebaseError('update', 'Roadblock', errorMessage);
+          break;
+        case 'DELETE_ROADBLOCK':
+          toastService.showFirebaseError('delete', 'Roadblock', errorMessage);
+          break;
+        case 'ADD_DECISION':
+          toastService.showFirebaseError('record', 'Decision', errorMessage);
+          break;
+        case 'DELETE_DECISION':
+          toastService.showFirebaseError('delete', 'Decision', errorMessage);
+          break;
+        case 'ADD_WIN':
+          toastService.showFirebaseError('add', 'Win', errorMessage);
+          break;
+        case 'DELETE_WIN':
+          toastService.showFirebaseError('delete', 'Win', errorMessage);
           break;
         default:
           toastService.error('Sync Failed', `Failed to sync data: ${errorMessage}`);
