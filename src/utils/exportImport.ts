@@ -102,6 +102,11 @@ export function mergeStates(existing: AppState, incoming: AppState, strategy: 'm
     weeklyReviews: mergeById(existing.weeklyReviews, incoming.weeklyReviews, strategy),
     activityLogs: mergeById(existing.activityLogs, incoming.activityLogs, strategy),
     checkIns: mergeById(existing.checkIns, incoming.checkIns, strategy),
+    goalUpdates: mergeById(existing.goalUpdates || [], incoming.goalUpdates || [], strategy),
+    learnings: mergeById(existing.learnings || [], incoming.learnings || [], strategy),
+    roadblocks: mergeById(existing.roadblocks || [], incoming.roadblocks || [], strategy),
+    decisions: mergeById(existing.decisions || [], incoming.decisions || [], strategy),
+    wins: mergeById(existing.wins || [], incoming.wins || [], strategy),
     currentYear: incoming.currentYear ?? existing.currentYear,
     currentQuarter: incoming.currentQuarter ?? existing.currentQuarter,
   };

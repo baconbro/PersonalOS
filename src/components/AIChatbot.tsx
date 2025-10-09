@@ -360,7 +360,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me for insights, recommendations, or help with planning..."
+              placeholder="Ask for insights or help..."
               rows={1}
               disabled={isLoading}
             />
