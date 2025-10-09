@@ -4,8 +4,20 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useApp } from '../context/AppContext';
 import { Plus, BookOpen, TrendingUp, Lightbulb, Target, Sparkles, Heart, Battery, Star, Calendar, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, addWeeks, startOfQuarter, endOfQuarter, getWeek } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, startOfQuarter, endOfQuarter, getWeek, isValid } from 'date-fns';
 import WeeklyCommandHuddle from './WeeklyCommandHuddle';
+
+// Safe date formatter
+const safeFormatDate = (date: Date | string | undefined, formatStr: string): string => {
+  if (!date) return '';
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (!isValid(dateObj)) return '';
+    return format(dateObj, formatStr);
+  } catch {
+    return '';
+  }
+};
 
 interface WeeklyHurdle {
   id: string;
@@ -26,7 +38,7 @@ interface WeeklyHurdle {
 
 // Helper function to convert WeeklyReviewData to WeeklyHurdle format
 const convertReviewDataToHurdle = (review: any): WeeklyHurdle => {
-  const weekStart = new Date(review.weekOf);
+  const weekStart = review.weekOf instanceof Date ? review.weekOf : new Date(review.weekOf);
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   
   // Parse wins from winsReflection (stored as newline-separated string)
@@ -43,8 +55,8 @@ const convertReviewDataToHurdle = (review: any): WeeklyHurdle => {
   
   return {
     id: review.id,
-    weekStart: format(weekStart, 'yyyy-MM-dd'),
-    weekEnd: format(weekEnd, 'yyyy-MM-dd'),
+    weekStart: safeFormatDate(weekStart, 'yyyy-MM-dd'),
+    weekEnd: safeFormatDate(weekEnd, 'yyyy-MM-dd'),
     wins,
     challenges,
     learnings,
@@ -53,8 +65,8 @@ const convertReviewDataToHurdle = (review: any): WeeklyHurdle => {
     overallMood: mood as WeeklyHurdle['overallMood'],
     energyLevel: review.energyLevel || 5,
     progressRating: Math.round((review.overallProgress || 50) / 10),
-    createdAt: format(weekStart, 'yyyy-MM-dd'),
-    completedAt: review.completedAt ? format(new Date(review.completedAt), 'yyyy-MM-dd') : undefined,
+    createdAt: safeFormatDate(weekStart, 'yyyy-MM-dd'),
+    completedAt: review.completedAt ? safeFormatDate(review.completedAt, 'yyyy-MM-dd') : undefined,
     clarityResponses: review.clarityResponses || {},
   };
 };
@@ -268,12 +280,12 @@ function WeeklyReview() {
     }
   };
 
-  const formatDate = (date: Date | string) => {
-    return format(new Date(date), 'MMM d');
+  const formatDate = (date: Date | string | undefined) => {
+    return safeFormatDate(date, 'MMM d');
   };
 
-  const formatCompletionDate = (date: Date | string) => {
-    return format(new Date(date), 'MMM d, yyyy');
+  const formatCompletionDate = (date: Date | string | undefined) => {
+    return safeFormatDate(date, 'MMM d, yyyy');
   };
 
   if (selectedHurdle) {

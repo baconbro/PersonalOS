@@ -387,6 +387,7 @@ function appReducer(state: AppState, action: Action): AppState {
         annualGoals: payload.annualGoals?.map(goal => ensureTimestamps(goal)) || [],
         quarterlyGoals: payload.quarterlyGoals?.map(goal => ensureTimestamps(goal)) || [],
         weeklyTasks: payload.weeklyTasks?.map(task => ensureTimestamps(task)) || [],
+        weeklyReviews: payload.weeklyReviews || [],
         activityLogs: payload.activityLogs || [], 
         checkIns: payload.checkIns || [],
         goalUpdates: payload.goalUpdates || [],

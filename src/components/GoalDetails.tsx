@@ -70,6 +70,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
   const [showWinForm, setShowWinForm] = useState(false);
   const [winContent, setWinContent] = useState('');
 
+  // Progress state - track temporary value while sliding
+  const [tempProgress, setTempProgress] = useState<number | null>(null);
+
   // Check-in form state
   const [showCheckInForm, setShowCheckInForm] = useState(false);
   const [checkInMood, setCheckInMood] = useState<'excellent' | 'good' | 'neutral' | 'challenging' | 'struggling'>('good');
@@ -449,7 +452,14 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
     }
   };
 
+  // Handler for visual feedback while dragging
   const handleProgressChange = (value: number[]) => {
+    if (goalType === 'weekly') return;
+    setTempProgress(value[0]);
+  };
+
+  // Handler for saving when user releases the slider
+  const handleProgressCommit = (value: number[]) => {
     if (goalType === 'weekly') return;
 
     const updatedGoal = { ...goal, progress: value[0], updatedAt: new Date() };
@@ -465,11 +475,13 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
         dispatch({ type: 'UPDATE_QUARTERLY_GOAL', payload: updatedGoal as QuarterlyGoal });
         break;
     }
+
+    setTempProgress(null);
   };
 
   const characterCount = updateContent.length;
   const characterLimit = 280;
-  const progress = 'progress' in goal ? goal.progress : 0;
+  const progress = tempProgress !== null ? tempProgress : ('progress' in goal ? goal.progress : 0);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -1543,6 +1555,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
                     <Slider
                       value={[progress]}
                       onValueChange={handleProgressChange}
+                      onValueCommit={handleProgressCommit}
                       max={100}
                       step={5}
                       className="cursor-pointer"
