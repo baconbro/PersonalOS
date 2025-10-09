@@ -108,34 +108,44 @@ function Dashboard() {
   };
 
   const calculateBalanceWheelData = () => {
-    const categories = [
-      'Career &\nProfessional',
-      'Health &\nFitness', 
-      'Relationships &\nFamily',
-      'Personal\nGrowth',
-      'Finance &\nSecurity',
-      'Recreation &\nFun',
-      'Physical\nEnvironment',
-      'Contribution &\nService'
-    ];
+    // Get unique categories from life goals
+    const uniqueCategories = Array.from(
+      new Set(state.lifeGoals.map(goal => goal.category).filter(cat => cat && cat.trim() !== ''))
+    ).sort();
 
-    return categories.map(category => {
+    // If no categories exist, return empty array
+    if (uniqueCategories.length === 0) {
+      return [];
+    }
+
+    // Calculate raw values for each category
+    const rawData = uniqueCategories.map(category => {
       const categoryGoals = state.lifeGoals.filter(goal => 
-        goal.category && goal.category.toLowerCase().includes(category.toLowerCase().split('\n')[0].split(' ')[0])
+        goal.category === category
       );
       
-      const effort = state.lifeGoals.length > 0 ? 
-        Math.round((categoryGoals.length / state.lifeGoals.length) * 100) : 0;
+      const goalCount = categoryGoals.length;
       
-      const progress = categoryGoals.length > 0 ? 
-        Math.round(categoryGoals.reduce((sum, goal) => sum + (goal.progress || 0), 0) / categoryGoals.length) : 0;
+      const avgProgress = categoryGoals.length > 0 ? 
+        categoryGoals.reduce((sum, goal) => sum + (goal.progress || 0), 0) / categoryGoals.length : 0;
 
       return {
         category,
-        effort,
-        progress
+        goalCount,
+        avgProgress
       };
     });
+
+    // Find the maximum values for scaling
+    const maxGoalCount = Math.max(...rawData.map(d => d.goalCount), 1);
+    const maxProgress = Math.max(...rawData.map(d => d.avgProgress), 1);
+
+    // Scale everything relative to the maximum (0-100%)
+    return rawData.map(data => ({
+      category: data.category,
+      effort: Math.round((data.goalCount / maxGoalCount) * 100),
+      progress: Math.round((data.avgProgress / maxProgress) * 100)
+    }));
   };
 
   const stats = calculateStats();

@@ -1570,12 +1570,42 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
             {/* Status */}
             <div>
               <Label className="text-xs text-muted-foreground">Status</Label>
-              <div className="mt-1">
-                <Badge variant={getStatusColor(goal.status)} className="gap-1 w-full justify-center">
-                  {getStatusIcon(goal.status)}
-                  {goal.status.replace('-', ' ')}
-                </Badge>
-              </div>
+              {editingField === 'status' ? (
+                <div className="mt-1 space-y-2">
+                  <Select value={editValue} onValueChange={setEditValue}>
+                    <SelectTrigger className="bg-white dark:bg-gray-950">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-gray-950">
+                      <SelectItem value="not-started">Not Started</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="on-hold">On Hold</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleSaveField('status')}>
+                      <Check className="w-3 h-3 mr-1" />
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                      <X className="w-3 h-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="mt-1 cursor-pointer group"
+                  onClick={() => handleEditField('status', goal.status)}
+                >
+                  <Badge variant={getStatusColor(goal.status)} className="gap-1 w-full justify-center group-hover:opacity-80 transition-opacity">
+                    {getStatusIcon(goal.status)}
+                    {goal.status.replace('-', ' ')}
+                  </Badge>
+                </div>
+              )}
             </div>
 
             <Separator />
