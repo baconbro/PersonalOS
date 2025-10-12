@@ -373,6 +373,14 @@ function App() {
           <Button
             variant="ghost"
             className="w-full justify-start space-x-3"
+            onClick={() => setShowNotificationSettings(true)}
+          >
+            <Settings size={18} />
+            <span>Settings</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start space-x-3"
             onClick={() => setShowActivityLog(true)}
           >
             <Clock size={18} />

@@ -914,6 +914,10 @@ export function AppProvider({ children }: AppProviderProps) {
           }
           break;
         }
+        case 'ADD_ACTIVITY_LOG':
+          await firebaseService.addActivityLog(action.payload);
+          // No toast for activity logs as they are background operations
+          break;
         case 'ADD_KEY_RESULT':
         case 'UPDATE_KEY_RESULT':
         case 'DELETE_KEY_RESULT': {

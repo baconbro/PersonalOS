@@ -8,6 +8,7 @@ import {
   setDoc,
   query, 
   orderBy,
+  limit,
   Timestamp 
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
@@ -683,10 +684,47 @@ export class FirebaseService {
     }
   }
 
+  // Activity Log operations
+  async getActivityLogs(): Promise<any[]> {
+    try {
+      console.log('📋 [ActivityLog] Getting activity logs for user:', this.userId);
+      const logsRef = collection(db, 'users', this.userId, 'activityLogs');
+      const q = query(logsRef, orderBy('timestamp', 'desc'), limit(30));
+      const snapshot = await getDocs(q);
+      const logs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate() || new Date()
+      }));
+      console.log('📋 [ActivityLog] Retrieved', logs.length, 'activity logs');
+      return logs;
+    } catch (error) {
+      console.error('❌ [ActivityLog] Error getting activity logs:', error);
+      return [];
+    }
+  }
+
+  async addActivityLog(log: any): Promise<string> {
+    try {
+      const { id, ...logData } = log;
+      console.log('➕ [ActivityLog] Adding activity log for user:', this.userId);
+      const logsRef = collection(db, 'users', this.userId, 'activityLogs');
+      const docRef = await addDoc(logsRef, {
+        ...logData,
+        timestamp: logData.timestamp || new Date()
+      });
+      console.log('➕ [ActivityLog] Log added with Firebase ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ [ActivityLog] Error adding activity log:', error);
+      throw error;
+    }
+  }
+
   // Load all user data
   async loadAllData(): Promise<AppState> {
     try {
-      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns, goalUpdates, learnings, roadblocks, decisions, wins, bucketList] = await Promise.all([
+      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns, goalUpdates, learnings, roadblocks, decisions, wins, bucketList, activityLogs] = await Promise.all([
         this.getAnnualGoals(),
         this.getQuarterlyGoals(),
         this.getWeeklyTasks(),
@@ -698,7 +736,8 @@ export class FirebaseService {
         this.getRoadblocks(),
         this.getDecisions(),
         this.getWins(),
-        this.getBucketList()
+        this.getBucketList(),
+        this.getActivityLogs()
       ]);
 
       return {
@@ -707,7 +746,7 @@ export class FirebaseService {
         weeklyTasks,
         weeklyReviews,
         lifeGoals,
-        activityLogs: [], // Activity logs are handled locally, not stored in Firebase
+        activityLogs,
         checkIns,
         goalUpdates,
         learnings,
