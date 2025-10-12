@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn, GoalUpdate, Learning, Roadblock, Decision, Win } from '../types';
+import type { AppState, AnnualGoal, QuarterlyGoal, WeeklyTask, WeeklyReviewData, LifeGoal, ActivityLog, CheckIn, GoalUpdate, Learning, Roadblock, Decision, Win, BucketListItem } from '../types';
 import { useAuth } from './AuthContext';
 import { FirebaseService } from '../lib/firebaseService';
 import { LocalStorageService } from '../lib/localStorageService';
@@ -24,6 +24,7 @@ const initialState: AppState & { loading: boolean } = {
   roadblocks: [],
   decisions: [],
   wins: [],
+  bucketList: [],
   currentYear: new Date().getFullYear(),
   currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
   loading: false,
@@ -59,6 +60,10 @@ type Action =
   | { type: 'DELETE_DECISION'; payload: string }
   | { type: 'ADD_WIN'; payload: Win }
   | { type: 'DELETE_WIN'; payload: string }
+  | { type: 'ADD_BUCKET_ITEM'; payload: BucketListItem }
+  | { type: 'UPDATE_BUCKET_ITEM'; payload: BucketListItem }
+  | { type: 'DELETE_BUCKET_ITEM'; payload: string }
+  | { type: 'TOGGLE_BUCKET_ITEM'; payload: string }
   | { type: 'ADD_KEY_RESULT'; payload: { goalId: string; keyResult: any } }
   | { type: 'UPDATE_KEY_RESULT'; payload: { goalId: string; keyResult: any } }
   | { type: 'DELETE_KEY_RESULT'; payload: { goalId: string; keyResultId: string } }
@@ -334,6 +339,34 @@ function appReducer(state: AppState, action: Action): AppState {
         wins: state.wins.filter(win => win.id !== action.payload),
       };
     }
+    case 'ADD_BUCKET_ITEM': {
+      return {
+        ...state,
+        bucketList: [...state.bucketList, action.payload],
+      };
+    }
+    case 'UPDATE_BUCKET_ITEM': {
+      return {
+        ...state,
+        bucketList: state.bucketList.map(item =>
+          item.id === action.payload.id ? action.payload : item
+        ),
+      };
+    }
+    case 'DELETE_BUCKET_ITEM': {
+      return {
+        ...state,
+        bucketList: state.bucketList.filter(item => item.id !== action.payload),
+      };
+    }
+    case 'TOGGLE_BUCKET_ITEM': {
+      return {
+        ...state,
+        bucketList: state.bucketList.map(item =>
+          item.id === action.payload ? { ...item, completed: !item.completed } : item
+        ),
+      };
+    }
     case 'ADD_KEY_RESULT': {
       const updatedQuarterlyGoals = state.quarterlyGoals.map(goal =>
         goal.id === action.payload.goalId
@@ -395,6 +428,7 @@ function appReducer(state: AppState, action: Action): AppState {
         roadblocks: payload.roadblocks || [],
         decisions: payload.decisions || [],
         wins: payload.wins || [],
+        bucketList: payload.bucketList || [],
         loading: false 
       };
     case 'SET_LOADING':
@@ -659,6 +693,7 @@ export function AppProvider({ children }: AppProviderProps) {
         roadblocks: newState.roadblocks,
         decisions: newState.decisions,
         wins: newState.wins,
+        bucketList: newState.bucketList,
         currentYear: newState.currentYear,
         currentQuarter: newState.currentQuarter,
       };
@@ -694,7 +729,7 @@ export function AppProvider({ children }: AppProviderProps) {
     if (firebaseService) {
       console.log('🔄 Firebase service available, starting background sync...');
       // Don't await this - let it run in background
-      handleFirebaseSync(action, firebaseService).catch(error => {
+      handleFirebaseSync(action, newState, firebaseService).catch(error => {
         console.warn('⚠️ Firebase sync failed (but localStorage is safe):', error);
       });
     } else {
@@ -703,7 +738,7 @@ export function AppProvider({ children }: AppProviderProps) {
   };
 
   // Separate function to handle Firebase sync
-  const handleFirebaseSync = async (action: Action, firebaseService: FirebaseService) => {
+  const handleFirebaseSync = async (action: Action, newState: AppState, firebaseService: FirebaseService) => {
     try {
       console.log('🔄 Syncing with Firebase...');
       
@@ -839,6 +874,38 @@ export function AppProvider({ children }: AppProviderProps) {
           await firebaseService.deleteWin(action.payload);
           toastService.showFirebaseSuccess('deleted', 'Win');
           break;
+        case 'ADD_BUCKET_ITEM':
+          const bucketItemId = await firebaseService.addBucketItem(action.payload);
+          // Update the local item with Firebase-generated ID
+          const updatedItem = { ...action.payload, id: bucketItemId };
+          originalDispatch({ type: 'UPDATE_BUCKET_ITEM', payload: updatedItem });
+          // Save to localStorage with the updated ID
+          const updatedBucketList = newState.bucketList.map((item: any) => 
+            item.id === action.payload.id ? updatedItem : item
+          );
+          LocalStorageService.save({
+            ...newState,
+            bucketList: updatedBucketList
+          });
+          toastService.showFirebaseSuccess('added', 'Bucket List Item');
+          break;
+        case 'UPDATE_BUCKET_ITEM':
+          await firebaseService.updateBucketItem(action.payload);
+          toastService.showFirebaseSuccess('updated', 'Bucket List Item');
+          break;
+        case 'DELETE_BUCKET_ITEM':
+          await firebaseService.deleteBucketItem(action.payload);
+          toastService.showFirebaseSuccess('deleted', 'Bucket List Item');
+          break;
+        case 'TOGGLE_BUCKET_ITEM': {
+          // Find the toggled item in the updated state
+          const toggledItem = newState.bucketList.find((item: any) => item.id === action.payload);
+          if (toggledItem) {
+            await firebaseService.updateBucketItem(toggledItem);
+            toastService.showFirebaseSuccess('updated', 'Bucket List Item');
+          }
+          break;
+        }
         case 'ADD_KEY_RESULT':
         case 'UPDATE_KEY_RESULT':
         case 'DELETE_KEY_RESULT': {

@@ -90,6 +90,13 @@ export interface Win {
   createdAt: Date;
 }
 
+export interface BucketListItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: Date;
+}
+
 export type LifeGoalCategory = 
   | 'Creativity & Passion'
   | 'Mind'
@@ -234,6 +241,7 @@ export interface AppState {
   roadblocks: Roadblock[];
   decisions: Decision[];
   wins: Win[];
+  bucketList: BucketListItem[];
   currentYear: number;
   currentQuarter: 1 | 2 | 3 | 4;
   loading?: boolean;

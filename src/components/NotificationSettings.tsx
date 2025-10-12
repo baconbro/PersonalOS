@@ -93,6 +93,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
       roadblocks: state.roadblocks,
       decisions: state.decisions,
       wins: state.wins,
+      bucketList: state.bucketList,
       currentYear: state.currentYear,
       currentQuarter: state.currentQuarter,
     });
@@ -145,6 +146,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
       roadblocks: state.roadblocks,
       decisions: state.decisions,
       wins: state.wins,
+      bucketList: state.bucketList,
       currentYear: state.currentYear,
       currentQuarter: state.currentQuarter,
     }, incoming, mergeStrategy);
@@ -274,7 +276,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                 <div className="setting-item">
                   <div className="setting-info">
                     <label>Enable Notifications</label>
-                    <span>Turn on/off all Personal OS notifications</span>
+                    <span>Turn on/off all LifePeak notifications</span>
                   </div>
                   <label className="toggle">
                     <input
@@ -288,7 +290,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                 <div className="setting-item">
                   <div className="setting-info">
                     <label>Browser Notifications</label>
-                    <span>Show notifications even when Personal OS is not active</span>
+                    <span>Show notifications even when LifePeak is not active</span>
                   </div>
                   <label className="toggle">
                     <input

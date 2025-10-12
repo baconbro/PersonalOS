@@ -174,7 +174,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
       case 'weekly-huddle':
         return 'Weekly Command Huddle';
       default:
-        return 'Personal OS';
+        return 'LifePeak';
     }
   };
 

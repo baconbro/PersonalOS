@@ -4,7 +4,8 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
+  deleteDoc,
+  setDoc,
   query, 
   orderBy,
   Timestamp 
@@ -621,10 +622,71 @@ export class FirebaseService {
     }
   }
 
+  // Bucket List methods
+  async getBucketList(): Promise<any[]> {
+    try {
+      console.log('📋 [BucketList] Getting bucket list for user:', this.userId);
+      const bucketListRef = collection(db, 'users', this.userId, 'bucketList');
+      const snapshot = await getDocs(bucketListRef);
+      console.log('📋 [BucketList] Found', snapshot.docs.length, 'items in Firebase');
+      const items = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+      console.log('📋 [BucketList] Items:', items);
+      return items;
+    } catch (error) {
+      console.error('❌ [BucketList] Error getting bucket list:', error);
+      throw error;
+    }
+  }
+
+  async addBucketItem(item: any): Promise<string> {
+    try {
+      console.log('➕ [BucketList] Adding item for user:', this.userId);
+      console.log('➕ [BucketList] Item data:', item);
+      const bucketListRef = collection(db, 'users', this.userId, 'bucketList');
+      // Remove id from item data since Firebase will generate its own
+      const { id, ...itemData } = item;
+      const docRef = await addDoc(bucketListRef, convertDatesToTimestamps(itemData));
+      console.log('✅ [BucketList] Item added with Firebase ID:', docRef.id);
+      console.log('✅ [BucketList] Collection path: users/' + this.userId + '/bucketList/' + docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ [BucketList] Error adding bucket item:', error);
+      throw error;
+    }
+  }
+
+  async updateBucketItem(item: any): Promise<void> {
+    try {
+      console.log('📝 [BucketList] Updating item:', item.id, 'for user:', this.userId);
+      console.log('📝 [BucketList] Collection path: users/' + this.userId + '/bucketList/' + item.id);
+      const itemRef = doc(db, 'users', this.userId, 'bucketList', item.id);
+      // Remove id from item data since it's stored as the document ID
+      const { id, ...itemData } = item;
+      await setDoc(itemRef, convertDatesToTimestamps(itemData));
+      console.log('✅ [BucketList] Item updated successfully');
+    } catch (error) {
+      console.error('❌ [BucketList] Error updating bucket item:', error);
+      throw error;
+    }
+  }
+
+  async deleteBucketItem(itemId: string): Promise<void> {
+    try {
+      console.log('🗑️ [BucketList] Deleting item:', itemId, 'for user:', this.userId);
+      console.log('🗑️ [BucketList] Collection path: users/' + this.userId + '/bucketList/' + itemId);
+      const itemRef = doc(db, 'users', this.userId, 'bucketList', itemId);
+      await deleteDoc(itemRef);
+      console.log('✅ [BucketList] Item deleted successfully');
+    } catch (error) {
+      console.error('❌ [BucketList] Error deleting bucket item:', error);
+      throw error;
+    }
+  }
+
   // Load all user data
   async loadAllData(): Promise<AppState> {
     try {
-      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns, goalUpdates, learnings, roadblocks, decisions, wins] = await Promise.all([
+      const [annualGoals, quarterlyGoals, weeklyTasks, weeklyReviews, lifeGoals, checkIns, goalUpdates, learnings, roadblocks, decisions, wins, bucketList] = await Promise.all([
         this.getAnnualGoals(),
         this.getQuarterlyGoals(),
         this.getWeeklyTasks(),
@@ -635,7 +697,8 @@ export class FirebaseService {
         this.getLearnings(),
         this.getRoadblocks(),
         this.getDecisions(),
-        this.getWins()
+        this.getWins(),
+        this.getBucketList()
       ]);
 
       return {
@@ -651,6 +714,7 @@ export class FirebaseService {
         roadblocks,
         decisions,
         wins,
+        bucketList,
         currentYear: new Date().getFullYear(),
         currentQuarter: Math.ceil((new Date().getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
       };

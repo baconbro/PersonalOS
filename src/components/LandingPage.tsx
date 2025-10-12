@@ -169,7 +169,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 {/* Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-blue-700 font-medium">Launch Personal OS</span>
+                    <span className="text-blue-700 font-medium">Launch LifePeak</span>
                     <span className="text-blue-600">85%</span>
                   </div>
                   <div className="h-3 bg-blue-100 rounded-full overflow-hidden">

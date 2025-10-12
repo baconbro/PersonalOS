@@ -168,7 +168,7 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
           overallProgress: 10,
           energyLevel: 4 as const,
           satisfaction: 4 as const,
-          notes: 'Started PersonalOS journey with complete Golden Thread setup'
+          notes: 'Started LifePeak journey with complete Golden Thread setup'
         }
       });
 
@@ -208,7 +208,7 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
         return (
           <div className="wizard-step">
             <div className="wizard-header">
-              <h1>Welcome to PersonalOS</h1>
+              <h1>Welcome to LifePeak</h1>
               <p className="wizard-subtitle">Before we build, let's lay the cornerstone.</p>
             </div>
             <div className="wizard-content">
@@ -404,7 +404,7 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
               </div>
             </div>
             <div className="wizard-completion-message">
-              <p>This visual proof of your newly-architected plan is the foundation of your PersonalOS. You now have clarity on how every weekly action connects to your ultimate life vision.</p>
+              <p>This visual proof of your newly-architected plan is the foundation of your LifePeak. You now have clarity on how every weekly action connects to your ultimate life vision.</p>
               <p><strong>Ready to start building your extraordinary life?</strong></p>
             </div>
           </div>
@@ -449,7 +449,7 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
                 onClick={handleComplete}
                 className="wizard-button primary completion"
               >
-                Launch My PersonalOS
+                Launch My LifePeak
               </button>
             )}
             <button onClick={onClose} className="wizard-button secondary">

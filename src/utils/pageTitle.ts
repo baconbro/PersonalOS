@@ -1,7 +1,7 @@
-// Page title management utility for PersonalOS
+// Page title management utility for LifePeak
 // Provides context-aware page titles based on current view
 
-type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table';
+type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table' | 'bucket-list';
 
 interface PageTitleConfig {
   title: string;
@@ -38,7 +38,11 @@ const PAGE_TITLES: Record<ViewType, PageTitleConfig> = {
   },
   'guide': {
     title: 'User Guide',
-    description: 'Learn how to use PersonalOS effectively'
+    description: 'Learn how to use LifePeak effectively'
+  },
+  'bucket-list': {
+    title: 'Bucket List',
+    description: 'Dreams, experiences, and things to accomplish'
   },
   'goals-table': {
     title: 'Goals Table',
@@ -49,7 +53,7 @@ const PAGE_TITLES: Record<ViewType, PageTitleConfig> = {
 /**
  * Base application name
  */
-const APP_NAME = 'PersonalOS';
+const APP_NAME = 'LifePeak';
 
 /**
  * Updates the document title based on the current view

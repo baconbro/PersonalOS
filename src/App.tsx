@@ -16,10 +16,11 @@ import ToastContainer from './components/ToastContainer.tsx'
 import ActivityLogDrawer from './components/ActivityLogDrawer.tsx'
 import { LandingPage } from './components/LandingPage.tsx'
 import GoalsTable from './components/GoalsTable.tsx'
+import { BucketList } from './components/BucketList.tsx'
 import { Button } from './components/ui/button'
 
 import { analyticsService } from './services/analyticsService'
-import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table, Menu, X } from 'lucide-react'
+import { Target, Calendar, CheckSquare, TrendingUp, LogOut, BookOpen, Heart, Settings, Sparkles, Clock, Table, Menu, X, List } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { useApp } from './context/AppContext'
 import { useRouter } from './hooks/useRouter'
@@ -201,6 +202,8 @@ function App() {
         return <WeeklyReview />
       case 'guide':
         return <UserGuide />
+      case 'bucket-list':
+        return <BucketList />
       case 'goals-table':
         return <GoalsTable 
           onNavigate={(view) => navigateTo(view)}
@@ -226,7 +229,7 @@ function App() {
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
-            <h1 className="text-lg font-semibold">Personal OS</h1>
+            <h1 className="text-lg font-semibold">LifePeak</h1>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -254,9 +257,52 @@ function App() {
       )}>
         {/* Desktop Header */}
         <div className="hidden lg:flex items-center justify-between p-6 border-b border-border">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Personal OS</h1>
-            <p className="text-sm text-muted-foreground mt-1">Strategic Life Management</p>
+          <div className="flex items-center space-x-3">
+            {/* LifePeak Logo */}
+            <svg width="40" height="40" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Gradient definitions */}
+              <defs>
+                <linearGradient id="sunset1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#fbbf24', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} />
+                </linearGradient>
+                <linearGradient id="sunset2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#fb923c', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#f97316', stopOpacity: 1 }} />
+                </linearGradient>
+                <linearGradient id="sunset3" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#f472b6', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#ec4899', stopOpacity: 1 }} />
+                </linearGradient>
+                <linearGradient id="sunset4" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#c084fc', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#a855f7', stopOpacity: 1 }} />
+                </linearGradient>
+                <linearGradient id="sunset5" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#818cf8', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#6366f1', stopOpacity: 1 }} />
+                </linearGradient>
+              </defs>
+              
+              {/* Outermost circle - Deep purple/indigo */}
+              <circle cx="40" cy="40" r="38" fill="url(#sunset5)" />
+              
+              {/* Second circle - Purple */}
+              <circle cx="40" cy="40" r="30" fill="url(#sunset4)" />
+              
+              {/* Third circle - Pink */}
+              <circle cx="40" cy="40" r="22" fill="url(#sunset3)" />
+              
+              {/* Fourth circle - Orange */}
+              <circle cx="40" cy="40" r="14" fill="url(#sunset2)" />
+              
+              {/* Center circle - Golden yellow */}
+              <circle cx="40" cy="40" r="6" fill="url(#sunset1)" />
+            </svg>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">LifePeak</h1>
+              <p className="text-sm text-muted-foreground mt-1">Strategic Life Management</p>
+            </div>
           </div>
         </div>
 
@@ -288,6 +334,7 @@ function App() {
             { id: 'quarterly', label: '90-Day Sprint', icon: Calendar },
             { id: 'this-week', label: 'This Week', icon: CheckSquare },
             { id: 'weekly', label: 'Weekly Review', icon: CheckSquare },
+            { id: 'bucket-list', label: 'Bucket List', icon: List },
             { id: 'goals-table', label: 'Goals Table', icon: Table },
             { id: 'guide', label: 'User Guide', icon: BookOpen },
           ].map((item) => {
@@ -398,7 +445,7 @@ function App() {
         isOpen={showWizard}
         onClose={() => setShowWizard(false)}
         onComplete={() => {
-          notificationService.celebrateGoalCompletion('PersonalOS Setup', 'Life Architecture');
+          notificationService.celebrateGoalCompletion('LifePeak Setup', 'Life Architecture');
           navigateTo('dashboard');
         }}
       />

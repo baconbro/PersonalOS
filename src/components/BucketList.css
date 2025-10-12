@@ -1,0 +1,264 @@
+.bucket-list-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.bucket-list-header {
+  margin-bottom: 2rem;
+}
+
+.bucket-list-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+  margin-bottom: 0.5rem;
+}
+
+.bucket-list-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary, #666);
+}
+
+/* Add Item Form */
+.add-item-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.add-item-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.add-item-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.add-item-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-item-button:hover {
+  background: #2563eb;
+}
+
+/* Sections */
+.bucket-list-section {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  margin-bottom: 1rem;
+}
+
+/* Items */
+.bucket-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bucket-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.bucket-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.bucket-item.completed {
+  opacity: 0.7;
+}
+
+.bucket-item.completed .item-title {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.checkbox-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #d1d5db;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkbox:hover {
+  border-color: #3b82f6;
+}
+
+.checkbox.checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.item-title {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  color: #6b7280;
+}
+
+.icon-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.edit-button:hover {
+  color: #3b82f6;
+}
+
+.delete-button:hover {
+  color: #ef4444;
+}
+
+.save-button {
+  color: #10b981;
+}
+
+.save-button:hover {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.cancel-button {
+  color: #6b7280;
+}
+
+.cancel-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Edit Mode */
+.edit-item-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.edit-item-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #3b82f6;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+}
+
+.edit-item-input:focus {
+  outline: none;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2rem;
+  font-size: 1rem;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .bucket-list-header h1 {
+    color: #f9fafb;
+  }
+
+  .bucket-list-subtitle {
+    color: #9ca3af;
+  }
+
+  .section-title {
+    color: #f9fafb;
+  }
+
+  .bucket-item {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .bucket-item:hover {
+    border-color: #4b5563;
+  }
+
+  .item-title {
+    color: #f9fafb;
+  }
+
+  .add-item-input,
+  .edit-item-input {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .add-item-input:focus,
+  .edit-item-input:focus {
+    border-color: #3b82f6;
+  }
+
+  .icon-button:hover {
+    background: #374151;
+  }
+}

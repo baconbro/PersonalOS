@@ -107,6 +107,7 @@ export function mergeStates(existing: AppState, incoming: AppState, strategy: 'm
     roadblocks: mergeById(existing.roadblocks || [], incoming.roadblocks || [], strategy),
     decisions: mergeById(existing.decisions || [], incoming.decisions || [], strategy),
     wins: mergeById(existing.wins || [], incoming.wins || [], strategy),
+    bucketList: mergeById(existing.bucketList || [], incoming.bucketList || [], strategy),
     currentYear: incoming.currentYear ?? existing.currentYear,
     currentQuarter: incoming.currentQuarter ?? existing.currentQuarter,
   };
