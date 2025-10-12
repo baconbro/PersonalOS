@@ -1,48 +1,23 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useRouter } from '../hooks/useRouter';
-import { Target, Plus, Edit3, Trash2, Calendar, Heart, Brain, Briefcase, DollarSign, Activity, Users, Compass, Building, Plane, Gift, GitBranch } from 'lucide-react';
+import { Target, Plus, Sparkles, Lightbulb } from 'lucide-react';
 import { format } from 'date-fns';
-import type { AnnualGoal, LifeGoalCategory } from '../types';
-import AISuggestions from './AISuggestions';
-import GoldenThread from './GoldenThread';
-import { RichTextEditor } from './ui/RichTextEditor';
-
-const categoryIcons: Record<LifeGoalCategory, React.ComponentType<any>> = {
-  'Creativity & Passion': Heart,
-  'Mind': Brain,
-  'Career': Briefcase,
-  'Finance': DollarSign,
-  'Health': Activity,
-  'Relationships': Users,
-  'Spirit': Compass,
-  'Community': Building,
-  'Travel': Plane,
-  'Giving Back': Gift,
-  'Other': Target
-};
-
-const categoryColors: Record<LifeGoalCategory, string> = {
-  'Creativity & Passion': 'var(--mood-inspired)',
-  'Mind': 'var(--chart-2)',
-  'Career': 'var(--ocean-deep-blue)',
-  'Finance': 'var(--warning)',
-  'Health': 'var(--success)',
-  'Relationships': 'var(--mood-confident)',
-  'Spirit': 'var(--mood-calm)',
-  'Community': 'var(--chart-4)',
-  'Travel': 'var(--chart-3)',
-  'Giving Back': 'var(--mood-determined)',
-  'Other': 'var(--ocean-surface-blue)'
-};
+import type { AnnualGoal } from '../types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Progress } from './ui/progress';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 function AnnualPlan() {
   const { state, dispatch } = useApp();
   const { navigateTo } = useRouter();
-  const [showForm, setShowForm] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<AnnualGoal | null>(null);
-  const [showGoldenThread, setShowGoldenThread] = useState(false);
-  const [selectedThreadGoal, setSelectedThreadGoal] = useState<AnnualGoal | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -50,7 +25,25 @@ function AnnualPlan() {
     targetDate: '',
   });
 
+  const MAX_ANNUAL_GOALS = 10;
   const currentYearGoals = state.annualGoals.filter(goal => goal.year === state.currentYear);
+  const currentGoalCount = currentYearGoals.length;
+  const canAddMore = currentGoalCount < MAX_ANNUAL_GOALS;
+
+  // Months for the flight path
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  // Current month (October = 9, 0-indexed)
+  const currentMonth = new Date().getMonth();
+
+  // Group goals by their linked life goal
+  const groupedGoals = state.lifeGoals.map((lifeGoal) => ({
+    lifeGoal,
+    annualGoals: currentYearGoals.filter((g) => g.lifeGoalId === lifeGoal.id),
+  })).filter((group) => group.annualGoals.length > 0);
 
   const resetForm = () => {
     setFormData({
@@ -59,8 +52,7 @@ function AnnualPlan() {
       lifeGoalId: '',
       targetDate: '',
     });
-    setEditingGoal(null);
-    setShowForm(false);
+    setIsDialogOpen(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,471 +63,313 @@ function AnnualPlan() {
       return;
     }
 
-    try {
-      const goalData: AnnualGoal = {
-        id: editingGoal?.id || crypto.randomUUID(),
-        type: 'annual',
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        category: 'Annual Goal', // Set a default category for Annual Goals
-        status: editingGoal?.status || 'not-started',
-        createdAt: editingGoal?.createdAt || new Date(),
-        targetDate: new Date(formData.targetDate),
-        progress: editingGoal?.progress || 0,
-        year: state.currentYear,
-        lifeGoalId: formData.lifeGoalId || undefined,
-        quarterlyGoals: editingGoal?.quarterlyGoals || [],
-        updatedAt: new Date(),
-      };
+    const goalData: AnnualGoal = {
+      id: crypto.randomUUID(),
+      type: 'annual',
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      category: 'Annual Goal',
+      status: 'not-started',
+      createdAt: new Date(),
+      targetDate: new Date(formData.targetDate),
+      progress: 0,
+      year: state.currentYear,
+      lifeGoalId: formData.lifeGoalId || undefined,
+      quarterlyGoals: [],
+      updatedAt: new Date(),
+    };
 
-      console.log('Saving annual goal:', goalData);
-
-      if (editingGoal) {
-        dispatch({ type: 'UPDATE_ANNUAL_GOAL', payload: goalData });
-        console.log('Updated annual goal');
-      } else {
-        dispatch({ type: 'ADD_ANNUAL_GOAL', payload: goalData });
-        console.log('Added new annual goal');
-      }
-
-      alert(editingGoal ? 'Goal updated successfully!' : 'Goal created successfully!');
-      resetForm();
-    } catch (error) {
-      console.error('Error saving goal:', error);
-      alert('Error saving goal. Please try again.');
-    }
+    dispatch({ type: 'ADD_ANNUAL_GOAL', payload: goalData });
+    resetForm();
   };
 
-  const handleEdit = (goal: AnnualGoal) => {
-    setEditingGoal(goal);
-    setFormData({
-      title: goal.title,
-      description: goal.description,
-      lifeGoalId: goal.lifeGoalId || '',
-      targetDate: format(goal.targetDate, 'yyyy-MM-dd'),
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = (goalId: string) => {
-    if (confirm('Are you sure you want to delete this annual goal? This will also affect related quarterly goals.')) {
-      dispatch({ type: 'DELETE_ANNUAL_GOAL', payload: goalId });
-    }
-  };
-
-  const handleShowGoldenThread = (goal: AnnualGoal) => {
-    setSelectedThreadGoal(goal);
-    setShowGoldenThread(true);
-  };
-
-  const handleGoalClick = (goalId: string) => {
+  const handleSelectGoal = (goalId: string) => {
     navigateTo('goals-table', false, { goalType: 'annual', goalId });
   };
 
-
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#48bb78';
-      case 'in-progress': return '#4299e1';
-      case 'on-hold': return '#ed8936';
-      default: return '#a0aec0';
-    }
-  };
-
   return (
-    <div className="component-container">
-      <div className="component-title">
-        <Target size={32} />
-        Annual Flight Plan {state.currentYear}
-      </div>
-      
-      <p className="component-description">
-        Set strategic goals that will define your year. These should be significant achievements
-        that align with your long-term vision and can be broken down into quarterly objectives.
-      </p>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <strong>Current Goals: </strong>
-          <span style={{ color: '#667eea' }}>{currentYearGoals.length}</span>
-          <span style={{ marginLeft: '1rem', fontSize: '0.9rem', color: '#666' }}>
-            Completed: {currentYearGoals.filter(g => g.status === 'completed').length}
-          </span>
-        </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowForm(true)}
-        >
-          <Plus size={20} />
-          Add Annual Goal
-        </button>
-      </div>
-
-      {/* Goal Form */}
-      {showForm && (
-        <div className="card" style={{ marginBottom: '2rem', background: '#f7fafc' }}>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Goal Title *</label>
-              <input
-                type="text"
-                className="form-input"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g., Achieve Stanford AI Certificate"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Description *</label>
-              <RichTextEditor
-                content={formData.description}
-                onChange={(html) => setFormData({ ...formData, description: html })}
-                placeholder="Describe what success looks like and why this goal matters..."
-                minHeight="150px"
-              />
-            </div>
-
-            {/* AI Suggestions for Annual Goals */}
-            {formData.lifeGoalId && (
-              <AISuggestions
-                type="annual-goals"
-                sourceData={state.lifeGoals.find(lg => lg.id === formData.lifeGoalId)}
-                onSuggestionSelect={(suggestion) => {
-                  if (!formData.title.trim()) {
-                    setFormData({ ...formData, title: suggestion });
-                  } else if (!formData.description.trim()) {
-                    setFormData({ ...formData, description: suggestion });
-                  }
-                }}
-                className="ai-suggestions-section"
-              />
-            )}
-
-            {!formData.lifeGoalId && (
-              <div style={{
-                background: '#f0f9ff',
-                border: '1px solid #7dd3fc',
-                borderRadius: '6px',
-                padding: '0.75rem',
-                color: '#0369a1',
-                fontSize: '0.9rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                💡 Select a Life Goal above to get AI-powered suggestions for breaking it down into annual goals.
-              </div>
-            )}
-
-            <div className="grid grid-3">
-              <div className="form-group">
-                <label className="form-label">Linked Life Goal (Optional)</label>
-                <select
-                  className="form-input"
-                  value={formData.lifeGoalId}
-                  onChange={(e) => setFormData({ ...formData, lifeGoalId: e.target.value })}
-                >
-                  <option value="">No life goal selected</option>
-                  {state.lifeGoals.map((lifeGoal) => (
-                    <option key={lifeGoal.id} value={lifeGoal.id}>
-                      {lifeGoal.title} ({lifeGoal.category})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-
-
-              <div className="form-group">
-                <label className="form-label">Target Date *</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={formData.targetDate}
-                  onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary" onClick={resetForm}>
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                {editingGoal ? 'Update Goal' : 'Create Goal'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Goals List */}
-      {currentYearGoals.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <Target size={48} style={{ color: '#cbd5e0', margin: '0 auto 1rem' }} />
-          <h3 style={{ color: '#4a5568', marginBottom: '1rem' }}>No Annual Goals Set</h3>
-          <p style={{ color: '#718096', marginBottom: '2rem' }}>
-            Start by creating your first strategic goal for {state.currentYear}. 
-            Think big picture - what significant achievement would make this year a success?
+    <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
+      {/* Life Goals Context - The "Why" */}
+      <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-semibold">Your Life Goals</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            The foundation. Your annual goals serve these bigger aspirations.
           </p>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowForm(true)}
-          >
-            <Plus size={20} />
-            Create Your First Goal
-          </button>
-        </div>
-      ) : (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
-          gap: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          {currentYearGoals.map((goal) => (
-            <div 
-              key={goal.id} 
-              style={{
-                background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                transition: 'all 0.2s ease-in-out',
-                position: 'relative',
-                overflow: 'hidden',
-                cursor: 'pointer'
-              }}
-              onClick={() => handleGoalClick(goal.id)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-            }}
-            >
-              {/* Header Section */}
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                  <h3 style={{ 
-                    margin: 0, 
-                    fontSize: '1.4rem',
-                    fontWeight: '700',
-                    color: '#1a202c',
-                    lineHeight: '1.3'
-                  }}>
-                    {goal.title}
-                  </h3>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleShowGoldenThread(goal);
-                      }}
-                      style={{ 
-                        padding: '0.5rem', 
-                        backgroundColor: '#ffd700', 
-                        color: '#8b4513',
-                        border: 'none',
-                        borderRadius: '8px',
-                        transition: 'all 0.2s'
-                      }}
-                      title="See Context - Trace this goal to your life vision"
-                    >
-                      <GitBranch size={16} />
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(goal);
-                      }}
-                      style={{ 
-                        padding: '0.5rem',
-                        border: 'none',
-                        borderRadius: '8px',
-                        backgroundColor: '#e2e8f0',
-                        color: '#4a5568',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(goal.id);
-                      }}
-                      style={{ 
-                        padding: '0.5rem', 
-                        color: '#f56565',
-                        border: 'none',
-                        borderRadius: '8px',
-                        backgroundColor: '#fed7d7',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Status and Priority Badges */}
-                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <span style={{ 
-                    padding: '0.375rem 0.875rem',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    backgroundColor: getStatusColor(goal.status) + '15',
-                    color: getStatusColor(goal.status),
-                    border: `1px solid ${getStatusColor(goal.status)}30`
-                  }}>
-                    {goal.status.replace('-', ' ').toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p style={{ 
-                color: '#4a5568', 
-                margin: '0 0 1.25rem 0', 
-                lineHeight: '1.6',
-                fontSize: '0.95rem'
-              }}>
-                {goal.description}
-              </p>
-
-              {/* Metadata Section */}
-              <div style={{ marginBottom: '1.25rem' }}>
-                {goal.lifeGoalId && (() => {
-                  const linkedLifeGoal = state.lifeGoals.find(lg => lg.id === goal.lifeGoalId);
-                  if (linkedLifeGoal) {
-                    const Icon = categoryIcons[linkedLifeGoal.category];
-                    const color = categoryColors[linkedLifeGoal.category];
-                    return (
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.5rem', 
-                        marginBottom: '0.75rem',
-                        padding: '0.75rem',
-                        backgroundColor: color + '10',
-                        borderRadius: '8px',
-                        border: `1px solid ${color}20`
-                      }}>
-                        <Icon size={18} style={{ color }} />
-                        <span style={{ fontSize: '0.9rem', color: '#2d3748', fontWeight: '500' }}>
-                          <strong>Life Goal:</strong> {linkedLifeGoal.title}
-                        </span>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {state.lifeGoals.map((goal) => (
+              <Card key={goal.id} className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-2">
+                    <Target className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <CardTitle className="text-sm mb-1">{goal.title}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Progress value={goal.progress} className="h-1 flex-1" />
+                        <span className="text-xs text-muted-foreground">{goal.progress}%</span>
                       </div>
-                    );
-                  }
-                  return null;
-                })()}
-                
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem',
-                  color: '#666',
-                  fontSize: '0.9rem'
-                }}>
-                  <Calendar size={16} />
-                  <span><strong>Target:</strong> {format(goal.targetDate, 'MMM dd, yyyy')}</span>
-                </div>
-              </div>
-
-              {/* Progress Section */}
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748' }}>
-                    Progress
-                  </span>
-                  <span style={{ 
-                    fontSize: '1.1rem', 
-                    fontWeight: '700', 
-                    color: goal.progress >= 75 ? '#38a169' : goal.progress >= 50 ? '#ed8936' : '#e53e3e'
-                  }}>
-                    {goal.progress}%
-                  </span>
-                </div>
-                <div style={{
-                  width: '100%',
-                  height: '8px',
-                  backgroundColor: '#e2e8f0',
-                  borderRadius: '4px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${goal.progress}%`,
-                    height: '100%',
-                    background: goal.progress >= 75 
-                      ? 'linear-gradient(90deg, #38a169 0%, #48bb78 100%)'
-                      : goal.progress >= 50
-                      ? 'linear-gradient(90deg, #ed8936 0%, #f6ad55 100%)'
-                      : 'linear-gradient(90deg, #e53e3e 0%, #fc8181 100%)',
-                    transition: 'width 0.3s ease'
-                  }}></div>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.25rem' }}>
-                  Auto-calculated from quarterly goals
-                </div>
-              </div>
-
-              {/* Quarterly Goals Link */}
-              {goal.quarterlyGoals.length > 0 && (
-                <div style={{ 
-                  padding: '1rem', 
-                  background: 'linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%)', 
-                  borderRadius: '8px',
-                  border: '1px solid #bee3f8'
-                }}>
-                  <div style={{ 
-                    fontSize: '0.9rem', 
-                    fontWeight: '600', 
-                    color: '#2b6cb0', 
-                    marginBottom: '0.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <Target size={16} />
-                    Linked Quarterly Goals: {goal.quarterlyGoals.length}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#4a5568' }}>
-                    Break this annual goal into quarterly objectives in the 90-Day Sprint section.
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* Golden Thread Modal */}
-      {showGoldenThread && selectedThreadGoal && (
-        <GoldenThread
-          annualGoalId={selectedThreadGoal.id}
-          onClose={() => {
-            setShowGoldenThread(false);
-            setSelectedThreadGoal(null);
-          }}
-          onNavigate={(target, goalId) => {
-            console.log(`Navigate to ${target} for goal ${goalId}`);
-            // TODO: Implement navigation logic
-          }}
-        />
-      )}
+      <div className="p-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Your {state.currentYear} Flight Path</h1>
+              <p className="text-muted-foreground">
+                Strategic missions for the year ahead. Focus is your superpower.
+              </p>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={!canAddMore}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Annual Goal
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Annual Goal</DialogTitle>
+                  <DialogDescription>
+                    Set a strategic goal for {state.currentYear} that serves your life goals
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="linked-goal">Connect to Life Goal</Label>
+                    <Select value={formData.lifeGoalId} onValueChange={(value) => setFormData({ ...formData, lifeGoalId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Which life goal does this serve?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {state.lifeGoals.map((goal) => (
+                          <SelectItem key={goal.id} value={goal.id}>
+                            {goal.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Goal Title</Label>
+                    <Input 
+                      id="title" 
+                      placeholder="e.g., Ship 3 Major Features" 
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Why This Matters</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="How does this goal serve your life vision?"
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="targetDate">Target Date</Label>
+                    <Input
+                      id="targetDate"
+                      type="date"
+                      value={formData.targetDate}
+                      onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Create Mission</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Goal Counter */}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-muted-foreground">
+              {currentGoalCount} of {MAX_ANNUAL_GOALS} annual goals
+            </div>
+            <div className="flex gap-1">
+              {Array.from({ length: MAX_ANNUAL_GOALS }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-6 rounded-full ${
+                    i < currentGoalCount ? 'bg-primary' : 'bg-muted'
+                  }`}
+                />
+              ))}
+            </div>
+            {!canAddMore && (
+              <div className="text-sm text-muted-foreground italic">
+                • Focus is your superpower
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* The Flight Path - 12 Month Timeline */}
+        <div className="mb-8 p-6 bg-card border rounded-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="w-4 h-4 text-primary" />
+            <h3 className="text-lg font-semibold">Your Year at a Glance</h3>
+          </div>
+          
+          <div className="relative">
+            {/* Timeline Base */}
+            <div className="flex items-center gap-1 mb-2">
+              {months.map((month, idx) => (
+                <div key={month} className="flex-1">
+                  <div className="text-xs text-center text-muted-foreground mb-1">
+                    {month}
+                  </div>
+                  <div className="h-2 bg-accent rounded-full relative overflow-hidden">
+                    {/* Progress indicator - for current month */}
+                    {idx === currentMonth && (
+                      <div className="absolute inset-0 bg-primary/50 w-1/3" />
+                    )}
+                    {idx < currentMonth && (
+                      <div className="absolute inset-0 bg-primary/30" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+              <span>Jan 1, {state.currentYear}</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span>You are here • {months[currentMonth]}</span>
+              </div>
+              <span>Dec 31, {state.currentYear}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Strategic Missions - Grouped by Life Goal */}
+        <div className="space-y-8">
+          {groupedGoals.length > 0 ? (
+            groupedGoals.map(({ lifeGoal, annualGoals: goals }) => (
+              <div key={lifeGoal.id}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px flex-1 bg-border" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20">
+                    <Target className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-sm">{lifeGoal.title}</span>
+                  </div>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {goals.map((goal) => (
+                    <Card
+                      key={goal.id}
+                      className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all group"
+                      onClick={() => handleSelectGoal(goal.id)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <CardTitle className="group-hover:text-primary transition-colors">
+                            {goal.title}
+                          </CardTitle>
+                          <Badge
+                            variant={goal.status === 'in-progress' ? 'default' : 'secondary'}
+                            className="capitalize shrink-0"
+                          >
+                            {goal.status.replace('-', ' ')}
+                          </Badge>
+                        </div>
+                        <CardDescription className="line-clamp-2">
+                          {goal.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="font-medium">{goal.progress}%</span>
+                          </div>
+                          <Progress value={goal.progress} className="h-2.5" />
+                          <div className="text-xs text-muted-foreground">
+                            Target: {format(goal.targetDate, 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <Card className="border-dashed border-2">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Target className="w-12 h-12 text-muted-foreground mb-3" />
+                <h3 className="text-lg font-semibold mb-1">No Annual Goals Yet</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
+                  Start by creating your first strategic mission for {state.currentYear}
+                </p>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Mission
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Empty State for remaining capacity */}
+          {canAddMore && groupedGoals.length > 0 && (
+            <Card 
+              className="border-dashed border-2 hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                  <Plus className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">Add Another Mission</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  {MAX_ANNUAL_GOALS - currentGoalCount} {MAX_ANNUAL_GOALS - currentGoalCount === 1 ? 'slot' : 'slots'} remaining. 
+                  Choose goals that truly matter.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Focus Message when at capacity */}
+          {!canAddMore && (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="flex items-center gap-3 py-6">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">You've set your strategic focus</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {MAX_ANNUAL_GOALS} carefully chosen goals. This level of focus is rare and powerful. 
+                    Now it's about execution.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
