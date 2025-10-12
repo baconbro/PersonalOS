@@ -218,7 +218,7 @@ function App() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-950 border-b border-border">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-2">
             <Button
@@ -252,7 +252,7 @@ function App() {
 
       {/* Sidebar Navigation */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-950 border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
         mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Desktop Header */}
