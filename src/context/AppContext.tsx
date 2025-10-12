@@ -894,8 +894,16 @@ export function AppProvider({ children }: AppProviderProps) {
           toastService.showFirebaseSuccess('updated', 'Bucket List Item');
           break;
         case 'DELETE_BUCKET_ITEM':
-          await firebaseService.deleteBucketItem(action.payload);
-          toastService.showFirebaseSuccess('deleted', 'Bucket List Item');
+          try {
+            await firebaseService.deleteBucketItem(action.payload);
+            toastService.showFirebaseSuccess('deleted', 'Bucket List Item');
+          } catch (error) {
+            console.error('Failed to delete bucket item from Firebase:', error);
+            toastService.showFirebaseError('delete', 'Bucket List Item', error instanceof Error ? error.message : 'Unknown error');
+            // Revert the deletion by reloading from Firebase
+            const bucketList = await firebaseService.getBucketList();
+            originalDispatch({ type: 'LOAD_STATE', payload: { ...newState, bucketList } });
+          }
           break;
         case 'TOGGLE_BUCKET_ITEM': {
           // Find the toggled item in the updated state
