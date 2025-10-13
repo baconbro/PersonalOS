@@ -241,10 +241,10 @@ function AnnualPlan() {
                   <div className="h-2 bg-accent rounded-full relative overflow-hidden">
                     {/* Progress indicator - for current month */}
                     {idx === currentMonth && (
-                      <div className="absolute inset-0 bg-primary/50 w-1/3" />
+                      <div className="absolute inset-0 bg-primary w-1/3" />
                     )}
                     {idx < currentMonth && (
-                      <div className="absolute inset-0 bg-primary/30" />
+                      <div className="absolute inset-0 bg-primary" />
                     )}
                   </div>
                 </div>

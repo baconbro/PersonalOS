@@ -514,10 +514,10 @@ function QuarterlySprint() {
                   </div>
                   <div className="h-2 bg-accent rounded-full relative overflow-hidden">
                     {idx + 1 === currentWeek && (
-                      <div className="absolute inset-0 bg-primary/50 w-1/2" />
+                      <div className="absolute inset-0 bg-primary w-1/2" />
                     )}
                     {idx + 1 < currentWeek && (
-                      <div className="absolute inset-0 bg-primary/30" />
+                      <div className="absolute inset-0 bg-primary" />
                     )}
                   </div>
                 </div>
