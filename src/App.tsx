@@ -331,7 +331,7 @@ function App() {
             { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
             { id: 'life-goals', label: 'Life Goals', icon: Heart },
             { id: 'annual', label: 'Annual Plan', icon: Target },
-            { id: 'quarterly', label: '90-Day Sprint', icon: Calendar },
+            { id: 'quarterly', label: 'Quarterly Execution', icon: Calendar },
             { id: 'this-week', label: 'This Week', icon: CheckSquare },
             { id: 'weekly', label: 'Weekly Review', icon: CheckSquare },
             { id: 'bucket-list', label: 'Bucket List', icon: List },

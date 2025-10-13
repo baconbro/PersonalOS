@@ -219,7 +219,7 @@ function QuarterlySprint() {
             <h2 className="text-xl font-semibold">Your Annual Goals</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Break these strategic missions into quarterly objectives (OKRs).
+            Break these strategic missions into quarterly objectives.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -249,10 +249,10 @@ function QuarterlySprint() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">
-                90-Day Sprint - {getQuarterName(state.currentQuarter)} {state.currentYear}
+                Quarterly Execution - {getQuarterName(state.currentQuarter)} {state.currentYear}
               </h1>
               <p className="text-muted-foreground">
-                Transform annual goals into quarterly OKRs. Each goal is a key result.
+                Transform annual goals into quarterly objectives. Each goal is a key result.
               </p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -262,12 +262,12 @@ function QuarterlySprint() {
               <DialogTrigger asChild>
                 <Button disabled={!canAddMore}>
                   <Plus className="w-4 h-4 mr-2" />
-                  New OKR
+                  New quarterly objective
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-950">
                 <DialogHeader>
-                  <DialogTitle>Create Quarter Goal (OKR)</DialogTitle>
+                  <DialogTitle>Create Quarterly Objective</DialogTitle>
                   <DialogDescription>
                     Set an Objective and Key Results for {getQuarterName(state.currentQuarter)} {state.currentYear}
                   </DialogDescription>
@@ -477,7 +477,7 @@ function QuarterlySprint() {
           {/* Goal Counter */}
           <div className="flex items-center gap-3">
             <div className="text-sm text-muted-foreground">
-              {currentGoalCount} of {MAX_QUARTERLY_GOALS} quarterly OKRs
+              {currentGoalCount} of {MAX_QUARTERLY_GOALS} quarterly objectives
             </div>
             <div className="flex gap-1">
               {Array.from({ length: MAX_QUARTERLY_GOALS }).map((_, i) => (
@@ -610,13 +610,13 @@ function QuarterlySprint() {
             <Card className="border-dashed border-2">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="w-12 h-12 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-1">No OKRs Yet</h3>
+                <h3 className="text-lg font-semibold mb-1">No Quarter Objectives Yet</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
                   Start by creating your first quarterly objective for {getQuarterName(state.currentQuarter)} {state.currentYear}
                 </p>
                 <Button onClick={() => setIsDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Your First OKR
+                  Create Your First quarterly objective
                 </Button>
               </CardContent>
             </Card>
@@ -632,7 +632,7 @@ function QuarterlySprint() {
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
                   <Plus className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-1">Add Another OKR</h3>
+                <h3 className="text-lg font-semibold mb-1">Add Another quarterly objective</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-sm">
                   {MAX_QUARTERLY_GOALS - currentGoalCount} {MAX_QUARTERLY_GOALS - currentGoalCount === 1 ? 'slot' : 'slots'} remaining. 
                   Keep it focused and achievable.
@@ -651,7 +651,7 @@ function QuarterlySprint() {
                 <div>
                   <h3 className="text-lg font-semibold mb-1">Quarter is fully planned</h3>
                   <p className="text-sm text-muted-foreground">
-                    {MAX_QUARTERLY_GOALS} focused OKRs for this quarter. Now it's time to execute and track progress weekly.
+                    {MAX_QUARTERLY_GOALS} focused quarterly objectives for this quarter. Now it's time to execute and track progress weekly.
                   </p>
                 </div>
               </CardContent>
