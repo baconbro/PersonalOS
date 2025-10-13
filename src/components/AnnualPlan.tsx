@@ -138,7 +138,7 @@ function AnnualPlan() {
                   New Annual Goal
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-white dark:bg-gray-950">
                 <DialogHeader>
                   <DialogTitle>Create Annual Goal</DialogTitle>
                   <DialogDescription>

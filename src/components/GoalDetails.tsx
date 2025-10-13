@@ -462,7 +462,23 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
   const handleProgressCommit = (value: number[]) => {
     if (goalType === 'weekly') return;
 
-    const updatedGoal = { ...goal, progress: value[0], updatedAt: new Date() };
+    const newProgress = value[0];
+    let updatedGoal = { ...goal, progress: newProgress, updatedAt: new Date() };
+
+    // For quarterly goals, update the first key result's currentValue based on progress
+    if (goalType === 'quarterly' && 'keyResults' in goal && goal.keyResults && goal.keyResults.length > 0) {
+      const firstKR = goal.keyResults[0];
+      const newCurrentValue = Math.round((newProgress / 100) * firstKR.targetValue * 100) / 100; // Round to 2 decimal places
+      
+      const updatedKeyResults = [...goal.keyResults];
+      updatedKeyResults[0] = {
+        ...firstKR,
+        currentValue: newCurrentValue,
+        completed: newCurrentValue >= firstKR.targetValue,
+      };
+      
+      updatedGoal = { ...updatedGoal, keyResults: updatedKeyResults } as QuarterlyGoal;
+    }
 
     switch (goalType) {
       case 'life':
@@ -1012,7 +1028,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
                                       <div className="flex-1">
                                         <p className="font-medium mb-1">{kr.description}</p>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                          <span className="font-mono">{kr.currentValue} / {kr.targetValue} {kr.unit}</span>
+                                          <span className="font-mono">{Math.round(kr.currentValue)} / {Math.round(kr.targetValue)} {kr.unit}</span>
                                           <Badge variant={progress >= 100 ? "default" : "outline"} className="text-xs">
                                             {progress}%
                                           </Badge>
@@ -1547,6 +1563,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
                     </svg>
                     <div className="absolute">
                       <div className="text-3xl font-bold">{progress}%</div>
+                      {/* For quarterly goals, show KR measurement */}
+                      {goalType === 'quarterly' && 'keyResults' in goal && goal.keyResults && goal.keyResults.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {Math.round(goal.keyResults[0].currentValue)} / {Math.round(goal.keyResults[0].targetValue)} {goal.keyResults[0].unit}
+                        </div>
+                      )}
                     </div>
                   </div>
 
