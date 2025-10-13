@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useRouter } from '../hooks/useRouter';
-import { Calendar, Plus, Sparkles, Lightbulb, Target, TrendingUp, X, Hash, DollarSign, Percent, CheckCircle2 } from 'lucide-react';
+import { Calendar, Plus, Sparkles, Lightbulb, Target, TrendingUp, X, Hash, DollarSign, Percent, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import type { QuarterlyGoal, KeyResult } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -36,6 +36,10 @@ function QuarterlySprint() {
   const [newKrTarget, setNewKrTarget] = useState('');
   const [titleError, setTitleError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
+  
+  // Track the viewing quarter (can be different from current quarter)
+  const [viewingQuarter, setViewingQuarter] = useState(state.currentQuarter);
+  const [viewingYear, setViewingYear] = useState(state.currentYear);
 
   const MAX_QUARTERLY_GOALS = 5;
   
@@ -45,13 +49,39 @@ function QuarterlySprint() {
     return { start: quarterStartDate, end: quarterEndDate };
   };
 
+  // Navigation functions
+  const goToPreviousQuarter = () => {
+    if (viewingQuarter === 1) {
+      setViewingQuarter(4);
+      setViewingYear(viewingYear - 1);
+    } else {
+      setViewingQuarter((viewingQuarter - 1) as 1 | 2 | 3 | 4);
+    }
+  };
+
+  const goToNextQuarter = () => {
+    if (viewingQuarter === 4) {
+      setViewingQuarter(1);
+      setViewingYear(viewingYear + 1);
+    } else {
+      setViewingQuarter((viewingQuarter + 1) as 1 | 2 | 3 | 4);
+    }
+  };
+
+  const goToCurrentQuarter = () => {
+    setViewingQuarter(state.currentQuarter);
+    setViewingYear(state.currentYear);
+  };
+
+  const isCurrentQuarter = viewingQuarter === state.currentQuarter && viewingYear === state.currentYear;
+
   const currentQuarterGoals = state.quarterlyGoals.filter(
-    goal => goal.quarter === state.currentQuarter && goal.year === state.currentYear
+    goal => goal.quarter === viewingQuarter && goal.year === viewingYear
   );
   
   const currentGoalCount = currentQuarterGoals.length;
   const canAddMore = currentGoalCount < MAX_QUARTERLY_GOALS;
-  const currentQuarterDates = getQuarterDates(state.currentQuarter, state.currentYear);
+  const currentQuarterDates = getQuarterDates(viewingQuarter, viewingYear);
 
   // Get weeks in current quarter
   const getWeeksInQuarter = () => {
@@ -168,8 +198,8 @@ function QuarterlySprint() {
       createdAt: new Date(),
       targetDate: currentQuarterDates.end,
       progress,
-      quarter: state.currentQuarter,
-      year: state.currentYear,
+      quarter: viewingQuarter,
+      year: viewingYear,
       annualGoalId: selectedAnnualGoal || '',
       keyResults: keyResults.map(kr => ({
         id: kr.id,
@@ -247,10 +277,42 @@ function QuarterlySprint() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
-                Quarterly Execution - {getQuarterName(state.currentQuarter)} {state.currentYear}
-              </h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousQuarter}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <h1 className="text-3xl font-bold">
+                  Quarterly Execution - {getQuarterName(viewingQuarter)} {viewingYear}
+                </h1>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextQuarter}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                
+                {!isCurrentQuarter && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={goToCurrentQuarter}
+                    className="ml-2"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Current Quarter
+                  </Button>
+                )}
+              </div>
               <p className="text-muted-foreground">
                 Transform annual goals into quarterly objectives. Each goal is a key result.
               </p>
@@ -269,7 +331,7 @@ function QuarterlySprint() {
                 <DialogHeader>
                   <DialogTitle>Create Quarterly Objective</DialogTitle>
                   <DialogDescription>
-                    Set an Objective and Key Results for {getQuarterName(state.currentQuarter)} {state.currentYear}
+                    Set an Objective and Key Results for {getQuarterName(viewingQuarter)} {viewingYear}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -612,7 +674,7 @@ function QuarterlySprint() {
                 <Calendar className="w-12 h-12 text-muted-foreground mb-3" />
                 <h3 className="text-lg font-semibold mb-1">No Quarter Objectives Yet</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
-                  Start by creating your first quarterly objective for {getQuarterName(state.currentQuarter)} {state.currentYear}
+                  Start by creating your first quarterly objective for {getQuarterName(viewingQuarter)} {viewingYear}
                 </p>
                 <Button onClick={() => setIsDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />

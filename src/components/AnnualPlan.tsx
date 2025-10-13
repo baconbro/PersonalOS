@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useRouter } from '../hooks/useRouter';
-import { Target, Plus, Sparkles, Lightbulb } from 'lucide-react';
+import { Target, Plus, Sparkles, Lightbulb, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import type { AnnualGoal } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -24,11 +24,29 @@ function AnnualPlan() {
     lifeGoalId: '',
     targetDate: '',
   });
+  
+  // Track the viewing year (can be different from current year)
+  const [viewingYear, setViewingYear] = useState(state.currentYear);
 
   const MAX_ANNUAL_GOALS = 10;
-  const currentYearGoals = state.annualGoals.filter(goal => goal.year === state.currentYear);
+  const currentYearGoals = state.annualGoals.filter(goal => goal.year === viewingYear);
   const currentGoalCount = currentYearGoals.length;
   const canAddMore = currentGoalCount < MAX_ANNUAL_GOALS;
+  
+  // Navigation functions
+  const goToPreviousYear = () => {
+    setViewingYear(viewingYear - 1);
+  };
+
+  const goToNextYear = () => {
+    setViewingYear(viewingYear + 1);
+  };
+
+  const goToCurrentYear = () => {
+    setViewingYear(state.currentYear);
+  };
+
+  const isCurrentYear = viewingYear === state.currentYear;
 
   // Months for the flight path
   const months = [
@@ -73,7 +91,7 @@ function AnnualPlan() {
       createdAt: new Date(),
       targetDate: new Date(formData.targetDate),
       progress: 0,
-      year: state.currentYear,
+      year: viewingYear,
       lifeGoalId: formData.lifeGoalId || undefined,
       quarterlyGoals: [],
       updatedAt: new Date(),
@@ -125,8 +143,40 @@ function AnnualPlan() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Your {state.currentYear} Flight Path</h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousYear}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <h1 className="text-3xl font-bold">Your {viewingYear} Flight Path</h1>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextYear}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                
+                {!isCurrentYear && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={goToCurrentYear}
+                    className="ml-2"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Current Year
+                  </Button>
+                )}
+              </div>
               <p className="text-muted-foreground">
                 Strategic missions for the year ahead. Focus is your superpower.
               </p>
@@ -142,7 +192,7 @@ function AnnualPlan() {
                 <DialogHeader>
                   <DialogTitle>Create Annual Goal</DialogTitle>
                   <DialogDescription>
-                    Set a strategic goal for {state.currentYear} that serves your life goals
+                    Set a strategic goal for {viewingYear} that serves your life goals
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -252,12 +302,19 @@ function AnnualPlan() {
             </div>
             
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <span>Jan 1, {state.currentYear}</span>
+              <span>Jan 1, {viewingYear}</span>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span>You are here • {months[currentMonth]}</span>
+                {isCurrentYear && (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span>You are here • {months[currentMonth]}</span>
+                  </>
+                )}
+                {!isCurrentYear && (
+                  <span>{viewingYear}</span>
+                )}
               </div>
-              <span>Dec 31, {state.currentYear}</span>
+              <span>Dec 31, {viewingYear}</span>
             </div>
           </div>
         </div>
@@ -322,7 +379,7 @@ function AnnualPlan() {
                 <Target className="w-12 h-12 text-muted-foreground mb-3" />
                 <h3 className="text-lg font-semibold mb-1">No Annual Goals Yet</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
-                  Start by creating your first strategic mission for {state.currentYear}
+                  Start by creating your first strategic mission for {viewingYear}
                 </p>
                 <Button onClick={() => setIsDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
