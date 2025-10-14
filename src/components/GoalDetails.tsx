@@ -32,6 +32,7 @@ import {
   Check,
   ChevronRight,
   Trash2,
+  PanelRightOpen,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toastService } from '../services/toastService';
@@ -52,6 +53,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string>('on-track');
   const [updateContent, setUpdateContent] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Learning form state
   const [showLearningForm, setShowLearningForm] = useState(false);
@@ -506,10 +508,22 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
         <div className="p-8 space-y-6 max-w-5xl">
           {/* Header */}
           <div>
-            <Button variant="ghost" onClick={onBack} className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Overview
-            </Button>
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="ghost" onClick={onBack}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Overview
+              </Button>
+              
+              {/* Mobile Sidebar Toggle */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden"
+              >
+                <PanelRightOpen className="w-4 h-4" />
+              </Button>
+            </div>
 
             {/* Breadcrumb */}
             {parentGoal && (
@@ -1529,8 +1543,23 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
         </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="w-80 border-l bg-muted/20 overflow-auto">
+      {/* Sidebar - Hidden on mobile by default, full-screen overlay when opened */}
+      <div className={`
+        ${isSidebarOpen ? 'fixed inset-0 z-50 bg-white dark:bg-gray-950' : 'hidden'}
+        lg:block lg:relative lg:w-80 lg:border-l lg:bg-white dark:bg-gray-950 overflow-auto
+      `}>
+        {/* Mobile Close Button */}
+        <div className="lg:hidden sticky top-0 z-10 bg-background border-b p-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Goal Details</h2>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        
         <ScrollArea className="h-full">
           <div className="p-6 space-y-6">
             {/* Progress Circle */}
