@@ -238,6 +238,12 @@ function WeeklyReview() {
 
   const quarterWeeks = generateQuarterWeeks();
   
+  // Get current week start for comparison
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const isCurrentWeek = (weekStart: Date) => {
+    return format(weekStart, 'yyyy-MM-dd') === format(currentWeekStart, 'yyyy-MM-dd');
+  };
+  
   // Filter hurdles for the selected quarter (using real data + mock data)
   const realHurdles = state.weeklyReviews?.map(convertReviewDataToHurdle) || [];
   const allHurdles = [...realHurdles, ...mockHurdles];
@@ -528,8 +534,15 @@ function WeeklyReview() {
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Week {week.number}</CardTitle>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-lg">Week {week.number}</CardTitle>
+                    {isCurrentWeek(week.start) && (
+                      <Badge variant="default" className="bg-primary text-xs">
+                        This Week
+                      </Badge>
+                    )}
+                  </div>
                   <CardDescription className="text-sm">
                     {formatDate(week.start)} - {formatDate(week.end)}
                   </CardDescription>
