@@ -567,6 +567,7 @@
 /* Drag and Drop Styles */
 .kanban-task[draggable="true"] {
   cursor: grab;
+  touch-action: none; /* Prevent default touch behaviors */
 }
 
 .kanban-task[draggable="true"]:active {
@@ -579,13 +580,25 @@
   cursor: grabbing;
 }
 
+/* Touch Dragging Styles for Mobile/Tablet */
+.kanban-task.touch-dragging {
+  opacity: 0.8;
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: none;
+  z-index: 1000;
+}
+
 .kanban-column.drag-over {
   background-color: rgba(59, 130, 246, 0.1);
   border: 2px dashed #3b82f6;
+  transition: all 0.2s ease;
 }
 
 .kanban-column.drag-over .column-header {
   color: #3b82f6;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
 }
 
 .task-header {

@@ -42,6 +42,11 @@ const ThisWeekDashboard: React.FC = () => {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [celebratingTask, setCelebratingTask] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  // Touch drag state for mobile/tablet
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [touchCurrentPos, setTouchCurrentPos] = useState<{ x: number; y: number } | null>(null);
+  const [draggedElement, setDraggedElement] = useState<HTMLElement | null>(null);
+  const [dropTargetColumn, setDropTargetColumn] = useState<'todo' | 'in-progress' | 'done' | null>(null);
   const [editingTask, setEditingTask] = useState<WeeklyTask | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -223,6 +228,99 @@ const ThisWeekDashboard: React.FC = () => {
       updateTaskStatus(draggedTask, newStatus);
     }
     setDraggedTask(null);
+  };
+
+  // Touch event handlers for mobile/tablet support
+  const handleTouchStart = (e: React.TouchEvent, taskId: string) => {
+    const touch = e.touches[0];
+    const element = e.currentTarget as HTMLElement;
+    
+    setDraggedTask(taskId);
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    setDraggedElement(element);
+    
+    // Add touch-dragging class after a small delay to prevent accidental drags
+    setTimeout(() => {
+      if (element) {
+        element.classList.add('touch-dragging');
+      }
+    }, 100);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!draggedTask || !touchStartPos) return;
+    
+    e.preventDefault(); // Prevent scrolling while dragging
+    const touch = e.touches[0];
+    setTouchCurrentPos({ x: touch.clientX, y: touch.clientY });
+    
+    // Update dragged element position
+    if (draggedElement) {
+      draggedElement.style.position = 'fixed';
+      draggedElement.style.zIndex = '1000';
+      draggedElement.style.pointerEvents = 'none';
+      draggedElement.style.left = `${touch.clientX - 50}px`;
+      draggedElement.style.top = `${touch.clientY - 30}px`;
+      draggedElement.style.width = '250px';
+      draggedElement.style.opacity = '0.8';
+    }
+    
+    // Detect which column we're over
+    const columns = document.querySelectorAll('.kanban-column');
+    let foundColumn: 'todo' | 'in-progress' | 'done' | null = null;
+    
+    columns.forEach((column) => {
+      const rect = column.getBoundingClientRect();
+      if (
+        touch.clientX >= rect.left &&
+        touch.clientX <= rect.right &&
+        touch.clientY >= rect.top &&
+        touch.clientY <= rect.bottom
+      ) {
+        // Determine column type by checking data attribute or class
+        if (column.getAttribute('data-column') === 'todo') foundColumn = 'todo';
+        else if (column.getAttribute('data-column') === 'in-progress') foundColumn = 'in-progress';
+        else if (column.getAttribute('data-column') === 'done') foundColumn = 'done';
+        
+        column.classList.add('drag-over');
+      } else {
+        column.classList.remove('drag-over');
+      }
+    });
+    
+    setDropTargetColumn(foundColumn);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!draggedTask) return;
+    
+    // Reset dragged element styles
+    if (draggedElement) {
+      draggedElement.style.position = '';
+      draggedElement.style.zIndex = '';
+      draggedElement.style.pointerEvents = '';
+      draggedElement.style.left = '';
+      draggedElement.style.top = '';
+      draggedElement.style.width = '';
+      draggedElement.style.opacity = '';
+      draggedElement.classList.remove('touch-dragging');
+    }
+    
+    // Remove drag-over class from all columns
+    const columns = document.querySelectorAll('.kanban-column');
+    columns.forEach(column => column.classList.remove('drag-over'));
+    
+    // Update task status if dropped on a valid column
+    if (dropTargetColumn) {
+      updateTaskStatus(draggedTask, dropTargetColumn);
+    }
+    
+    // Reset state
+    setDraggedTask(null);
+    setTouchStartPos(null);
+    setTouchCurrentPos(null);
+    setDraggedElement(null);
+    setDropTargetColumn(null);
   };
 
   const getLinkedOKR = (okrId: string) => {
@@ -686,6 +784,7 @@ const ThisWeekDashboard: React.FC = () => {
               {/* To Do Column */}
               <div 
                 className="kanban-column"
+                data-column="todo"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, 'todo')}
@@ -702,6 +801,9 @@ const ThisWeekDashboard: React.FC = () => {
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}
+                      onTouchStart={(e) => handleTouchStart(e, task.id)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                     >
                       <div className="task-header">
                         <h4>{task.title}</h4>
@@ -731,6 +833,7 @@ const ThisWeekDashboard: React.FC = () => {
               {/* In Progress Column */}
               <div 
                 className="kanban-column"
+                data-column="in-progress"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, 'in-progress')}
@@ -747,6 +850,9 @@ const ThisWeekDashboard: React.FC = () => {
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}
+                      onTouchStart={(e) => handleTouchStart(e, task.id)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                     >
                       <div className="task-header">
                         <h4>{task.title}</h4>
@@ -776,6 +882,7 @@ const ThisWeekDashboard: React.FC = () => {
               {/* Done Column */}
               <div 
                 className="kanban-column"
+                data-column="done"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, 'done')}
@@ -792,6 +899,9 @@ const ThisWeekDashboard: React.FC = () => {
                       draggable
                       onDragStart={() => handleDragStart(task.id)}
                       onDragEnd={handleDragEnd}
+                      onTouchStart={(e) => handleTouchStart(e, task.id)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                     >
                       <div className="task-header">
                         <h4>{task.title}</h4>
