@@ -47,85 +47,15 @@
   }
 }
 
-/* Header */
-.command-huddle-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
-
-.huddle-progress {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.progress-step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0.6;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.progress-step.active {
-  opacity: 1;
-  transform: scale(1.05);
-}
-
-.progress-step.completed {
-  opacity: 0.8;
-}
-
-.progress-step.completed .step-number {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.progress-step.active .step-number {
-  background: white;
-  color: #667eea;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
-}
-
-.step-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
+/* Header - Updated to match app's modern design using Tailwind classes */
+/* Old gradient header styles removed - now handled in component with Tailwind */
 
 .progress-step span {
   font-weight: 500;
   font-size: 14px;
 }
 
-.huddle-close {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.huddle-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
+/* Close button now using shadcn Button component */
 
 /* Content */
 .command-huddle-content {

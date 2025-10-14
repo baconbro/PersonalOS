@@ -7,12 +7,16 @@ import {
   X,
   ArrowLeft,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval, addWeeks } from 'date-fns';
 import type { WeeklyReviewData, QuarterlyGoal, WeeklyTask } from '../types';
 import { taskRolloverService } from '../services/taskRolloverService';
 import { RichTextEditor } from './ui/RichTextEditor';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import './WeeklyCommandHuddle.css';
 
 interface WeeklyCommandHuddleProps {
@@ -864,63 +868,93 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
         className="command-huddle-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="command-huddle-header">
-          {/* Week Selection */}
-          <div className="week-selector" style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            gap: '1rem',
-            marginBottom: '1rem',
-            padding: '0.5rem',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px'
-          }}>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-            >
-              ← Previous Week
-            </button>
-            <div style={{ 
-              textAlign: 'center', 
-              color: 'white', 
-              fontWeight: 'bold',
-              minWidth: '200px'
-            }}>
-              Week of {format(weekStart, 'MMM dd')} - {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+        {/* Modern Header */}
+        <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="p-6">
+            {/* Close Button */}
+            <div className="flex justify-end mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-            >
-              Next Week →
-            </button>
+
+            {/* Title & Week Selection */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Weekly Command Huddle</h2>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span className="font-medium">
+                    Week of {format(weekStart, 'MMM dd')} - {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Progress Steps */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              <Badge 
+                variant={currentPhase === 'review' ? 'default' : ['clarity', 'realign', 'plan'].includes(currentPhase) ? 'secondary' : 'outline'}
+                className="gap-1.5"
+              >
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background/20 text-xs font-medium">
+                  1
+                </span>
+                Review
+              </Badge>
+              <div className="h-px flex-1 bg-border max-w-12" />
+              <Badge 
+                variant={currentPhase === 'clarity' ? 'default' : ['realign', 'plan'].includes(currentPhase) ? 'secondary' : 'outline'}
+                className="gap-1.5"
+              >
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background/20 text-xs font-medium">
+                  2
+                </span>
+                Clarity
+              </Badge>
+              <div className="h-px flex-1 bg-border max-w-12" />
+              <Badge 
+                variant={currentPhase === 'realign' ? 'default' : currentPhase === 'plan' ? 'secondary' : 'outline'}
+                className="gap-1.5"
+              >
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background/20 text-xs font-medium">
+                  3
+                </span>
+                Re-align
+              </Badge>
+              <div className="h-px flex-1 bg-border max-w-12" />
+              <Badge 
+                variant={currentPhase === 'plan' ? 'default' : 'outline'}
+                className="gap-1.5"
+              >
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background/20 text-xs font-medium">
+                  4
+                </span>
+                Plan
+              </Badge>
+            </div>
           </div>
-          
-          <div className="huddle-progress">
-            <div className={`progress-step ${currentPhase === 'review' ? 'active' : 'completed'}`}>
-              <div className="step-number">1</div>
-              <span>Review</span>
-            </div>
-            <div className={`progress-step ${currentPhase === 'clarity' ? 'active' : ['realign', 'plan'].includes(currentPhase) ? 'completed' : ''}`}>
-              <div className="step-number">2</div>
-              <span>Clarity</span>
-            </div>
-            <div className={`progress-step ${currentPhase === 'realign' ? 'active' : currentPhase === 'plan' ? 'completed' : ''}`}>
-              <div className="step-number">3</div>
-              <span>Re-align</span>
-            </div>
-            <div className={`progress-step ${currentPhase === 'plan' ? 'active' : ''}`}>
-              <div className="step-number">4</div>
-              <span>Plan</span>
-            </div>
-          </div>
-          <button className="huddle-close" onClick={onClose}>
-            <X size={24} />
-          </button>
         </div>
 
         <div className="command-huddle-content">
@@ -930,9 +964,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
               {/* Step 1: Celebrate (Wins) */}
               {reviewStep === 'celebrate' && (
                 <div className="after-action-step">
-                  <div className="step-indicator">
-                    <span className="step-number">Step 1 of 3</span>
-                  </div>
                   <div className="phase-header celebrate-header">
                     <h2>🎉 Let's start with the wins</h2>
                     <p>What are you proud of from last week?</p>
@@ -1046,9 +1077,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
               {/* Step 2: Analyze (Gaps) */}
               {reviewStep === 'analyze' && (
                 <div className="after-action-step">
-                  <div className="step-indicator">
-                    <span className="step-number">Step 2 of 3</span>
-                  </div>
                   <div className="phase-header analyze-header">
                     <h2>🔍 Where were the gaps?</h2>
                     <p>What didn't get done, and what stood in the way?</p>
@@ -1162,9 +1190,6 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
               {/* Step 3: Learn (Key Takeaway) */}
               {reviewStep === 'learn' && (
                 <div className="after-action-step">
-                  <div className="step-indicator">
-                    <span className="step-number">Step 3 of 3</span>
-                  </div>
                   <div className="phase-header learn-header">
                     <h2>🧠 What's the key takeaway?</h2>
                     <p>What's the one lesson you can apply to make next week better?</p>
