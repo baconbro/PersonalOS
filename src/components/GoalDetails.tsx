@@ -596,29 +596,32 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, goalType, onBack, onN
 
           {/* Tabs */}
           <Tabs defaultValue="updates" className="space-y-4">
-            <TabsList className="grid grid-cols-7 w-full">
-              <TabsTrigger value="updates">Updates</TabsTrigger>
-              <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="learnings">
-                Learnings
-                {goalLearnings.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                    {goalLearnings.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="roadblocks">
-                Roadblocks
-                {goalRoadblocks.filter((r: any) => r.status === 'active').length > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
-                    {goalRoadblocks.filter((r: any) => r.status === 'active').length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="decisions">Decisions</TabsTrigger>
-              <TabsTrigger value="wins">Wins</TabsTrigger>
-              <TabsTrigger value="checkins">Check-ins</TabsTrigger>
-            </TabsList>
+            {/* Mobile: Scrollable tabs, Desktop: Grid layout */}
+            <div className="overflow-x-auto -mx-8 px-8 lg:mx-0 lg:px-0">
+              <TabsList className="inline-flex lg:grid lg:grid-cols-7 w-auto lg:w-full min-w-max lg:min-w-0">
+                <TabsTrigger value="updates" className="whitespace-nowrap">Updates</TabsTrigger>
+                <TabsTrigger value="about" className="whitespace-nowrap">About</TabsTrigger>
+                <TabsTrigger value="learnings" className="whitespace-nowrap">
+                  Learnings
+                  {goalLearnings.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                      {goalLearnings.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="roadblocks" className="whitespace-nowrap">
+                  Roadblocks
+                  {goalRoadblocks.filter((r: any) => r.status === 'active').length > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                      {goalRoadblocks.filter((r: any) => r.status === 'active').length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="decisions" className="whitespace-nowrap">Decisions</TabsTrigger>
+                <TabsTrigger value="wins" className="whitespace-nowrap">Wins</TabsTrigger>
+                <TabsTrigger value="checkins" className="whitespace-nowrap">Check-ins</TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Updates Tab */}
             <TabsContent value="updates" className="space-y-4">
