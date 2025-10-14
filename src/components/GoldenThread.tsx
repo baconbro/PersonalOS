@@ -278,7 +278,7 @@ const GoldenThread: React.FC<GoldenThreadProps> = ({
             {threadPath.task && (
               <ThreadLevel
                 title={threadPath.task.title}
-                subtitle={`${threadPath.task.estimatedHours}h • ${threadPath.task.priority} priority`}
+                subtitle={`${threadPath.task.estimatedHours}h estimated`}
                 description={threadPath.task.description}
                 progress={threadPath.task.completed ? 100 : 0}
                 icon={CheckSquare}

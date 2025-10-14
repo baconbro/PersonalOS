@@ -111,7 +111,6 @@ const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
             title: task.title,
             description: task.description,
             completed: task.completed,
-            priority: task.priority,
             children: [],
             data: task
           }));
@@ -167,7 +166,6 @@ const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
           title: task.title,
           description: task.description,
           completed: task.completed,
-          priority: task.priority,
           children: [],
           data: task
         }));
@@ -209,7 +207,6 @@ const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
         title: task.title,
         description: task.description,
         completed: task.completed,
-        priority: task.priority,
         children: [],
         data: task
       }));
@@ -236,7 +233,6 @@ const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
         title: task.title,
         description: task.description,
         completed: task.completed,
-        priority: task.priority,
         children: [],
         data: task
       });

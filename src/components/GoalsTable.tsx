@@ -18,7 +18,6 @@ import { useApp } from '../context/AppContext';
 import { useRouter } from '../hooks/useRouter';
 import { analyticsService } from '../services/analyticsService';
 import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask, LifeGoalCategory } from '../types';
-import { sampleData } from '../utils/sampleData';
 import GoalDetails from './GoalDetails';
 import { RichTextEditor } from './ui/RichTextEditor';
 import './GoalsTable.css';
@@ -222,7 +221,7 @@ const QuickGoalForm: React.FC<QuickGoalFormProps> = ({ goalType, onBack, onClose
 };
 
 const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate, initialGoalId, initialGoalType }) => {
-  const { state, dispatch } = useApp();
+  const { state } = useApp();
   const { navigateTo } = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -261,21 +260,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate, initialGoalId, init
     navigateTo('goals-table', false, { goalType, goalId });
   };
 
-  const loadSampleData = () => {
-    // Load sample data for demonstration
-    sampleData.lifeGoals?.forEach(goal => {
-      dispatch({ type: 'ADD_LIFE_GOAL', payload: goal });
-    });
-    sampleData.annualGoals.forEach(goal => {
-      dispatch({ type: 'ADD_ANNUAL_GOAL', payload: goal });
-    });
-    sampleData.quarterlyGoals.forEach(goal => {
-      dispatch({ type: 'ADD_QUARTERLY_GOAL', payload: goal });
-    });
-    sampleData.weeklyTasks.forEach(task => {
-      dispatch({ type: 'ADD_WEEKLY_TASK', payload: task });
-    });
-  };
+  // Sample data loading removed - not needed for production
 
   // Create hierarchical goal structure
   const hierarchicalGoals = useMemo(() => {
@@ -384,13 +369,7 @@ const GoalsTable: React.FC<GoalsTableProps> = ({ onNavigate, initialGoalId, init
     );
   }, [flattenedGoals, searchTerm]);
 
-  // Auto-load sample data if no goals exist
-  React.useEffect(() => {
-    const totalGoals = state.lifeGoals.length + state.annualGoals.length + state.quarterlyGoals.length + state.weeklyTasks.length;
-    if (totalGoals === 0) {
-      loadSampleData();
-    }
-  }, [state.lifeGoals.length, state.annualGoals.length, state.quarterlyGoals.length, state.weeklyTasks.length]);
+  // Auto-load sample data removed - not needed for production
 
   // If viewing goal details, show the GoalDetails component
   if (selectedGoalId && selectedGoalType2) {

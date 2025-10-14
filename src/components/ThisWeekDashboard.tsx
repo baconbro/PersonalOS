@@ -44,7 +44,6 @@ const ThisWeekDashboard: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   // Touch drag state for mobile/tablet
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
-  const [touchCurrentPos, setTouchCurrentPos] = useState<{ x: number; y: number } | null>(null);
   const [draggedElement, setDraggedElement] = useState<HTMLElement | null>(null);
   const [dropTargetColumn, setDropTargetColumn] = useState<'todo' | 'in-progress' | 'done' | null>(null);
   const [editingTask, setEditingTask] = useState<WeeklyTask | null>(null);
@@ -252,7 +251,6 @@ const ThisWeekDashboard: React.FC = () => {
     
     e.preventDefault(); // Prevent scrolling while dragging
     const touch = e.touches[0];
-    setTouchCurrentPos({ x: touch.clientX, y: touch.clientY });
     
     // Update dragged element position
     if (draggedElement) {
@@ -291,7 +289,7 @@ const ThisWeekDashboard: React.FC = () => {
     setDropTargetColumn(foundColumn);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = () => {
     if (!draggedTask) return;
     
     // Reset dragged element styles
@@ -318,7 +316,6 @@ const ThisWeekDashboard: React.FC = () => {
     // Reset state
     setDraggedTask(null);
     setTouchStartPos(null);
-    setTouchCurrentPos(null);
     setDraggedElement(null);
     setDropTargetColumn(null);
   };

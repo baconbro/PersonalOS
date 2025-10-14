@@ -67,11 +67,11 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
           vision: wizardData.lifeGoal,
           category: 'Other' as const,
           timeframe: 'five-year' as const,
-          priority: 'high' as const,
           targetDate: new Date(new Date().getFullYear() + 5, 11, 31),
           status: 'not-started' as const,
           progress: 0,
           createdAt: new Date(),
+          updatedAt: new Date(),
           annualGoals: []
         }
       });
@@ -86,12 +86,12 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
           title: wizardData.annualGoal,
           description: `Supporting Life Goal: ${wizardData.lifeGoal}`,
           category: 'Other',
-          priority: 'high' as const,
           year: new Date().getFullYear(),
           lifeGoalId: lifeGoalId,
           status: 'in-progress' as const,
           progress: 0,
           createdAt: new Date(),
+          updatedAt: new Date(),
           targetDate: new Date(new Date().getFullYear(), 11, 31),
           quarterlyGoals: []
         }
@@ -108,7 +108,6 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
           title: wizardData.quarterlyObjective,
           description: `Supporting Annual Goal: ${wizardData.annualGoal}`,
           category: 'Other',
-          priority: 'high' as const,
           keyResults: wizardData.keyResults.filter(kr => kr.trim() !== '').map((kr, index) => ({
             id: `kr-${Date.now()}-${index}`,
             description: kr,
@@ -123,6 +122,7 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
           status: 'in-progress' as const,
           progress: 0,
           createdAt: new Date(),
+          updatedAt: new Date(),
           targetDate: new Date(new Date().getFullYear(), (currentQuarter * 3) - 1, 30),
           weeklyTasks: []
         }
@@ -141,13 +141,15 @@ const LifeArchitectureWizard: React.FC<LifeArchitectureWizardProps> = ({
             title: task,
             description: `Priority task from Life Architecture setup`,
             quarterlyGoalId: quarterlyGoalId,
-            priority: 'high' as const,
             estimatedHours: 2,
+            actualHours: 0,
             completed: false,
             status: 'todo' as const,
             weekOf: weekStart, // Use Monday-based week start
             roadblocks: [],
-            notes: 'Created during onboarding wizard'
+            notes: 'Created during onboarding wizard',
+            createdAt: new Date(),
+            updatedAt: new Date()
           }
         });
       });

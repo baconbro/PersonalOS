@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useRouter } from '../hooks/useRouter';
-import { Calendar, Plus, Sparkles, Lightbulb, Target, TrendingUp, X, Hash, DollarSign, Percent, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Plus, Sparkles, Lightbulb, Target, X, Hash, DollarSign, Percent, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
-import type { QuarterlyGoal, KeyResult } from '../types';
+import type { QuarterlyGoal } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
@@ -14,7 +14,7 @@ import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from './ui/breadcrumb';
-import { validateGoalTitle, validateGoalDescription, sanitizeText } from '../utils/security';
+import { validateGoalTitle, sanitizeText } from '../utils/security';
 
 type KeyResultInput = {
   id: string;
@@ -35,7 +35,8 @@ function QuarterlySprint() {
   const [newKrUnit, setNewKrUnit] = useState<'number' | 'percent' | 'currency'>('number');
   const [newKrTarget, setNewKrTarget] = useState('');
   const [titleError, setTitleError] = useState('');
-  const [descriptionError, setDescriptionError] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_descriptionError, setDescriptionError] = useState('');
   
   // Track the viewing quarter (can be different from current quarter)
   const [viewingQuarter, setViewingQuarter] = useState(state.currentQuarter);
@@ -111,14 +112,6 @@ function QuarterlySprint() {
   // Get the selected annual goal for context
   const selectedAnnual = state.annualGoals.find(g => g.id === selectedAnnualGoal);
   const selectedLife = selectedAnnual ? state.lifeGoals.find(lg => lg.id === selectedAnnual.lifeGoalId) : null;
-
-  const getUnitIcon = (unit: string) => {
-    switch (unit) {
-      case 'currency': return <DollarSign className="w-4 h-4" />;
-      case 'percent': return <Percent className="w-4 h-4" />;
-      default: return <Hash className="w-4 h-4" />;
-    }
-  };
 
   const getUnitSymbol = (unit: string) => {
     switch (unit) {

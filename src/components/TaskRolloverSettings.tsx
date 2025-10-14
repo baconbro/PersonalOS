@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Settings, RefreshCw, TestTube, Info, Clock, CheckCircle } from 'lucide-react';
+import { Settings, RefreshCw, Info, Clock, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { taskRolloverService } from '../services/taskRolloverService';
-import { createTestTasksForRollover } from '../utils/testRollover';
-import { performTaskRollover } from '../utils/taskRollover';
 import './TaskRolloverSettings.css';
 
 export function TaskRolloverSettings() {
-  const { state, dispatch, logActivity, createActivityLog } = useApp();
+  const { state } = useApp();
   const [isTestingRollover, setIsTestingRollover] = useState(false);
   const [testResults, setTestResults] = useState<string | null>(null);
   const [rolloverEnabled, setRolloverEnabled] = useState(true);
@@ -34,36 +32,11 @@ export function TaskRolloverSettings() {
     setTestResults(null);
 
     try {
-      // Create test tasks
-      const testTasks = createTestTasksForRollover();
-      
-      // Test rollover logic
-      const result = performTaskRollover([...state.weeklyTasks, ...testTasks]);
-      
-      if (result.shouldRollover && result.rolledOverTasks.length > 0) {
-        // Actually add the test tasks to simulate rollover
-        result.rolledOverTasks.forEach(task => {
-          dispatch({ type: 'ADD_WEEKLY_TASK', payload: task });
-        });
-
-        setTestResults(`✅ Successfully rolled over ${result.rolledOverTasks.length} test task${result.rolledOverTasks.length === 1 ? '' : 's'}`);
-        
-        // Log test activity
-        const activityLog = createActivityLog(
-          'SYSTEM_ROLLOVER',
-          'Test rollover completed',
-          `Tested rollover functionality with ${result.rolledOverTasks.length} tasks`,
-          undefined,
-          'system',
-          { testMode: true, taskCount: result.rolledOverTasks.length }
-        );
-        logActivity(activityLog);
-      } else {
-        setTestResults('ℹ️ No rollover needed - all test conditions passed');
-      }
+      // Test functionality disabled - test utilities removed
+      setTestResults('⚠️ Test rollover feature currently disabled');
     } catch (error) {
-      console.error('Test rollover failed:', error);
-      setTestResults('❌ Test failed - check console for details');
+      console.error('Test rollover error:', error);
+      setTestResults('❌ Test rollover failed');
     } finally {
       setIsTestingRollover(false);
     }
@@ -170,7 +143,7 @@ export function TaskRolloverSettings() {
               </>
             ) : (
               <>
-                <TestTube size={20} />
+                <RefreshCw size={20} />
                 Test Rollover
               </>
             )}
