@@ -20,6 +20,8 @@ import type { WeeklyTask, ActivityType } from '../types';
 import WeeklyCommandHuddle from './WeeklyCommandHuddle';
 import GoldenThread from './GoldenThread';
 import { getIncompleteTasksForWeek, getPreviousWeek, performManualTaskRollover } from '../utils/taskRollover';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
 import './ThisWeekDashboard.css';
 
 interface WeeklyPriorityCard {
@@ -444,113 +446,135 @@ const ThisWeekDashboard: React.FC = () => {
 
   return (
     <div className="this-week-dashboard">
-      {/* Header */}
-      <div className="week-header">
-        <div className="week-info">
-          <h1>
-            <Calendar size={28} />
-            {isCurrentWeek ? 'This Week' : 'Week View'}
-          </h1>
-          <p className="week-range">
-            Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}
-          </p>
-        </div>
+      {/* Header - Modernized */}
+      <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10 mb-6">
+        <div className="p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+            <div className="week-info">
+              <h1 className="text-3xl font-bold flex items-center gap-3 mb-2">
+                <Calendar className="w-7 h-7" />
+                {isCurrentWeek ? 'This Week' : 'Week View'}
+              </h1>
+              <p className="text-muted-foreground">
+                Week of {format(weekStart, 'MMM dd')} - {format(weekEnd, 'MMM dd, yyyy')}
+              </p>
+            </div>
 
-        {/* Week Navigation */}
-        <div className="week-navigation">
-          <button 
-            className="nav-btn"
-            onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
-            title="Previous Week"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          
-          <button 
-            className="nav-btn this-week-btn"
-            onClick={() => setSelectedWeek(new Date())}
-            disabled={isCurrentWeek}
-            title="Go to This Week"
-          >
-            This Week
-          </button>
-          
-          <button 
-            className="nav-btn"
-            onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
-            title="Next Week"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
+            {/* Week Navigation */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+                title="Previous Week"
+                className="h-9 w-9 p-0"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <Button
+                variant={isCurrentWeek ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedWeek(new Date())}
+                disabled={isCurrentWeek}
+                title="Go to This Week"
+              >
+                This Week
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+                title="Next Week"
+                className="h-9 w-9 p-0"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
 
-        {/* Week Stats */}
-        <div className="week-stats">
-          <div className="stat-card">
-            <div className="stat-value">{thisWeekTasks.length}</div>
-            <div className="stat-label">Total</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{doneTasks.length}</div>
-            <div className="stat-label">Done</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{completionRate}%</div>
-            <div className="stat-label">Progress</div>
+          {/* Week Stats */}
+          <div className="flex gap-3">
+            <Card className="flex-1">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-primary mb-1">{thisWeekTasks.length}</div>
+                <div className="text-xs text-muted-foreground">Total</div>
+              </CardContent>
+            </Card>
+            <Card className="flex-1">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600 mb-1">{doneTasks.length}</div>
+                <div className="text-xs text-muted-foreground">Done</div>
+              </CardContent>
+            </Card>
+            <Card className="flex-1">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600 mb-1">{completionRate}%</div>
+                <div className="text-xs text-muted-foreground">Progress</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
-        <div className="week-actions">
-          <button 
-            className="weekly-huddle-btn"
+        {/* Week Actions - Modernized */}
+        <div className="flex gap-3 mb-6">
+          <Button 
             onClick={() => setShowCommandHuddle(true)}
+            className="flex-1"
           >
-            <Target size={20} />
+            <Target className="w-4 h-4 mr-2" />
             Weekly Huddle
-          </button>
+          </Button>
           
-          <button 
-            className="rollover-btn"
+          <Button 
+            variant="outline"
             onClick={handleManualRollover}
             disabled={isRolloverLoading}
             title="Check and rollover incomplete tasks from previous week"
           >
             {isRolloverLoading ? (
               <>
-                <RefreshCw size={18} className="spinning" />
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                 Rolling over...
               </>
             ) : (
               <>
-                <RefreshCw size={18} />
+                <RefreshCw className="w-4 h-4 mr-2" />
                 Check Rollover
               </>
             )}
-          </button>
+          </Button>
         </div>
         
         {rolloverMessage && (
-          <div className={`rollover-message ${rolloverMessage.startsWith('✅') ? 'success' : rolloverMessage.startsWith('❌') ? 'error' : 'info'}`}>
+          <div className={`mb-6 p-3 rounded-lg border text-sm font-medium ${
+            rolloverMessage.startsWith('✅') 
+              ? 'bg-green-50 text-green-800 border-green-200' 
+              : rolloverMessage.startsWith('❌') 
+              ? 'bg-red-50 text-red-800 border-red-200' 
+              : 'bg-blue-50 text-blue-800 border-blue-200'
+          }`}>
             {rolloverMessage}
           </div>
         )}
 
-      {/* Command Huddle Prompt */}
+      {/* Command Huddle Prompt - Modernized */}
       {shouldShowHuddlePrompt && (
-        <div className="huddle-prompt">
-          <div className="prompt-content">
-            <h2>Ready for your Weekly Command Huddle?</h2>
-            <p>Your 15-minute strategic session to review, re-align, and plan your week.</p>
-            <button 
-              className="start-huddle-btn"
+        <Card className="mb-6 border-2 border-dashed border-primary/50 bg-primary/5">
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-2">Ready for your Weekly Command Huddle?</h2>
+            <p className="text-muted-foreground mb-4">Your 15-minute strategic session to review, re-align, and plan your week.</p>
+            <Button 
+              size="lg"
               onClick={() => setShowCommandHuddle(true)}
             >
-              <Play size={20} />
+              <Play className="w-5 h-5 mr-2" />
               Start Weekly Huddle
-            </button>
-          </div>
-        </div>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Main Content */}

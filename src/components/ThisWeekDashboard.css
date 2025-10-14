@@ -7,35 +7,7 @@
   background: #fafafa;
 }
 
-/* Header */
-.week-header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  margin-bottom: 32px;
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.week-info h1 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-  color: #1e293b;
-}
-
-.week-range {
-  color: #64748b;
-  font-size: 16px;
-  margin: 0;
-}
+/* Header - Now using shadcn Card components */
 
 /* Week Navigation */
 .week-navigation {
@@ -125,39 +97,7 @@
 }
 
 /* Week Actions Container */
-.week-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-/* Rollover Button */
-.rollover-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
-}
-
-.rollover-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 20px rgba(245, 158, 11, 0.4);
-}
-
-.rollover-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
+/* Week Actions - Now using shadcn Button components */
 
 /* Rollover Message */
 .rollover-message {
@@ -208,61 +148,7 @@
   }
 }
 
-/* Command Huddle Prompt */
-.huddle-prompt {
-  background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
-  border: 2px dashed #667eea;
-  border-radius: 16px;
-  padding: 32px;
-  text-align: center;
-  margin-bottom: 32px;
-  animation: pulsePrompt 2s infinite;
-}
-
-@keyframes pulsePrompt {
-  0%, 100% { 
-    border-color: #667eea;
-    background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
-  }
-  50% { 
-    border-color: #5a67d8;
-    background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
-  }
-}
-
-.prompt-content h2 {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-  color: #1e293b;
-}
-
-.prompt-content p {
-  color: #64748b;
-  font-size: 16px;
-  margin: 0 0 24px 0;
-}
-
-.start-huddle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.start-huddle-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
-}
+/* Command Huddle Prompt - Now using shadcn Card components */
 
 /* Empty State */
 .empty-week {
