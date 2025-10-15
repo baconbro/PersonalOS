@@ -120,7 +120,11 @@ function AnnualPlan() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {state.lifeGoals.map((goal) => (
-              <Card key={goal.id} className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <Card 
+                key={goal.id} 
+                className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+                onClick={() => navigateTo('goals-table', false, { goalType: 'life', goalId: goal.id })}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-2">
                     <Target className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
@@ -199,10 +203,10 @@ function AnnualPlan() {
                   <div className="space-y-2">
                     <Label htmlFor="linked-goal">Connect to Life Goal</Label>
                     <Select value={formData.lifeGoalId} onValueChange={(value) => setFormData({ ...formData, lifeGoalId: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-white">
                         <SelectValue placeholder="Which life goal does this serve?" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-gray-950">
                         {state.lifeGoals.map((goal) => (
                           <SelectItem key={goal.id} value={goal.id}>
                             {goal.title}

@@ -247,7 +247,11 @@ function QuarterlySprint() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {state.annualGoals.filter(ag => ag.year === state.currentYear).map((goal) => (
-              <Card key={goal.id} className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <Card 
+                key={goal.id} 
+                className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+                onClick={() => navigateTo('goals-table', false, { goalType: 'annual', goalId: goal.id })}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-2">
                     <Target className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
