@@ -76,7 +76,7 @@ function AnnualPlan() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim() || !formData.description.trim() || !formData.targetDate) {
+    if (!formData.title.trim() || !formData.description.trim()) {
       alert('Please fill in all required fields');
       return;
     }
@@ -89,7 +89,7 @@ function AnnualPlan() {
       category: 'Annual Goal',
       status: 'not-started',
       createdAt: new Date(),
-      targetDate: new Date(formData.targetDate),
+      targetDate: new Date(viewingYear, 11, 31), // December 31st of the selected year
       progress: 0,
       year: viewingYear,
       lifeGoalId: formData.lifeGoalId || undefined,
@@ -232,15 +232,6 @@ function AnnualPlan() {
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="targetDate">Target Date</Label>
-                    <Input
-                      id="targetDate"
-                      type="date"
-                      value={formData.targetDate}
-                      onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
