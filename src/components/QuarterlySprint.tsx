@@ -122,7 +122,7 @@ function QuarterlySprint() {
   };
 
   const addKeyResult = () => {
-    if (!newKrDescription.trim() || !newKrTarget) return;
+    if (!newKrDescription.trim() || !newKrTarget || keyResults.length >= 1) return;
 
     const newKr: KeyResultInput = {
       id: `kr-${Date.now()}`,
@@ -337,10 +337,10 @@ function QuarterlySprint() {
                   <div className="space-y-2">
                     <Label>Connect to Annual Goal</Label>
                     <Select value={selectedAnnualGoal} onValueChange={setSelectedAnnualGoal}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-white">
                         <SelectValue placeholder="Which annual mission does this serve?" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-gray-950">
                         {state.annualGoals.filter(ag => ag.year === state.currentYear).map((goal) => (
                           <SelectItem key={goal.id} value={goal.id}>
                             {goal.title}
@@ -456,10 +456,10 @@ function QuarterlySprint() {
                         <div className="space-y-2">
                           <Label>Measurement Unit</Label>
                           <Select value={newKrUnit} onValueChange={(value: any) => setNewKrUnit(value)}>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white dark:bg-white">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white dark:bg-gray-950">
                               <SelectItem value="number">
                                 <div className="flex items-center gap-2">
                                   <Hash className="w-4 h-4" />
@@ -499,20 +499,20 @@ function QuarterlySprint() {
                         variant="outline"
                         className="w-full"
                         onClick={addKeyResult}
-                        disabled={!newKrDescription.trim() || !newKrTarget}
+                        disabled={!newKrDescription.trim() || !newKrTarget || keyResults.length >= 1}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Key Result
                       </Button>
 
                       <p className="text-xs text-muted-foreground">
-                        💡 Make it measurable. You should be able to track progress objectively.
+                        💡 Make it measurable. You should be able to track progress objectively. (Maximum 1 key result per objective)
                       </p>
                     </div>
 
                     {keyResults.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-2">
-                        Add 2-5 measurable key results to track your objective
+                        Add 1 measurable key result to track your objective
                       </p>
                     )}
                   </div>
