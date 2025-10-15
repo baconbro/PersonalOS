@@ -42,7 +42,7 @@ function QuarterlySprint() {
   const [viewingQuarter, setViewingQuarter] = useState(state.currentQuarter);
   const [viewingYear, setViewingYear] = useState(state.currentYear);
 
-  const MAX_QUARTERLY_GOALS = 5;
+  const MAX_QUARTERLY_GOALS = 10;
   
   const getQuarterDates = (quarter: number, year: number) => {
     const quarterStartDate = new Date(year, (quarter - 1) * 3, 1);
