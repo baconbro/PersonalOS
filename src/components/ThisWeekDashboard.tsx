@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import { 
   Calendar, 
   Target, 
@@ -17,7 +18,6 @@ import {
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isWithinInterval, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 import type { WeeklyTask, ActivityType } from '../types';
-import WeeklyCommandHuddle from './WeeklyCommandHuddle';
 import GoldenThread from './GoldenThread';
 import { getIncompleteTasksForWeek, getPreviousWeek, performManualTaskRollover } from '../utils/taskRollover';
 import { Button } from './ui/button';
@@ -36,7 +36,7 @@ interface WeeklyPriorityCard {
 
 const ThisWeekDashboard: React.FC = () => {
   const { state, dispatch, logActivity, createActivityLog } = useApp();
-  const [showCommandHuddle, setShowCommandHuddle] = useState(false);
+  const { navigateTo } = useRouter();
   const [showGoldenThread, setShowGoldenThread] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
@@ -137,10 +137,10 @@ const ThisWeekDashboard: React.FC = () => {
       const hour = now.getHours();
       
       if ((dayOfWeek === 0 && hour >= 18) || (dayOfWeek === 1 && hour <= 10)) {
-        setShowCommandHuddle(true);
+        navigateTo('weekly-huddle', false);
       }
     }
-  }, [shouldShowHuddlePrompt]);
+  }, [shouldShowHuddlePrompt, navigateTo]);
 
   const updateTaskStatus = (taskId: string, newStatus: 'todo' | 'in-progress' | 'done') => {
     const task = thisWeekTasks.find(t => t.id === taskId);
@@ -616,7 +616,7 @@ const ThisWeekDashboard: React.FC = () => {
         {/* Week Actions - Modernized */}
         <div className="flex gap-3 mb-6">
           <Button 
-            onClick={() => setShowCommandHuddle(true)}
+            onClick={() => navigateTo('weekly-huddle', false)}
             className="flex-1"
           >
             <Target className="w-4 h-4 mr-2" />
@@ -663,7 +663,7 @@ const ThisWeekDashboard: React.FC = () => {
             <p className="text-muted-foreground mb-4">Your 15-minute strategic session to review, re-align, and plan your week.</p>
             <Button 
               size="lg"
-              onClick={() => setShowCommandHuddle(true)}
+              onClick={() => navigateTo('weekly-huddle', false)}
             >
               <Play className="w-5 h-5 mr-2" />
               Start Weekly Huddle
@@ -680,7 +680,7 @@ const ThisWeekDashboard: React.FC = () => {
           <p>Start your Weekly Command Huddle to define your focus areas</p>
           <button 
             className="start-planning-btn"
-            onClick={() => setShowCommandHuddle(true)}
+            onClick={() => navigateTo('weekly-huddle', false)}
           >
             Plan This Week
           </button>
@@ -1018,16 +1018,6 @@ const ThisWeekDashboard: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Weekly Command Huddle Modal */}
-      <WeeklyCommandHuddle
-        isOpen={showCommandHuddle}
-        onClose={() => setShowCommandHuddle(false)}
-        onComplete={() => {
-          setShowCommandHuddle(false);
-          // The component will automatically refresh with new data
-        }}
-      />
 
       {/* Golden Thread Modal */}
       {showGoldenThread && selectedTaskId && (

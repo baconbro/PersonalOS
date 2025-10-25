@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import { 
   CheckSquare, 
   Target, 
   Calendar, 
-  X,
   ArrowLeft,
   ArrowRight,
   TrendingUp,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval, addWeeks } from 'date-fns';
 import type { WeeklyReviewData, QuarterlyGoal, WeeklyTask } from '../types';
@@ -20,9 +21,6 @@ import { Badge } from './ui/badge';
 import './WeeklyCommandHuddle.css';
 
 interface WeeklyCommandHuddleProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onComplete: () => void;
   selectedWeek?: Date; // Optional prop to set initial week
 }
 
@@ -288,8 +286,9 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ value, onChange, pl
   );
 };
 
-const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClose, onComplete, selectedWeek: initialSelectedWeek }) => {
+const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ selectedWeek: initialSelectedWeek }) => {
   const { state, dispatch } = useApp();
+  const { navigateTo } = useRouter();
 
   // Get all available goals and tasks for linking, sorted by most recent modification
   const availableItems = useMemo(() => {
@@ -418,18 +417,17 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
 
   // Load last week's tasks and reviews on component mount
   useEffect(() => {
-    if (isOpen) {
-      // Trigger automatic rollover check when opening the huddle
-      taskRolloverService.checkAndPerformRollover(state.weeklyTasks).catch(error => {
-        console.warn('Weekly Huddle rollover check failed:', error);
-      });
+    // Trigger automatic rollover check when opening the huddle
+    taskRolloverService.checkAndPerformRollover(state.weeklyTasks).catch(error => {
+      console.warn('Weekly Huddle rollover check failed:', error);
+    });
 
-      // Load tasks for the CURRENT selected week (week in focus)
-      const currentWeekTasks = state.weeklyTasks.filter(task =>
-        isWithinInterval(task.weekOf, { start: weekStart, end: weekEnd })
-      );
-      
-      const lastWeekReview = state.weeklyReviews.find(review =>
+    // Load tasks for the CURRENT selected week (week in focus)
+    const currentWeekTasks = state.weeklyTasks.filter(task =>
+      isWithinInterval(task.weekOf, { start: weekStart, end: weekEnd })
+    );
+    
+    const lastWeekReview = state.weeklyReviews.find(review =>
         isWithinInterval(review.weekOf, { start: lastWeekStart, end: lastWeekEnd })
       );
 
@@ -450,8 +448,7 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       
       // Reset validation error when modal opens
       setShowValidationError(false);
-    }
-  }, [isOpen, weekStart, weekEnd, lastWeekStart, lastWeekEnd, state.weeklyTasks, state.weeklyReviews]);
+  }, [weekStart, weekEnd, lastWeekStart, lastWeekEnd, state.weeklyTasks, state.weeklyReviews]);
 
   const togglePriorityComplete = (priorityId: string) => {
     setLastWeekPriorities(prev => 
@@ -821,7 +818,8 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
       dispatch({ type: 'ADD_WEEKLY_TASK', payload: taskData });
     });
 
-    onComplete();
+    // Navigate back to this week dashboard after completion
+    navigateTo('this-week', false);
   };
 
   const canProceedFromReview = useMemo(() => {
@@ -860,26 +858,22 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ isOpen, onClo
            });
   }, [weeklyPriorities.length, selectedOKRs]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="command-huddle-overlay" onClick={onClose}>
-      <div 
-        className="command-huddle-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto">
         {/* Modern Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="p-6">
-            {/* Close Button */}
-            <div className="flex justify-end mb-4">
+            {/* Back Button */}
+            <div className="flex justify-start mb-4">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
-                className="h-8 w-8 p-0"
+                onClick={() => navigateTo('this-week', false)}
+                className="gap-2"
               >
-                <X className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4" />
+                Back to This Week
               </Button>
             </div>
 

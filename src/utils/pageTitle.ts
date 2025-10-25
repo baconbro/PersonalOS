@@ -1,7 +1,7 @@
 // Page title management utility for LifePeak
 // Provides context-aware page titles based on current view
 
-type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table' | 'bucket-list';
+type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table' | 'bucket-list' | 'weekly-huddle';
 
 interface PageTitleConfig {
   title: string;
@@ -31,6 +31,10 @@ const PAGE_TITLES: Record<ViewType, PageTitleConfig> = {
   'this-week': {
     title: 'This Week',
     description: 'Your weekly priorities and tasks'
+  },
+  'weekly-huddle': {
+    title: 'Weekly Command Huddle',
+    description: 'Review, reflect, and plan your week'
   },
   'weekly': {
     title: 'Weekly Review',

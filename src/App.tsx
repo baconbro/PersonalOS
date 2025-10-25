@@ -4,6 +4,7 @@ import AnnualPlan from './components/AnnualPlan.tsx'
 import QuarterlySprint from './components/QuarterlySprint.tsx'
 import WeeklyReview from './components/WeeklyReview'
 import ThisWeekDashboard from './components/ThisWeekDashboard.tsx'
+import WeeklyCommandHuddle from './components/WeeklyCommandHuddle.tsx'
 import LifeGoals from './components/LifeGoals.tsx'
 import UserGuide from './components/UserGuide.tsx'
 import AuthComponent from './components/AuthComponent.tsx'
@@ -198,6 +199,8 @@ function App() {
         return <QuarterlySprint />
       case 'this-week':
         return <ThisWeekDashboard />
+      case 'weekly-huddle':
+        return <WeeklyCommandHuddle />
       case 'weekly':
         return <WeeklyReview />
       case 'guide':

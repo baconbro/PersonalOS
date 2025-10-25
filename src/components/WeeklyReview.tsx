@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import { Plus, BookOpen, TrendingUp, Lightbulb, Target, Sparkles, Heart, Battery, Star, Calendar, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addWeeks, startOfQuarter, endOfQuarter, getWeek, isValid } from 'date-fns';
-import WeeklyCommandHuddle from './WeeklyCommandHuddle';
 
 // Safe date formatter
 const safeFormatDate = (date: Date | string | undefined, formatStr: string): string => {
@@ -177,10 +177,9 @@ const mockHurdles: WeeklyHurdle[] = [
 
 function WeeklyReview() {
   const { state } = useApp();
+  const { navigateTo } = useRouter();
   const [selectedHurdle, setSelectedHurdle] = useState<WeeklyHurdle | null>(null);
-  const [showCommandHuddle, setShowCommandHuddle] = useState(false);
   const [selectedQuarter, setSelectedQuarter] = useState<1 | 2 | 3 | 4>(state.currentQuarter);
-  const [selectedWeekForHurdle, setSelectedWeekForHurdle] = useState<Date | null>(null);
   
   const currentYear = new Date().getFullYear();
   const currentQuarter = selectedQuarter;
@@ -490,10 +489,7 @@ function WeeklyReview() {
             )}
           </p>
         </div>
-        <Button onClick={() => {
-          setSelectedWeekForHurdle(null); // No specific week selected
-          setShowCommandHuddle(true);
-        }}>
+        <Button onClick={() => navigateTo('weekly-huddle', false)}>
           <Plus className="w-4 h-4 mr-2" />
           New Hurdle
         </Button>
@@ -601,8 +597,7 @@ function WeeklyReview() {
                     className="mt-2"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedWeekForHurdle(week.start);
-                      setShowCommandHuddle(true);
+                      navigateTo('weekly-huddle', false);
                     }}
                   >
                     Add Hurdle
@@ -667,20 +662,6 @@ function WeeklyReview() {
         </Card>
       </div>
 
-      {/* Weekly Command Huddle Modal */}
-      <WeeklyCommandHuddle
-        isOpen={showCommandHuddle}
-        onClose={() => {
-          setShowCommandHuddle(false);
-          setSelectedWeekForHurdle(null); // Reset selected week
-        }}
-        onComplete={() => {
-          setShowCommandHuddle(false);
-          setSelectedWeekForHurdle(null); // Reset selected week
-          // The component will automatically refresh with new data
-        }}
-        selectedWeek={selectedWeekForHurdle || undefined}
-      />
     </div>
   );
 }

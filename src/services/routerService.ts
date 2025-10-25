@@ -1,4 +1,4 @@
-export type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table' | 'bucket-list';
+export type ViewType = 'dashboard' | 'annual' | 'quarterly' | 'weekly' | 'this-week' | 'life-goals' | 'guide' | 'goals-table' | 'bucket-list' | 'weekly-huddle';
 
 export interface RouteConfig {
   path: string;
@@ -54,6 +54,12 @@ export const routes: RouteConfig[] = [
     path: '/this-week',
     view: 'this-week',
     title: 'This Week',
+    requiresAuth: true
+  },
+  {
+    path: '/weekly-huddle',
+    view: 'weekly-huddle',
+    title: 'Weekly Command Huddle',
     requiresAuth: true
   },
   {
