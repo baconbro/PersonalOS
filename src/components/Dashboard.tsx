@@ -3,7 +3,6 @@ import { Calendar, Target, CheckCircle, Heart, Star, TrendingUp, Clock, GitBranc
 import { format } from 'date-fns';
 import { useApp } from '../context/AppContext';
 import { useRouter } from '../hooks/useRouter';
-import GoalTree from './GoalTree';
 import CheckInModal from './CheckInModal';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 
@@ -16,13 +15,11 @@ function Dashboard() {
   const { state } = useApp();
   const { navigateTo } = useRouter();
   const [showCheckInModal, setShowCheckInModal] = useState(false);
-  const [showGoalTree, setShowGoalTree] = useState(false);
 
   // Helper function to ensure date is a Date object
   const ensureDate = (date: Date | string): Date => {
     return typeof date === 'string' ? new Date(date) : date;
   };
-
   const calculateStats = () => {
     const now = new Date();
     const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -253,7 +250,7 @@ function Dashboard() {
       {/* Goal Tree Overview Card */}
       <Card 
         className="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
-        onClick={() => setShowGoalTree(true)}
+        onClick={() => navigateTo('goal-tree', false)}
       >
         <CardHeader className="p-6">
           <CardTitle className="flex items-center justify-center gap-4 text-lg font-bold text-warning">
@@ -499,12 +496,6 @@ function Dashboard() {
           </CardContent>
         </Card>
       )}
-
-      {/* Goal Tree Modal */}
-      <GoalTree 
-        isOpen={showGoalTree}
-        onClose={() => setShowGoalTree(false)}
-      />
       
       {/* Check-In Modal */}
       <CheckInModal 

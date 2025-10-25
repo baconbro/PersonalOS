@@ -5,6 +5,7 @@ import QuarterlySprint from './components/QuarterlySprint.tsx'
 import WeeklyReview from './components/WeeklyReview'
 import ThisWeekDashboard from './components/ThisWeekDashboard.tsx'
 import WeeklyCommandHuddle from './components/WeeklyCommandHuddle.tsx'
+import GoalTree from './components/GoalTree.tsx'
 import LifeGoals from './components/LifeGoals.tsx'
 import UserGuide from './components/UserGuide.tsx'
 import AuthComponent from './components/AuthComponent.tsx'
@@ -203,6 +204,8 @@ function App() {
         return <WeeklyCommandHuddle />
       case 'weekly':
         return <WeeklyReview />
+      case 'goal-tree':
+        return <GoalTree />
       case 'guide':
         return <UserGuide />
       case 'bucket-list':

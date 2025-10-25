@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useRouter } from '../hooks/useRouter';
 import { 
   ChevronDown, 
   ChevronRight, 
-  X, 
+  ArrowLeft, 
   Target, 
   Calendar, 
   CheckSquare, 
@@ -23,11 +24,6 @@ import {
 import { format } from 'date-fns';
 import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask, LifeGoalCategory } from '../types';
 import './GoalTree.css';
-
-interface GoalTreeProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 interface TreeNode {
   id: string;
@@ -72,12 +68,11 @@ const categoryColors: Record<LifeGoalCategory, string> = {
   'Other': '#6c757d'
 };
 
-const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
+const GoalTree: React.FC = () => {
   const { state } = useApp();
+  const { navigateTo } = useRouter();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root']));
   const [selectedView, setSelectedView] = useState<'full' | 'active' | 'completed'>('full');
-
-  if (!isOpen) return null;
 
   const toggleNode = (nodeId: string) => {
     setExpandedNodes(prev => {
@@ -399,9 +394,18 @@ const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="goal-tree-overlay">
-      <div className="goal-tree-modal">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="goal-tree-header">
+          <div className="flex items-center gap-4 mb-4">
+            <button 
+              onClick={() => navigateTo('dashboard', false)}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={20} />
+              <span>Back to Dashboard</span>
+            </button>
+          </div>
           <div className="goal-tree-title">
             <GitBranch size={24} style={{ color: '#ffd700' }} />
             <h2>Goal Tree Overview</h2>
@@ -409,9 +413,6 @@ const GoalTree: React.FC<GoalTreeProps> = ({ isOpen, onClose }) => {
               Complete hierarchy of your goals and tasks
             </span>
           </div>
-          <button className="goal-tree-close" onClick={onClose}>
-            <X size={24} />
-          </button>
         </div>
 
         <div className="goal-tree-controls">
