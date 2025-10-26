@@ -19,10 +19,15 @@ import {
   Plane,
   Gift,
   GitBranch,
-  Maximize2
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { LifeGoal, AnnualGoal, QuarterlyGoal, WeeklyTask, LifeGoalCategory } from '../types';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { Progress } from './ui/progress';
 import './GoalTree.css';
 
 interface TreeNode {
@@ -289,84 +294,87 @@ const GoalTree: React.FC = () => {
     const indent = level * 24;
 
     return (
-      <div key={node.id} className="tree-node">
-        <div 
-          className={`tree-node-content ${node.type}`}
-          style={{ paddingLeft: `${indent}px` }}
-        >
-          <div className="tree-node-header">
-            <button
-              className="tree-expand-button"
-              onClick={() => toggleNode(node.id)}
-              disabled={!hasChildren}
-            >
-              {hasChildren ? (
-                isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-              ) : (
-                <div style={{ width: '16px' }} />
-              )}
-            </button>
-            
-            <div className="tree-node-icon">
-              {getNodeIcon(node)}
-            </div>
-            
-            <div className="tree-node-info">
-              <div className="tree-node-title">
-                {node.title}
-                {node.type !== 'life' && (
-                  <span className={`tree-node-status ${getNodeStatus(node).toLowerCase()}`}>
-                    {getNodeStatus(node)}
-                  </span>
+      <div key={node.id} style={{ paddingLeft: `${indent}px` }} className="mb-2">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              {/* Expand/Collapse Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleNode(node.id)}
+                disabled={!hasChildren}
+                className="h-8 w-8 p-0 shrink-0"
+              >
+                {hasChildren ? (
+                  isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                ) : (
+                  <div className="w-4" />
                 )}
+              </Button>
+              
+              {/* Node Icon */}
+              <div className="shrink-0 text-primary">
+                {getNodeIcon(node)}
               </div>
               
-              {node.description && (
-                <div className="tree-node-description">
-                  {node.description}
+              {/* Node Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h3 className="font-semibold text-foreground">{node.title}</h3>
+                  {node.type !== 'life' && (
+                    <Badge variant={getNodeStatus(node) === 'Active' ? 'default' : 'secondary'}>
+                      {getNodeStatus(node)}
+                    </Badge>
+                  )}
                 </div>
-              )}
-              
-              <div className="tree-node-meta">
+                
+                {node.description && (
+                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                    {node.description}
+                  </p>
+                )}
+                
+                {/* Metadata */}
+                <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
+                  {node.type !== 'task' && node.progress !== undefined && (
+                    <span className="flex items-center gap-1">
+                      <span className="font-medium text-foreground">{getNodeProgress(node)}%</span>
+                      <span>complete</span>
+                    </span>
+                  )}
+                  
+                  {node.targetDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {format(node.targetDate, 'MMM dd, yyyy')}
+                    </span>
+                  )}
+                  
+                  {node.priority && (
+                    <Badge variant={node.priority === 'high' ? 'destructive' : 'outline'} className="text-xs">
+                      {node.priority.toUpperCase()}
+                    </Badge>
+                  )}
+                  
+                  {hasChildren && (
+                    <span className="flex items-center gap-1">
+                      {node.children.length} {node.children.length !== 1 ? 'items' : 'item'}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Progress Bar */}
                 {node.type !== 'task' && node.progress !== undefined && (
-                  <span className="tree-node-progress">
-                    Progress: {getNodeProgress(node)}%
-                  </span>
-                )}
-                
-                {node.targetDate && (
-                  <span className="tree-node-date">
-                    Due: {format(node.targetDate, 'MMM dd, yyyy')}
-                  </span>
-                )}
-                
-                {node.priority && (
-                  <span className={`tree-node-priority ${node.priority}`}>
-                    {node.priority.toUpperCase()}
-                  </span>
-                )}
-                
-                {hasChildren && (
-                  <span className="tree-node-children">
-                    {node.children.length} item{node.children.length !== 1 ? 's' : ''}
-                  </span>
+                  <Progress value={getNodeProgress(node)} className="mt-3 h-2" />
                 )}
               </div>
             </div>
-          </div>
-          
-          {node.type !== 'task' && node.progress !== undefined && (
-            <div className="tree-progress-bar">
-              <div 
-                className="tree-progress-fill"
-                style={{ width: `${getNodeProgress(node)}%` }}
-              />
-            </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
         
         {isExpanded && hasChildren && (
-          <div className="tree-node-children">
+          <div className="mt-2">
             {node.children.map(child => renderTreeNode(child, level + 1))}
           </div>
         )}
@@ -395,94 +403,117 @@ const GoalTree: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="goal-tree-header">
-          <div className="flex items-center gap-4 mb-4">
-            <button 
-              onClick={() => navigateTo('dashboard', false)}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={20} />
-              <span>Back to Dashboard</span>
-            </button>
+      {/* Header */}
+      <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="p-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigateTo('dashboard', false)}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          
+          <div className="flex items-center gap-3 mb-2">
+            <GitBranch className="w-6 h-6 text-primary" />
+            <h1 className="text-2xl font-bold">Goal Tree Overview</h1>
           </div>
-          <div className="goal-tree-title">
-            <GitBranch size={24} style={{ color: '#ffd700' }} />
-            <h2>Goal Tree Overview</h2>
-            <span className="goal-tree-subtitle">
-              Complete hierarchy of your goals and tasks
-            </span>
-          </div>
-        </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Complete hierarchy of your goals and tasks
+          </p>
 
-        <div className="goal-tree-controls">
-          <div className="goal-tree-filters">
-            <button
-              className={`filter-button ${selectedView === 'full' ? 'active' : ''}`}
+          {/* View Filters */}
+          <div className="flex gap-2">
+            <Button
+              variant={selectedView === 'full' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setSelectedView('full')}
             >
               All Goals
-            </button>
-            <button
-              className={`filter-button ${selectedView === 'active' ? 'active' : ''}`}
+            </Button>
+            <Button
+              variant={selectedView === 'active' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setSelectedView('active')}
             >
               Active Only
-            </button>
-            <button
-              className={`filter-button ${selectedView === 'completed' ? 'active' : ''}`}
+            </Button>
+            <Button
+              variant={selectedView === 'completed' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setSelectedView('completed')}
             >
               Completed
-            </button>
-          </div>
-          
-          <div className="goal-tree-actions">
-            <button className="tree-action-button" onClick={expandAll}>
-              <Maximize2 size={16} />
+            </Button>
+            
+            <div className="flex-1" />
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={expandAll}
+            >
+              <Maximize2 className="w-4 h-4 mr-2" />
               Expand All
-            </button>
-            <button className="tree-action-button" onClick={collapseAll}>
-              <ChevronRight size={16} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={collapseAll}
+            >
+              <Minimize2 className="w-4 h-4 mr-2" />
               Collapse All
-            </button>
+            </Button>
           </div>
         </div>
+      </div>
 
-        <div className="goal-tree-content">
-          {filteredTree.length === 0 ? (
-            <div className="goal-tree-empty">
-              <GitBranch size={48} style={{ color: '#cbd5e0' }} />
-              <h3>No Goals Found</h3>
-              <p>Start by creating your first life goal to see the goal tree.</p>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-6">
+        {filteredTree.length === 0 ? (
+          <Card className="p-12">
+            <div className="flex flex-col items-center justify-center text-center gap-4">
+              <GitBranch className="w-12 h-12 text-muted-foreground" />
+              <div>
+                <h3 className="text-lg font-semibold mb-2">No Goals Found</h3>
+                <p className="text-muted-foreground">Start by creating your first life goal to see the goal tree.</p>
+              </div>
             </div>
-          ) : (
-            <div className="goal-tree-list">
-              {filteredTree.map(node => renderTreeNode(node))}
-            </div>
-          )}
-        </div>
-
-        <div className="goal-tree-footer">
-          <div className="goal-tree-legend">
-            <div className="legend-item">
-              <Heart size={16} style={{ color: '#e74c3c' }} />
-              <span>Life Goals</span>
-            </div>
-            <div className="legend-item">
-              <Target size={16} style={{ color: '#667eea' }} />
-              <span>Annual Goals</span>
-            </div>
-            <div className="legend-item">
-              <Calendar size={16} style={{ color: '#764ba2' }} />
-              <span>Quarterly OKRs</span>
-            </div>
-            <div className="legend-item">
-              <CheckSquare size={16} style={{ color: '#48bb78' }} />
-              <span>Weekly Tasks</span>
-            </div>
+          </Card>
+        ) : (
+          <div className="goal-tree-list">
+            {filteredTree.map(node => renderTreeNode(node))}
           </div>
-        </div>
+        )}
+
+        {/* Legend */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Legend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                <span className="text-sm">Life Goals</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-chart-1" />
+                <span className="text-sm">Annual Goals</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-chart-3" />
+                <span className="text-sm">Quarterly OKRs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-chart-4" />
+                <span className="text-sm">Weekly Tasks</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -860,54 +860,54 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ selectedWeek:
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto">
-        {/* Modern Header */}
-        <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="p-6">
-            {/* Back Button */}
-            <div className="flex justify-start mb-4">
+      {/* Header */}
+      <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="p-6">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigateTo('this-week', false)}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to This Week
+          </Button>
+
+          {/* Title & Week Selection */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Target className="w-6 h-6 text-primary" />
+              <h1 className="text-2xl font-bold">Weekly Command Huddle</h1>
+            </div>
+            <div className="flex items-center gap-3">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={() => navigateTo('this-week', false)}
-                className="gap-2"
+                onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+                className="h-8 w-8 p-0"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to This Week
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="w-4 h-4" />
+                <span className="font-medium">
+                  Week of {format(weekStart, 'MMM dd')} - {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
+          </div>
 
-            {/* Title & Week Selection */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Weekly Command Huddle</h2>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span className="font-medium">
-                    Week of {format(weekStart, 'MMM dd')} - {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
-                  </span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Progress Steps */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          {/* Progress Steps */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
               <Badge 
                 variant={currentPhase === 'review' ? 'default' : ['clarity', 'realign', 'plan'].includes(currentPhase) ? 'secondary' : 'outline'}
                 className="gap-1.5"
@@ -951,6 +951,8 @@ const WeeklyCommandHuddle: React.FC<WeeklyCommandHuddleProps> = ({ selectedWeek:
           </div>
         </div>
 
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto p-6">
         <div className="command-huddle-content">
           {/* Phase 1: Review - After Action Review Wizard */}
           {currentPhase === 'review' && (
